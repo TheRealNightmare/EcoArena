@@ -2,7 +2,7 @@
 
 A non-episodic 2D predator–prey ecosystem for comparing **reinforcement learning**, **neuroevolution** and **hybrids** on the same world, judged by ecosystem-level outcomes (persistence, extinction, stability, Lotka–Volterra fit) as well as agent-level scores.
 
-Status: week 1 — environment core, baselines and tests. Training code comes next.
+Status: week 1 done — environment, baselines, tests, and a world that passes the survival gate. Training code (PPO first) comes next.
 
 Scenarios S2–S5 in `configs/scenarios.json` are relative (`"x2"` doubles the base value), so they apply to either world.
 
@@ -25,9 +25,8 @@ python scripts/gate_sweep.py                # survival gate: candidate rules x {
 - Continuous world with wrap-around edges and a grass grid with logistic regrowth. The benchmark world is
   200 × 200 (`configs/s1_large.json`); the 100 × 100 world (`s1_balanced.json`) has the same rules and is
   used for tests and quick debugging. On 100 × 100, predator numbers fall to 1–3 at the bottom of a cycle
-  and usually die out by chance. On 200 × 200 the current rules kept both species alive in 5/5 worlds for
-  6,000 steps with both heuristic and random agents (`results/gate_sweep_r2/`); the 10 × 10,000-step
-  confirmation is pending.
+  and usually die out by chance. **Survival gate passed** on 200 × 200: both species stayed alive in
+  10/10 worlds for 10,000 steps with heuristic agents and with random agents (`results/gate_sweep_r3/`).
 - Refuges: patches where prey can't be caught and grass grows sparsely. Predators take time to digest
   after a catch and can't breed when crowded by other predators. A lunge succeeds half the time
   (`catch_prob`), and a miss stuns the predator for 40 steps (`miss_stun_steps`).

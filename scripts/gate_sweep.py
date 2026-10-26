@@ -32,6 +32,8 @@ from scripts.run_baseline import plot, run, summarize
 # Round 2 (5 x 6000): E5 (catch 0.5, stun 20) and E6 (catch 0.5, stun 40, digest 60) passed.
 # E5 starved random predators (3-6 left, falling), which would starve untrained learners, so E6 was
 # adopted into the configs. Round 3 confirms it at 10 worlds x 10000 with one neighbour as fallback.
+# Round 3 result: F0 and F1 both 10/10 for both policies. F0 kept (random predators never below 81,
+# vs 9 for F1; untrained learners behave roughly randomly). Heuristic worst case: 6 predators.
 CANDIDATES: dict[str, dict] = {
     "F0_current": {},
     "F1_stun30_digest80": {"predator.miss_stun_steps": 30, "predator.digest_steps": 80},
