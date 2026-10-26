@@ -23,19 +23,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.run_baseline import plot, run, summarize
 
 # Overrides on top of configs/s1_large.json.
-# Diagnosis (logs.md, 2026-10-26): heuristic predators catch at the maximum rate digestion allows,
-# so they either strip prey (3/5 worlds) or sit at break-even and dwindle (2/5). Random predators
-# cycle cleanly. Candidates make a lunge uncertain and stun the predator after a miss.
+#
+# Round 1 (2026-10-26, 5 x 6000): no candidate passed. Lower catch_prob starved predators even with
+# prey plentiful, so predators were not too efficient: they barely broke even. Cause: predators
+# could not observe that they were digesting, and the heuristic chased at full thrust for the 83%
+# of its time it could not eat (0.27 vs 0.15 energy/step). Round 2 adds a "busy" observation and
+# the heuristic coasts while busy. Predators now keep more energy, so candidates bracket both ways.
 CANDIDATES: dict[str, dict] = {
-    "C0_current": {},
-    "C1_p0.5_stun20": {"predator.catch_prob": 0.5, "predator.miss_stun_steps": 20},
-    "C2_p0.3_stun20": {"predator.catch_prob": 0.3, "predator.miss_stun_steps": 20},
-    "C3_p0.3_stun40": {"predator.catch_prob": 0.3, "predator.miss_stun_steps": 40},
-    "C4_p0.3_stun20_catch45": {"predator.catch_prob": 0.3, "predator.miss_stun_steps": 20,
-                               "predator.energy_per_catch": 45.0},
-    "C5_p0.3_stun20_digest60": {"predator.catch_prob": 0.3, "predator.miss_stun_steps": 20,
-                                "predator.digest_steps": 60},
-    "C6_p0.5_stun40_digest60": {"predator.catch_prob": 0.5, "predator.miss_stun_steps": 40,
+    "E0_current": {},
+    "E1_pred_drain0.2": {"predator.base_drain": 0.2},
+    "E2_catch28": {"predator.energy_per_catch": 28.0},
+    "E3_pred_init_half": {"predator.init_count": "x0.5"},
+    "E4_E3_catch28": {"predator.init_count": "x0.5", "predator.energy_per_catch": 28.0},
+    "E5_p0.5_stun20": {"predator.catch_prob": 0.5, "predator.miss_stun_steps": 20},
+    "E6_p0.5_stun40_digest60": {"predator.catch_prob": 0.5, "predator.miss_stun_steps": 40,
                                 "predator.digest_steps": 60},
 }
 

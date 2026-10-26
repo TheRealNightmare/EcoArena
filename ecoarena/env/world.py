@@ -418,10 +418,12 @@ class EcoWorld:
         dnorm = torch.where(none, 1.0, dist / rng_).unsqueeze(-1)
         rays = torch.cat([dnorm, onehot], -1).reshape(W, No, R * 6)
 
+        busy_span = max(sc.digest_steps, sc.miss_stun_steps) + 1
         own = torch.stack([
             st.energy / sc.energy_cap,
             st.speed / sc.max_speed,
             st.age.float() / sc.max_age,
+            torch.clamp(st.digest.float() / busy_span, 0.0, 1.0),  # >0: can't catch yet (always 0 for prey)
             torch.gather(self.grass, 1, self.cell_index(st.pos)),
             self.in_refuge(st.pos).float(),
         ], -1)

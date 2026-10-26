@@ -405,3 +405,26 @@ def test_catch_prob_one_always_succeeds():
     w = lunge_world(1.0, 0)
     info = w.step(*zeros(w))
     assert int(info["captures"].sum()) == 4 * 150
+
+
+def test_busy_flag_set_after_catch():
+    cfg = load_config("S1", **{"prey.init_count": 1, "predator.init_count": 1, "refuge_count": 0,
+                               "predator.repro_threshold": 1000.0})
+    w = EcoWorld(cfg, n_worlds=1, seed=0)
+    w.species[PREY].pos[0, 0] = torch.tensor([50.0, 50.0])
+    w.species[PREDATOR].pos[0, 0] = torch.tensor([50.5, 50.0])
+    _, o2 = w.observe()
+    assert o2[0, 0, -3] == 0
+    w.step(*zeros(w))
+    _, o2 = w.observe()
+    expected = cfg.predator.digest_steps / (cfg.predator.digest_steps + 1)
+    assert abs(float(o2[0, 0, -3]) - expected) < 1e-6
+
+
+def test_heuristic_predator_coasts_while_digesting():
+    w = small_world()
+    pred = w.species[PREDATOR]
+    pred.digest[:] = 50
+    _, o2 = w.observe()
+    a = make_policy("heuristic", w, PREDATOR)(o2)
+    assert (a[..., 1][pred.alive] == 0).all()

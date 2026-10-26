@@ -66,8 +66,8 @@ class WorldConfig:
     @property
     def obs_dim(self) -> int:
         # per sector: distance + one-hot(grass, prey, predator, refuge, none);
-        # then energy, speed, age, grass-under-self, in-refuge
-        return self.n_rays * 6 + 5
+        # then energy, speed, age, busy (digesting/stunned), grass-under-self, in-refuge
+        return self.n_rays * 6 + 6
 
 
 def _set_dotted(d: dict, key: str, value) -> None:

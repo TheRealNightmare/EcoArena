@@ -2,7 +2,7 @@
 
 Both act only on the same observation vector a learned policy sees, so the comparison is fair.
 Observation layout per agent: n_rays × [dist, grass, prey, predator, refuge, none], then
-[energy, speed, age, grass_under_self, in_refuge].
+[energy, speed, age, busy, grass_under_self, in_refuge].
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from ..env.world import PREDATOR, PREY, EcoWorld
 
 D, GRASS, PREY_HIT, PRED_HIT, REFUGE, NONE = 0, 1, 2, 3, 4, 5
 PER_SECTOR = 6
-OWN_GRASS, OWN_REFUGE = -2, -1
+OWN_BUSY, OWN_GRASS, OWN_REFUGE = -3, -2, -1
 
 
 def _rays(obs: torch.Tensor, n_rays: int) -> torch.Tensor:
@@ -49,7 +49,8 @@ class RandomPolicy:
 
 class HeuristicPolicy:
     """B1: prey that see a predator hide in a visible refuge (or hold still inside one), else flee;
-    otherwise they graze or steer to grass. Predators chase the nearest visible prey, else wander."""
+    otherwise they graze or steer to grass. Predators coast while digesting (they can't catch, so
+    chasing only burns energy); otherwise they chase the nearest visible prey, else wander."""
 
     def __init__(self, world: EcoWorld, species: int):
         self.world, self.sp = world, species
@@ -89,6 +90,8 @@ class HeuristicPolicy:
             jp, see_prey = _nearest_ray(rays, PREY_HIT)
             turn = torch.where(see_prey, self._turn_toward(self.offsets[jp]), turn)
             thrust = torch.where(see_prey, torch.ones_like(thrust), torch.full_like(thrust, 0.6))
+            busy = obs[..., OWN_BUSY] > 0
+            thrust = torch.where(busy, torch.zeros_like(thrust), thrust)
         return torch.stack([turn, thrust], -1)
 
 
