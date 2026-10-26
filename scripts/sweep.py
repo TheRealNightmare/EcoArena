@@ -15,13 +15,15 @@ from scripts.run_baseline import plot, run, summarize
 
 BASE: dict = {}  # configs/s1_balanced.json already holds the current best guess
 
-FAST = {"predator.max_speed": 1.3, "predator.move_cost": 0.15, "predator.max_turn": 0.15}
+# Goal: shrink the opening prey boom (150 -> ~380 in 130 steps) that feeds a predator boom.
+SPARSE = {"grass_init_min": 0.1, "grass_init_max": 0.4}
+SLOW_PREY = {"prey.repro_cooldown": 150}
 
 CANDIDATES = {
-    "R1_refuge8": {},
-    "R2_refuge12": {"refuge_count": 12},
-    "R3_refuge8_fast": FAST,
-    "R4_refuge12_fast": {**FAST, "refuge_count": 12},
+    "U1_sparse_slowprey": {**SPARSE, **SLOW_PREY},
+    "U2_U1_slowpredbreed": {**SPARSE, **SLOW_PREY, "predator.repro_cooldown": 500},
+    "U3_U1_digest100": {**SPARSE, **SLOW_PREY, "predator.digest_steps": 100},
+    "U4_slowprey": SLOW_PREY,
 }
 
 
