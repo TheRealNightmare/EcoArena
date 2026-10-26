@@ -111,7 +111,8 @@ def test_old_age_kills():
 
 def test_capture_one_prey_per_predator_and_once_per_prey():
     # breeding off so the energy check isn't muddied by a same-step birth
-    cfg = load_config("S1", **{"prey.init_count": 3, "predator.init_count": 2, "predator.repro_threshold": 1000.0, "refuge_count": 0})
+    cfg = load_config("S1", **{"prey.init_count": 3, "predator.init_count": 2, "predator.repro_threshold": 1000.0, "refuge_count": 0,
+                               "predator.catch_prob": 1.0})
     w = EcoWorld(cfg, n_worlds=1, seed=0)
     prey, pred = w.species
     # three prey bunched next to two predators
@@ -126,7 +127,8 @@ def test_capture_one_prey_per_predator_and_once_per_prey():
 
 def test_digesting_predator_cannot_catch():
     cfg = load_config("S1", **{"prey.init_count": 2, "predator.init_count": 1, "refuge_count": 0,
-                               "predator.digest_steps": 5, "predator.repro_threshold": 1000.0})
+                               "predator.digest_steps": 5, "predator.repro_threshold": 1000.0,
+                               "predator.catch_prob": 1.0, "predator.miss_stun_steps": 0})
     w = EcoWorld(cfg, n_worlds=1, seed=0)
     prey, pred = w.species
     prey.pos[0, :2] = torch.tensor([[50.0, 50.0], [80.0, 80.0]])
@@ -144,7 +146,8 @@ def test_digesting_predator_cannot_catch():
 
 
 def test_capture_across_wrap_edge():
-    cfg = load_config("S1", **{"prey.init_count": 1, "predator.init_count": 1, "refuge_count": 0})
+    cfg = load_config("S1", **{"prey.init_count": 1, "predator.init_count": 1, "refuge_count": 0,
+                               "predator.catch_prob": 1.0})
     w = EcoWorld(cfg, n_worlds=1, seed=0)
     w.species[PREY].pos[0, 0] = torch.tensor([0.2, 50.0])
     w.species[PREDATOR].pos[0, 0] = torch.tensor([99.6, 50.0])
@@ -409,7 +412,7 @@ def test_catch_prob_one_always_succeeds():
 
 def test_busy_flag_set_after_catch():
     cfg = load_config("S1", **{"prey.init_count": 1, "predator.init_count": 1, "refuge_count": 0,
-                               "predator.repro_threshold": 1000.0})
+                               "predator.repro_threshold": 1000.0, "predator.catch_prob": 1.0})
     w = EcoWorld(cfg, n_worlds=1, seed=0)
     w.species[PREY].pos[0, 0] = torch.tensor([50.0, 50.0])
     w.species[PREDATOR].pos[0, 0] = torch.tensor([50.5, 50.0])
@@ -417,7 +420,8 @@ def test_busy_flag_set_after_catch():
     assert o2[0, 0, -3] == 0
     w.step(*zeros(w))
     _, o2 = w.observe()
-    expected = cfg.predator.digest_steps / (cfg.predator.digest_steps + 1)
+    qc = cfg.predator
+    expected = qc.digest_steps / (max(qc.digest_steps, qc.miss_stun_steps) + 1)
     assert abs(float(o2[0, 0, -3]) - expected) < 1e-6
 
 

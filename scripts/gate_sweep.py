@@ -29,15 +29,12 @@ from scripts.run_baseline import plot, run, summarize
 # could not observe that they were digesting, and the heuristic chased at full thrust for the 83%
 # of its time it could not eat (0.27 vs 0.15 energy/step). Round 2 adds a "busy" observation and
 # the heuristic coasts while busy. Predators now keep more energy, so candidates bracket both ways.
+# Round 2 (5 x 6000): E5 (catch 0.5, stun 20) and E6 (catch 0.5, stun 40, digest 60) passed.
+# E5 starved random predators (3-6 left, falling), which would starve untrained learners, so E6 was
+# adopted into the configs. Round 3 confirms it at 10 worlds x 10000 with one neighbour as fallback.
 CANDIDATES: dict[str, dict] = {
-    "E0_current": {},
-    "E1_pred_drain0.2": {"predator.base_drain": 0.2},
-    "E2_catch28": {"predator.energy_per_catch": 28.0},
-    "E3_pred_init_half": {"predator.init_count": "x0.5"},
-    "E4_E3_catch28": {"predator.init_count": "x0.5", "predator.energy_per_catch": 28.0},
-    "E5_p0.5_stun20": {"predator.catch_prob": 0.5, "predator.miss_stun_steps": 20},
-    "E6_p0.5_stun40_digest60": {"predator.catch_prob": 0.5, "predator.miss_stun_steps": 40,
-                                "predator.digest_steps": 60},
+    "F0_current": {},
+    "F1_stun30_digest80": {"predator.miss_stun_steps": 30, "predator.digest_steps": 80},
 }
 
 
