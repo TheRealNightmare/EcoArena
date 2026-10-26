@@ -23,11 +23,14 @@ SLOW_PREY = {"prey.repro_cooldown": 150}
 U3 = {**SPARSE, **SLOW_PREY, "predator.digest_steps": 100}
 CHEAP_PRED = {"predator.base_drain": 0.1, "predator.move_cost": 0.1}
 
+# Refuges with grass capped at 0.15 can't hold residents, so they don't act as a reservoir.
+V4 = {**U3, "predator.base_drain": 0.15, "predator.move_cost": 0.15}
+
 CANDIDATES = {
-    "V1_U3_cheappred": {**U3, **CHEAP_PRED},
-    "V2_digest60_cheappred": {**SPARSE, **SLOW_PREY, **CHEAP_PRED},
-    "V3_V1_catch45": {**U3, **CHEAP_PRED, "predator.energy_per_catch": 45.0},
-    "V4_U3_drain0.15": {**U3, "predator.base_drain": 0.15, "predator.move_cost": 0.15},
+    "W1_V4_refgrass0.5": {**V4, "refuge_grass_cap": 0.5},
+    "W2_V4_refgrass0.35": {**V4, "refuge_grass_cap": 0.35},
+    "W3_V1_refgrass0.5": {**U3, **CHEAP_PRED, "refuge_grass_cap": 0.5},
+    "W4_U3_refgrass0.5": {**U3, "refuge_grass_cap": 0.5},
 }
 
 
