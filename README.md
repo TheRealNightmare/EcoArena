@@ -29,7 +29,7 @@ python scripts/timing.py --device cuda      # throughput for 1, 16, 64 parallel 
   after a catch and can't breed when crowded by other predators.
 - **Prey** eat grass; **predators** eat prey. Both burn energy every step (more when thrusting), breed above an energy threshold (the child takes energy from the parent), and die of starvation, old age or being eaten.
 - The world never resets. Births reuse free slots in fixed-size tensors, so many worlds step in parallel on the GPU.
-- **Observation** (101 numbers): 16 vision sectors across the field of view (240° prey, 120° predators, range 20), each giving distance + what is nearest (grass / prey / predator / refuge / nothing), plus own energy, speed, age, grass underfoot and whether it is in a refuge.
+- **Observation** (101 numbers): 16 vision sectors across the field of view (prey: 240°, range 20; predators: 120°, range 12), each giving distance + what is nearest (grass / prey / predator / refuge / nothing), plus own energy, speed, age, grass underfoot and whether it is in a refuge.
 - **Action**: `[turn, thrust]` in [-1, 1].
 - All randomness is a counter-based hash of (seed, step, stream, world, slot), reproducible bit-for-bit in TypeScript for the browser demo.
 
