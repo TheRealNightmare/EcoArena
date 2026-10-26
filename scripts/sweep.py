@@ -26,11 +26,14 @@ CHEAP_PRED = {"predator.base_drain": 0.1, "predator.move_cost": 0.1}
 # Refuges with grass capped at 0.15 can't hold residents, so they don't act as a reservoir.
 V4 = {**U3, "predator.base_drain": 0.15, "predator.move_cost": 0.15}
 
+W2 = {**V4, "refuge_grass_cap": 0.35}  # best so far: 1/5 worlds survive 3000 steps
+TERR = {"predator.territory_radius": 10.0, "predator.territory_max": 2}
+
 CANDIDATES = {
-    "W1_V4_refgrass0.5": {**V4, "refuge_grass_cap": 0.5},
-    "W2_V4_refgrass0.35": {**V4, "refuge_grass_cap": 0.35},
-    "W3_V1_refgrass0.5": {**U3, **CHEAP_PRED, "refuge_grass_cap": 0.5},
-    "W4_U3_refgrass0.5": {**U3, "refuge_grass_cap": 0.5},
+    "X1_W2_territory10": {**W2, **TERR},
+    "X2_W2_territory15": {**W2, "predator.territory_radius": 15.0, "predator.territory_max": 2},
+    "X3_cheappred_territory10": {**U3, **CHEAP_PRED, "refuge_grass_cap": 0.35, **TERR},
+    "X4_X1_immigration": {**W2, **TERR, "immigration_floor": 3, "immigration_interval": 200},
 }
 
 
@@ -50,7 +53,8 @@ def main() -> None:
         plot(pops, out / f"{name}.png", f"{name} · {s['worlds_survived']}/{a.worlds} survive")
         (out / f"{name}.json").write_text(json.dumps({"overrides": {**BASE, **ov}, **s}, indent=2))
         print(json.dumps({"cand": name, "survived": s["worlds_survived"], "extinct_at": s["extinct_at_step"],
-                          "mean_pop": s["mean_pop_second_half"], "cv": s["cv_second_half"], "secs": round(secs)}), flush=True)
+                          "mean_pop": s["mean_pop_second_half"], "cv": s["cv_second_half"], "migrants": run.last_migrants.sum(0).tolist(),
+                          "secs": round(secs)}), flush=True)
 
 
 if __name__ == "__main__":

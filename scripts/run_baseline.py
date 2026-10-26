@@ -22,23 +22,27 @@ from ecoarena.env import EcoWorld, load_config
 from ecoarena.policies import make_policy
 
 
-def run(policy: str, scenario: str, worlds: int, steps: int, seed: int, device: str, overrides: dict):
-    cfg = load_config(scenario, **overrides)
+def run(policy: str, scenario: str, worlds: int, steps: int, seed: int, device: str, overrides: dict,
+        base: str = "s1_balanced.json"):
+    cfg = load_config(scenario, base=base, **overrides)
     world = EcoWorld(cfg, n_worlds=worlds, seed=seed, device=device)
     prey_pol, pred_pol = make_policy(policy, world, 0), make_policy(policy, world, 1)
     pops = np.zeros((steps + 1, worlds, 2), dtype=np.int32)
     pops[0] = world.populations().cpu().numpy()
     captures = np.zeros(worlds, dtype=np.int64)
+    migrants = np.zeros((worlds, 2), dtype=np.int64)
     t0 = time.time()
     for t in range(steps):
         o_prey, o_pred = world.observe()
         info = world.step(prey_pol(o_prey), pred_pol(o_pred))
         pops[t + 1] = info["populations"].cpu().numpy()
         captures += info["captures"].cpu().numpy()
+        migrants += torch.stack(info["migrants"], 1).cpu().numpy()
         if (pops[t + 1] == 0).any(axis=1).all():
             pops[t + 2 :] = pops[t + 1]
             break
     secs = time.time() - t0
+    run.last_migrants = migrants  # (prey, predator) arrivals per world
     return cfg, pops, captures, secs
 
 
@@ -83,6 +87,7 @@ def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--policy", default="heuristic", choices=["heuristic", "random"])
     p.add_argument("--scenario", default="S1")
+    p.add_argument("--base", default="s1_balanced.json", help="base config in configs/, e.g. s1_large.json")
     p.add_argument("--worlds", type=int, default=5)
     p.add_argument("--steps", type=int, default=10_000)
     p.add_argument("--seed", type=int, default=0)
@@ -92,7 +97,7 @@ def main() -> None:
     a = p.parse_args()
 
     overrides = {k: json.loads(v) for k, v in (s.split("=", 1) for s in a.set)}
-    _cfg, pops, capt, secs = run(a.policy, a.scenario, a.worlds, a.steps, a.seed, a.device, overrides)
+    _cfg, pops, capt, secs = run(a.policy, a.scenario, a.worlds, a.steps, a.seed, a.device, overrides, a.base)
     s = summarize(pops)
     agent_steps = int(pops[1:].sum())
     s.update({
@@ -101,11 +106,12 @@ def main() -> None:
         "world_steps_per_sec": round(a.steps * a.worlds / secs, 1),
         "agent_steps_per_sec": round(agent_steps / secs, 1),
         "captures_per_world": capt.tolist(),
+        "migrants_per_world": run.last_migrants.tolist(),
         "overrides": overrides,
     })
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    stem = f"{a.policy}-{a.scenario}-seed{a.seed}"
+    stem = f"{a.policy}-{Path(a.base).stem}-{a.scenario}-seed{a.seed}"
     np.save(out / f"{stem}-pops.npy", pops)
     (out / f"{stem}-summary.json").write_text(json.dumps(s, indent=2))
     plot(pops, out / f"{stem}.png", f"{a.policy} · {a.scenario} · {s['worlds_survived']}/{a.worlds} worlds keep both species")

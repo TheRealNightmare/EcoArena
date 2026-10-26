@@ -356,3 +356,11 @@ def test_immigration_off_by_default():
     for _ in range(100):
         w.step(*zeros(w))
     assert (w.populations()[:, PREY] == 0).all()
+
+
+def test_scenarios_are_relative_to_the_base():
+    small = load_config("S4")
+    large = load_config("S4", base="s1_large.json")
+    assert small.prey.init_count == 2 * load_config("S1").prey.init_count
+    assert large.prey.init_count == 4 * small.prey.init_count
+    assert load_config("S2").grass_regrow_rate == load_config("S1").grass_regrow_rate * 0.5
