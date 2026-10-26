@@ -85,12 +85,14 @@ class EcoWorld:
         # random starting ages so the founding generation does not all die of old age at once
         age = (u(rng.S_INIT_AGE) * (sc.max_age * 0.5)).to(torch.int64)
         alive = (s < sc.init_count).expand(W, N).clone()
+        # random starting energy in [0.5, 1.5] x energy_init so founders don't all breed in lockstep
+        energy0 = torch.clamp(sc.energy_init * (0.5 + u(rng.S_INIT_ENERGY)), max=sc.energy_cap)
         z = torch.zeros(W, N, device=self.device)
         return SpeciesState(
             pos=pos,
             heading=heading,
             speed=z.clone(),
-            energy=torch.where(alive, torch.full_like(z, sc.energy_init), z),
+            energy=torch.where(alive, energy0, z),
             age=torch.where(alive, age, torch.zeros_like(age)),
             cooldown=torch.zeros(W, N, dtype=torch.int64, device=self.device),
             digest=torch.zeros(W, N, dtype=torch.int64, device=self.device),
