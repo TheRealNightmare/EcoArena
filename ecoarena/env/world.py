@@ -201,7 +201,7 @@ class EcoWorld:
             st.digest = torch.clamp(st.digest - 1, min=0)
 
         # 6. deaths
-        deaths = []
+        deaths, died = [], []
         for sp, (st, sc) in enumerate(zip(self.species, self.species_cfg)):
             dead = st.alive & ((st.energy <= 0) | (st.age >= sc.max_age))
             if sp == PREY:
@@ -209,6 +209,7 @@ class EcoWorld:
             st.alive = st.alive & ~dead
             st.speed = torch.where(st.alive, st.speed, 0.0)
             deaths.append(dead.sum(1))
+            died.append(dead)
 
         # 7. births
         births = [self._births(sp) for sp in (PREY, PREDATOR)]
@@ -226,6 +227,8 @@ class EcoWorld:
             "t": self.t,
             "captures": n_capt,
             "deaths": deaths,
+            "died": died,  # per species [W, N] bool: the agent in this slot died this step (slot may be refilled)
+            "eaten": eaten,  # [W, Np] bool: prey caught this step
             "births": [b["count"] for b in births],
             "birth_pairs": [b["pairs"] for b in births],
             "migrants": migrants,
