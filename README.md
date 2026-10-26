@@ -15,6 +15,7 @@ uv pip install -e ".[dev]"
 pytest -q                                   # unit tests (CPU, ~10 s)
 python scripts/run_baseline.py --policy heuristic --worlds 5 --steps 10000 --base s1_large.json
 python scripts/timing.py --device cuda      # throughput for 1, 16, 64 parallel worlds
+python scripts/gate_sweep.py                # survival gate: candidate rules x {heuristic, random}
 ```
 
 `run_baseline.py` writes a population plot, the raw curves (`.npy`) and a JSON summary to `results/baselines/`.
@@ -24,9 +25,11 @@ python scripts/timing.py --device cuda      # throughput for 1, 16, 64 parallel 
 - Continuous world with wrap-around edges and a grass grid with logistic regrowth. The benchmark world is
   200 × 200 (`configs/s1_large.json`); the 100 × 100 world (`s1_balanced.json`) has the same rules and is
   used for tests and quick debugging. On 100 × 100, predator numbers fall to 1–3 at the bottom of a cycle
-  and usually die out by chance; the larger world keeps both species alive.
+  and usually die out by chance. The survival gate is not passed yet on 200 × 200 either: with heuristic
+  agents both species survive 10,000 steps in 2/5 worlds (see `logs.md`); `scripts/gate_sweep.py` tests fixes.
 - Refuges: patches where prey can't be caught and grass grows sparsely. Predators take time to digest
-  after a catch and can't breed when crowded by other predators.
+  after a catch and can't breed when crowded by other predators. Optionally a lunge succeeds only with
+  `catch_prob`, and a miss stuns the predator for `miss_stun_steps`.
 - **Prey** eat grass; **predators** eat prey. Both burn energy every step (more when thrusting), breed above an energy threshold (the child takes energy from the parent), and die of starvation, old age or being eaten.
 - The world never resets. Births reuse free slots in fixed-size tensors, so many worlds step in parallel on the GPU.
 - **Observation** (101 numbers): 16 vision sectors across the field of view (prey: 240°, range 20; predators: 120°, range 12), each giving distance + what is nearest (grass / prey / predator / refuge / nothing), plus own energy, speed, age, grass underfoot and whether it is in a refuge.

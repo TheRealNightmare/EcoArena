@@ -12,7 +12,8 @@ Step order (the TypeScript port must follow it exactly)
 2. move + wrap
 3. prey eat grass
 4. captures (each prey caught at most once; each predator eats at most one prey per step;
-   prey standing in a refuge cell cannot be caught; digesting predators cannot catch)
+   prey standing in a refuge cell cannot be caught; digesting predators cannot catch;
+   a lunge succeeds with catch_prob, and a miss stuns the predator for miss_stun_steps)
 5. energy drain + ageing + cooldowns
 6. deaths (energy <= 0, too old, or eaten)
 7. births into free slots (optionally blocked by crowding: territories)
@@ -247,7 +248,14 @@ class EcoWorld:
         M = torch.full_like(d2, float("inf"))
         M.scatter_(1, qarg.unsqueeze(1), dmin.unsqueeze(1))
         dsel, parg = M.min(dim=2)  # [W, Nq]
-        pred_eats = torch.isfinite(dsel)
+        lunges = torch.isfinite(dsel)
+        if qc.catch_prob < 1.0:
+            wq, sq = rng.grid(self.W, lunges.shape[1], self.device)
+            roll = rng.uniform(self.seed, self.t, self._stream(rng.S_CATCH, PREDATOR), wq, sq)
+            pred_eats = lunges & (roll < qc.catch_prob)
+        else:
+            pred_eats = lunges
+        missed = lunges & ~pred_eats
         # index assignment (not scatter_) so non-eating predators can't overwrite a True
         eaten = torch.zeros_like(prey.alive)
         w_idx = torch.arange(self.W, device=self.device).unsqueeze(1).expand_as(parg)
@@ -257,6 +265,7 @@ class EcoWorld:
         )
         # +1 because step 5 decrements every agent in this same step
         pred.digest = torch.where(pred_eats, torch.full_like(pred.digest, qc.digest_steps + 1), pred.digest)
+        pred.digest = torch.where(missed, torch.full_like(pred.digest, qc.miss_stun_steps + 1), pred.digest)
         return eaten, pred_eats.sum(1)
 
     def _births(self, sp: int) -> dict:

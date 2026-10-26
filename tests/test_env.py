@@ -364,3 +364,44 @@ def test_scenarios_are_relative_to_the_base():
     assert small.prey.init_count == 2 * load_config("S1").prey.init_count
     assert large.prey.init_count == 4 * small.prey.init_count
     assert load_config("S2").grass_regrow_rate == load_config("S1").grass_regrow_rate * 0.5
+
+
+# ---------------------------------------------------------------- catch success
+def lunge_world(prob, stun):
+    cfg = load_config("S1", **{"prey.init_count": 150, "predator.init_count": 150, "refuge_count": 0,
+                               "predator.capacity": 150, "predator.repro_threshold": 1000.0,
+                               "prey.repro_threshold": 1000.0,
+                               "predator.catch_prob": prob, "predator.miss_stun_steps": stun})
+    w = EcoWorld(cfg, n_worlds=4, seed=1)
+    prey, pred = w.species
+    # pair every predator with its own prey, 0.5 apart, far from other pairs
+    for i in range(150):
+        x, y = 4.0 + 6.5 * (i % 15), 4.0 + 9.5 * (i // 15)
+        prey.pos[:, i] = torch.tensor([x, y])
+        pred.pos[:, i] = torch.tensor([x + 0.5, y])
+    return w
+
+
+def test_catch_prob_controls_success_rate():
+    w = lunge_world(0.3, 50)
+    info = w.step(*zeros(w))
+    rate = info["captures"].sum().item() / (4 * 150)
+    assert 0.24 < rate < 0.36
+
+
+def test_missed_predator_is_stunned():
+    w = lunge_world(0.3, 50)
+    w.step(*zeros(w))
+    pred = w.species[PREDATOR]
+    alive_prey = w.species[PREY].alive
+    # predators whose prey survived missed: stunned for 50 steps
+    missed = alive_prey[:, :150]
+    assert (pred.digest[missed] == 50).all()
+    info = w.step(*zeros(w))
+    assert int(info["captures"].sum()) == 0
+
+
+def test_catch_prob_one_always_succeeds():
+    w = lunge_world(1.0, 0)
+    info = w.step(*zeros(w))
+    assert int(info["captures"].sum()) == 4 * 150

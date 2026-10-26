@@ -31,6 +31,8 @@ class SpeciesConfig:
     catch_radius: float = 0.0
     energy_per_catch: float = 0.0
     digest_steps: int = 0  # handling time after a catch (Holling type II); predators only
+    catch_prob: float = 1.0  # chance a lunge at a prey in range succeeds; predators only
+    miss_stun_steps: int = 0  # steps a predator can't catch after a failed lunge
     territory_radius: float = 0.0  # 0 = off. Breeding blocked when crowded by own species
     territory_max: int = 0  # max other same-species agents within territory_radius to still breed
 

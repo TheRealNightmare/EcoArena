@@ -58,6 +58,8 @@
     "energy_per_catch": 35.0,
     "digest_steps": 100,
     "territory_radius": 15.0,
-    "territory_max": 2
+    "territory_max": 2,
+    "catch_prob": 1.0,
+    "miss_stun_steps": 0
   }
 }
