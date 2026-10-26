@@ -1,0 +1,63 @@
+{
+  "worlds_survived": 5,
+  "worlds": 5,
+  "extinct_at_step": [
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "mean_pop_second_half": [
+    775.6,
+    106.6
+  ],
+  "cv_second_half": [
+    0.03,
+    0.065
+  ],
+  "candidate": "E1_pred_drain0.2",
+  "policy": "random",
+  "overrides": {
+    "predator.base_drain": 0.2
+  },
+  "steps": 6000,
+  "base": "s1_large.json",
+  "wall_seconds": 167.8,
+  "min_pop": [
+    [
+      461,
+      89
+    ],
+    [
+      484,
+      92
+    ],
+    [
+      494,
+      104
+    ],
+    [
+      462,
+      95
+    ],
+    [
+      474,
+      91
+    ]
+  ],
+  "min_pred_second_half": [
+    89,
+    92,
+    105,
+    95,
+    91
+  ],
+  "captures_per_world": [
+    5786,
+    5963,
+    6109,
+    6030,
+    5993
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "worlds_survived": 0,
+  "worlds": 5,
+  "extinct_at_step": [
+    1199,
+    1824,
+    1321,
+    1609,
+    1338
+  ],
+  "mean_pop_second_half": [
+    6.0,
+    0.0
+  ],
+  "cv_second_half": [
+    0.0,
+    0.0
+  ],
+  "candidate": "E2_catch28",
+  "policy": "heuristic",
+  "overrides": {
+    "predator.energy_per_catch": 28.0
+  },
+  "steps": 6000,
+  "base": "s1_large.json",
+  "wall_seconds": 50.9,
+  "min_pop": [
+    [
+      0,
+      0
+    ],
+    [
+      3,
+      0
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      0,
+      0
+    ]
+  ],
+  "min_pred_second_half": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "captures_per_world": [
+    1706,
+    1777,
+    1698,
+    1683,
+    1650
+  ]
+}
