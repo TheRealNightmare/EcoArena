@@ -60,9 +60,12 @@ class ActorCritic(nn.Module):
     def value(self, obs: torch.Tensor) -> torch.Tensor:
         return self.critic(obs).squeeze(-1)
 
+    min_log_std = -2.0
+
     def dist(self, obs: torch.Tensor) -> torch.distributions.Normal:
         mu = self.actor(obs)
-        return torch.distributions.Normal(mu, self.log_std.exp().expand_as(mu))
+        log_std = torch.clamp(self.log_std, min=self.min_log_std)
+        return torch.distributions.Normal(mu, log_std.exp().expand_as(mu))
 
     @torch.no_grad()
     def act(self, obs: torch.Tensor, deterministic: bool = False):
@@ -97,14 +100,16 @@ class PPOConfig:
     opponent: str = "heuristic"
     n_worlds: int = 4
     rollout_steps: int = 128
-    iterations: int = 200
+    iterations: int = 200  # upper bound on iterations
+    agent_step_budget: int = 0  # 0 = off; else stop once every learning species has this many agent-steps
     lr: float = 3e-4
     gamma: float = 0.99
     gae_lambda: float = 0.95
     clip: float = 0.2
     epochs: int = 4
     minibatch: int = 4096
-    ent_coef: float = 0.0
+    ent_coef: float = 0.003  # small bonus: stage-1 run on GPU collapsed entropy to 0 without it
+    min_log_std: float = -2.0  # action std never below ~0.14, so the policy keeps exploring
     vf_coef: float = 0.5
     max_grad_norm: float = 0.5
     birth_bonus: float = 1.0
@@ -127,6 +132,8 @@ class PPOTrainer:
         self.world_seed = cfg.seed * 1000
         self.world = EcoWorld(world_cfg, n_worlds=cfg.n_worlds, seed=self.world_seed, device=cfg.device)
         self.models = {sp: ActorCritic(world_cfg.obs_dim).to(self.device) for sp in cfg.learn}
+        for m in self.models.values():
+            m.min_log_std = cfg.min_log_std
         self.opts = {sp: torch.optim.Adam(m.parameters(), lr=cfg.lr, eps=1e-5) for sp, m in self.models.items()}
         self.fixed = {sp: make_policy(cfg.opponent, self.world, sp) for sp in (PREY, PREDATOR) if sp not in cfg.learn}
         self.resets = 0
@@ -283,7 +290,7 @@ class PPOTrainer:
                 "approx_kl": sum(kls) / len(kls),
                 "clipfrac": sum(clipfracs) / len(clipfracs),
                 "reward_per_agent_step": b["rew"][b["valid"]].mean().item(),
-                "action_std": m.log_std.exp().mean().item(),
+                "action_std": m.log_std.clamp(min=m.min_log_std).exp().mean().item(),
             }
         return out
 
@@ -321,8 +328,12 @@ class PPOTrainer:
                 )
                 print(f"it {it:4d}  t={row['secs']:7.1f}s  pop=({row['pop_prey']:.0f},{row['pop_pred']:.0f})  "
                       f"resets={self.resets}  {msg}", flush=True)
-            if it % 25 == 0 or it == cfg.iterations:
+            budget_done = cfg.agent_step_budget and min(agent_steps.values()) >= cfg.agent_step_budget
+            if it % 25 == 0 or it == cfg.iterations or budget_done:
                 self.save()
+            if budget_done:
+                print(f"agent-step budget {cfg.agent_step_budget:,} reached at iteration {it}", flush=True)
+                break
         return self.history
 
     def save(self) -> None:

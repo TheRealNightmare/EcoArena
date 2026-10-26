@@ -36,6 +36,7 @@ def evaluate(cfg, policies: dict, worlds: int, steps: int, seed: int, device: st
     deaths = [0, 0]
     births = [0, 0]
     eaten = 0
+    encounter_mass = 0.0  # sum over steps and worlds of prey x predators (Lotka-Volterra interaction term)
     pops = np.zeros((steps, worlds, 2))
     for t in range(steps):
         o = w.observe()
@@ -49,6 +50,7 @@ def evaluate(cfg, policies: dict, worlds: int, steps: int, seed: int, device: st
             gained = (w.species[sp].energy - e0[sp]).clamp(min=0)
             food[sp] += float(gained[a0[sp] & ~info["died"][sp]].sum())
         eaten += int(info["eaten"].sum())
+        encounter_mass += float((a0[PREY].sum(1).float() * a0[PREDATOR].sum(1).float()).sum())
         pops[t] = info["populations"].cpu().numpy()
     alive_both = (pops > 0).all(axis=2)
     return {
@@ -60,6 +62,9 @@ def evaluate(cfg, policies: dict, worlds: int, steps: int, seed: int, device: st
         "prey_births_per_1k_agent_steps": round(1000 * births[PREY] / max(alive_steps[PREY], 1), 2),
         "pred_births_per_1k_agent_steps": round(1000 * births[PREDATOR] / max(alive_steps[PREDATOR], 1), 2),
         "pred_catches_per_1k_agent_steps": round(1000 * eaten / max(alive_steps[PREDATOR], 1), 2),
+        # captures per (prey x predator x step) x 1e6: the Lotka-Volterra attack rate. Independent of how many
+        # animals there are, so it compares hunting/escaping skill across ecosystem states. Lower = better prey.
+        "attack_rate_e6": round(1e6 * eaten / max(encounter_mass, 1.0), 3),
     }
 
 
@@ -102,7 +107,8 @@ def main() -> None:
     p.add_argument("--base", default="s1_large.json")
     p.add_argument("--worlds", type=int, default=4)
     p.add_argument("--rollout", type=int, default=64)
-    p.add_argument("--iters", type=int, default=300)
+    p.add_argument("--iters", type=int, default=3000, help="upper bound; training stops at --agent-steps")
+    p.add_argument("--agent-steps", type=float, default=20e6, help="per learning species (fairness budget)")
     p.add_argument("--minibatch", type=int, default=16384)
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--seed", type=int, default=0)
@@ -118,8 +124,9 @@ def main() -> None:
     out = Path(a.out) / name
     wcfg = load_config("S1", base=a.base)
     pcfg = PPOConfig(learn=tuple(learn), opponent=a.opponent, n_worlds=a.worlds, rollout_steps=a.rollout,
-                     iterations=a.iters, minibatch=a.minibatch, lr=a.lr, seed=a.seed, device=a.device)
-    print(f"training {name} on {a.device}: {a.iters} iters x {a.rollout} steps x {a.worlds} worlds", flush=True)
+                     iterations=a.iters, agent_step_budget=int(a.agent_steps), minibatch=a.minibatch, lr=a.lr, seed=a.seed, device=a.device)
+    print(f"training {name} on {a.device}: up to {a.agent_steps:,.0f} agent-steps per learning species, "
+          f"{a.rollout} steps x {a.worlds} worlds per iteration", flush=True)
     trainer = PPOTrainer(wcfg, pcfg, out)
     history = trainer.train()
     plot_curves(history, a.learn, out / "curves.png")

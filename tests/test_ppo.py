@@ -6,7 +6,8 @@ from ecoarena.trainers.ppo import ActorCritic, PPOConfig, PPOTrainer, load_polic
 
 def tiny_trainer(tmp_path, **kw):
     wcfg = load_config("S1", refuge_count=0)
-    cfg = PPOConfig(n_worlds=1, rollout_steps=8, iterations=1, minibatch=512, **kw)
+    kw = {"iterations": 1, **kw}
+    cfg = PPOConfig(n_worlds=1, rollout_steps=8, minibatch=512, **kw)
     return PPOTrainer(wcfg, cfg, tmp_path)
 
 
@@ -87,3 +88,18 @@ def test_actor_critic_shapes():
     m = ActorCritic(102)
     a, logp, v = m.act(torch.zeros(3, 7, 102))
     assert a.shape == (3, 7, 2) and logp.shape == (3, 7) and v.shape == (3, 7)
+
+
+def test_action_std_has_a_floor():
+    m = ActorCritic(102)
+    m.min_log_std = -2.0
+    with torch.no_grad():
+        m.log_std.fill_(-10.0)
+    d = m.dist(torch.zeros(1, 102))
+    assert torch.allclose(d.stddev, torch.full_like(d.stddev, torch.tensor(-2.0).exp()))
+
+
+def test_training_stops_at_agent_step_budget(tmp_path):
+    tr = tiny_trainer(tmp_path, iterations=50, agent_step_budget=1)
+    hist = tr.train()
+    assert len(hist) == 1
