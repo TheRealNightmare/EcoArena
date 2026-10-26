@@ -4,6 +4,8 @@ A non-episodic 2D predator–prey ecosystem for comparing **reinforcement learni
 
 Status: week 1 — environment core, baselines and tests. Training code comes next.
 
+Scenarios S2–S5 in `configs/scenarios.json` are relative (`"x2"` doubles the base value), so they apply to either world.
+
 ## Quick start
 
 ```bash
@@ -11,7 +13,7 @@ uv venv --python 3.12 && source .venv/bin/activate
 uv pip install torch                        # CUDA build; Blackwell cards (RTX 50xx) need CUDA 12.8+
 uv pip install -e ".[dev]"
 pytest -q                                   # unit tests (CPU, ~10 s)
-python scripts/run_baseline.py --policy heuristic --worlds 5 --steps 10000
+python scripts/run_baseline.py --policy heuristic --worlds 5 --steps 10000 --base s1_large.json
 python scripts/timing.py --device cuda      # throughput for 1, 16, 64 parallel worlds
 ```
 
@@ -19,10 +21,15 @@ python scripts/timing.py --device cuda      # throughput for 1, 16, 64 parallel 
 
 ## How the world works
 
-- 100 × 100 continuous world with wrap-around edges; a 50 × 50 grass grid with logistic regrowth.
+- Continuous world with wrap-around edges and a grass grid with logistic regrowth. The benchmark world is
+  200 × 200 (`configs/s1_large.json`); the 100 × 100 world (`s1_balanced.json`) has the same rules and is
+  used for tests and quick debugging. On 100 × 100, predator numbers fall to 1–3 at the bottom of a cycle
+  and usually die out by chance; the larger world keeps both species alive.
+- Refuges: patches where prey can't be caught and grass grows sparsely. Predators take time to digest
+  after a catch and can't breed when crowded by other predators.
 - **Prey** eat grass; **predators** eat prey. Both burn energy every step (more when thrusting), breed above an energy threshold (the child takes energy from the parent), and die of starvation, old age or being eaten.
 - The world never resets. Births reuse free slots in fixed-size tensors, so many worlds step in parallel on the GPU.
-- **Observation** (84 numbers): 16 vision sectors across the field of view (240° prey, 120° predators, range 20), each giving distance + what is nearest (grass / prey / predator / nothing), plus own energy, speed, age and grass underfoot.
+- **Observation** (101 numbers): 16 vision sectors across the field of view (240° prey, 120° predators, range 20), each giving distance + what is nearest (grass / prey / predator / refuge / nothing), plus own energy, speed, age, grass underfoot and whether it is in a refuge.
 - **Action**: `[turn, thrust]` in [-1, 1].
 - All randomness is a counter-based hash of (seed, step, stream, world, slot), reproducible bit-for-bit in TypeScript for the browser demo.
 
