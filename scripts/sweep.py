@@ -19,11 +19,15 @@ BASE: dict = {}  # configs/s1_balanced.json already holds the current best guess
 SPARSE = {"grass_init_min": 0.1, "grass_init_max": 0.4}
 SLOW_PREY = {"prey.repro_cooldown": 150}
 
+# U3 removed the boom but predators could not break even (~0.3 energy/step vs. <= 1 catch/100 steps).
+U3 = {**SPARSE, **SLOW_PREY, "predator.digest_steps": 100}
+CHEAP_PRED = {"predator.base_drain": 0.1, "predator.move_cost": 0.1}
+
 CANDIDATES = {
-    "U1_sparse_slowprey": {**SPARSE, **SLOW_PREY},
-    "U2_U1_slowpredbreed": {**SPARSE, **SLOW_PREY, "predator.repro_cooldown": 500},
-    "U3_U1_digest100": {**SPARSE, **SLOW_PREY, "predator.digest_steps": 100},
-    "U4_slowprey": SLOW_PREY,
+    "V1_U3_cheappred": {**U3, **CHEAP_PRED},
+    "V2_digest60_cheappred": {**SPARSE, **SLOW_PREY, **CHEAP_PRED},
+    "V3_V1_catch45": {**U3, **CHEAP_PRED, "predator.energy_per_catch": 45.0},
+    "V4_U3_drain0.15": {**U3, "predator.base_drain": 0.15, "predator.move_cost": 0.15},
 }
 
 
