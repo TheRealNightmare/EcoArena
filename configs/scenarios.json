@@ -1,8 +1,17 @@
 {
-  "_comment": "Scenario overrides applied on top of s1_balanced.json. Keys use dotted paths.",
+  "_comment": "Scenario overrides applied on top of a base config. Keys use dotted paths; a value 'xK' multiplies the base value by K, so scenarios scale with the world.",
   "S1": {},
-  "S2": {"grass_regrow_rate": 0.01},
-  "S3": {"prey.max_speed": 1.3},
-  "S4": {"prey.init_count": 300, "predator.init_count": 60},
-  "S5": {"predator.init_count": 60}
+  "S2": {
+    "grass_regrow_rate": "x0.5"
+  },
+  "S3": {
+    "prey.max_speed": "x1.3"
+  },
+  "S4": {
+    "prey.init_count": "x2",
+    "predator.init_count": "x2"
+  },
+  "S5": {
+    "predator.init_count": "x2"
+  }
 }

@@ -74,6 +74,10 @@ def _set_dotted(d: dict, key: str, value) -> None:
         d = d[p]
     if parts[-1] not in d:
         raise KeyError(f"unknown config key: {key}")
+    if isinstance(value, str) and value.startswith("x"):  # relative: "x2" doubles the base value
+        old = d[parts[-1]]
+        new = old * float(value[1:])
+        value = round(new) if isinstance(old, int) else new
     d[parts[-1]] = value
 
 
