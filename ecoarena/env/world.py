@@ -15,8 +15,9 @@ Step order (the TypeScript port must follow it exactly)
    prey standing in a refuge cell cannot be caught; digesting predators cannot catch)
 5. energy drain + ageing + cooldowns
 6. deaths (energy <= 0, too old, or eaten)
-7. births into free slots
-8. grass regrowth
+7. births into free slots (optionally blocked by crowding: territories)
+8. immigration (optional: one migrant per species when it is below a floor, every N steps)
+9. grass regrowth
 """
 
 from __future__ import annotations
@@ -211,7 +212,10 @@ class EcoWorld:
         # 7. births
         births = [self._births(sp) for sp in (PREY, PREDATOR)]
 
-        # 8. grass regrowth (logistic + small floor so bare cells recover)
+        # 8. immigration
+        migrants = [self._immigrate(sp) for sp in (PREY, PREDATOR)]
+
+        # 9. grass regrowth (logistic + small floor so bare cells recover)
         g = self.grass
         self.grass = torch.clamp(g + cfg.grass_regrow_rate * g * (1 - g) + cfg.grass_regrow_floor, 0.0, 1.0)
         self._cap_refuge_grass()
@@ -223,6 +227,7 @@ class EcoWorld:
             "deaths": deaths,
             "births": [b["count"] for b in births],
             "birth_pairs": [b["pairs"] for b in births],
+            "migrants": migrants,
             "populations": self.populations(),
         }
 
@@ -259,6 +264,11 @@ class EcoWorld:
         W, N = st.alive.shape
         idx = torch.arange(N, device=self.device).unsqueeze(0).expand(W, N)
         parent = st.alive & (st.energy >= sc.repro_threshold) & (st.cooldown <= 0)
+        if sc.territory_radius > 0:
+            rel = self.min_image(st.pos.unsqueeze(1) - st.pos.unsqueeze(2))
+            near = st.alive.unsqueeze(1) & ((rel * rel).sum(-1) <= sc.territory_radius**2)
+            crowd = near.sum(2) - st.alive.long()  # exclude self
+            parent = parent & (crowd <= sc.territory_max)
         free = ~st.alive
         # stable "k-th parent -> k-th free slot" matching, in slot order
         par_order = torch.argsort(torch.where(parent, idx, idx + N), dim=1)
@@ -283,6 +293,30 @@ class EcoWorld:
             st.digest[wi, child] = 0
             st.alive[wi, child] = True
         return {"count": k.squeeze(1), "pairs": (wi, child, par)}
+
+    def _immigrate(self, sp: int) -> torch.Tensor:
+        """One migrant into the first free slot of each world whose population is below the floor."""
+        cfg = self.cfg
+        st, sc = self.species[sp], self.species_cfg[sp]
+        W = st.alive.shape[0]
+        none = torch.zeros(W, dtype=torch.int64, device=self.device)
+        if cfg.immigration_floor <= 0 or (self.t + 1) % cfg.immigration_interval != 0:
+            return none
+        need = (st.alive.sum(1) < cfg.immigration_floor) & (~st.alive).any(1)
+        if not need.any():
+            return none
+        wi = torch.nonzero(need).squeeze(1)
+        slot = torch.argmax((~st.alive[wi]).to(torch.int8), dim=1)  # first free slot
+        u = lambda stream: rng.uniform(self.seed, self.t, self._stream(stream, sp), wi, slot)
+        st.pos[wi, slot] = torch.stack([u(rng.S_MIGRANT_X), u(rng.S_MIGRANT_Y)], -1) * cfg.world_size
+        st.heading[wi, slot] = u(rng.S_MIGRANT_HEADING) * (2 * math.pi) - math.pi
+        st.speed[wi, slot] = 0.0
+        st.energy[wi, slot] = sc.energy_init
+        st.age[wi, slot] = 0
+        st.cooldown[wi, slot] = 0
+        st.digest[wi, slot] = 0
+        st.alive[wi, slot] = True
+        return need.long()
 
     # ------------------------------------------------------------------ observations
     @torch.no_grad()

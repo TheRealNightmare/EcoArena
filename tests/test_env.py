@@ -323,3 +323,36 @@ def test_in_refuge_flag_in_observation():
     w.species[PREY].pos[:, 0] = a_refuge_point(w)
     o1, _ = w.observe()
     assert (o1[:, 0, -1] == 1).all()
+
+
+# ---------------------------------------------------------------- territories and immigration
+def test_crowded_predators_cannot_breed():
+    cfg = load_config("S1", **{"prey.init_count": 1, "predator.init_count": 3, "refuge_count": 0,
+                               "predator.territory_radius": 5.0, "predator.territory_max": 0})
+    w = EcoWorld(cfg, n_worlds=1, seed=0)
+    pred = w.species[PREDATOR]
+    pred.energy[0, :3] = 95.0
+    pred.pos[0, :3] = torch.tensor([[50.0, 50.0], [52.0, 50.0], [80.0, 80.0]])  # two crowded, one alone
+    w.species[PREY].pos[0, 0] = torch.tensor([5.0, 5.0])
+    info = w.step(*zeros(w))
+    _wi, _child, par = info["birth_pairs"][PREDATOR]
+    assert par.tolist() == [2]
+
+
+def test_immigration_rescues_an_extinct_species():
+    cfg = load_config("S1", **{"prey.init_count": 0, "refuge_count": 0,
+                               "immigration_floor": 2, "immigration_interval": 10})
+    w = EcoWorld(cfg, n_worlds=2, seed=0)
+    arrivals = 0
+    for _ in range(10):
+        info = w.step(*zeros(w))
+        arrivals += int(info["migrants"][PREY].sum())
+    assert arrivals == 2  # one per world, on step 10
+    assert (w.populations()[:, PREY] == 1).all()
+
+
+def test_immigration_off_by_default():
+    w = small_world(**{"prey.init_count": 0})
+    for _ in range(100):
+        w.step(*zeros(w))
+    assert (w.populations()[:, PREY] == 0).all()

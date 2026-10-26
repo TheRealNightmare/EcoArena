@@ -14,6 +14,9 @@
   "refuge_radius": 6.0,
   "refuge_grass_cap": 0.15,
 
+  "immigration_floor": 0,
+  "immigration_interval": 100,
+
   "n_rays": 16,
   "ray_neighbors": 16,
   "ray_grass_samples": 8,
@@ -34,7 +37,9 @@
     "child_energy": 30.0,
     "max_age": 1500,
     "vision_cone_deg": 240.0,
-    "vision_range": 20.0
+    "vision_range": 20.0,
+    "territory_radius": 0.0,
+    "territory_max": 0
   },
 
   "predator": {
@@ -56,6 +61,8 @@
     "vision_range": 12.0,
     "catch_radius": 1.5,
     "energy_per_catch": 35.0,
-    "digest_steps": 60
+    "digest_steps": 60,
+    "territory_radius": 0.0,
+    "territory_max": 0
   }
 }

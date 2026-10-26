@@ -31,6 +31,8 @@ class SpeciesConfig:
     catch_radius: float = 0.0
     energy_per_catch: float = 0.0
     digest_steps: int = 0  # handling time after a catch (Holling type II); predators only
+    territory_radius: float = 0.0  # 0 = off. Breeding blocked when crowded by own species
+    territory_max: int = 0  # max other same-species agents within territory_radius to still breed
 
 
 @dataclass(frozen=True)
@@ -47,6 +49,8 @@ class WorldConfig:
     refuge_count: int
     refuge_radius: float
     refuge_grass_cap: float
+    immigration_floor: int  # 0 = off. Below this many alive, one migrant arrives ...
+    immigration_interval: int  # ... every this many steps
     n_rays: int
     ray_neighbors: int
     ray_grass_samples: int
