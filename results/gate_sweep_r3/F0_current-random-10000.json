@@ -1,0 +1,96 @@
+{
+  "worlds_survived": 10,
+  "worlds": 10,
+  "extinct_at_step": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "mean_pop_second_half": [
+    777.0,
+    126.9
+  ],
+  "cv_second_half": [
+    0.028,
+    0.071
+  ],
+  "candidate": "F0_current",
+  "policy": "random",
+  "overrides": {},
+  "steps": 10000,
+  "base": "s1_large.json",
+  "wall_seconds": 501.7,
+  "min_pop": [
+    [
+      480,
+      120
+    ],
+    [
+      524,
+      95
+    ],
+    [
+      520,
+      113
+    ],
+    [
+      529,
+      120
+    ],
+    [
+      544,
+      114
+    ],
+    [
+      540,
+      116
+    ],
+    [
+      529,
+      99
+    ],
+    [
+      537,
+      100
+    ],
+    [
+      498,
+      81
+    ],
+    [
+      538,
+      92
+    ]
+  ],
+  "min_pred_second_half": [
+    125,
+    95,
+    113,
+    129,
+    116,
+    116,
+    99,
+    100,
+    81,
+    92
+  ],
+  "captures_per_world": [
+    9835,
+    8281,
+    9029,
+    9960,
+    9261,
+    9085,
+    9019,
+    8082,
+    7926,
+    8153
+  ]
+}
