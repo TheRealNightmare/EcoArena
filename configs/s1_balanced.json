@@ -1,39 +1,35 @@
 {
-  "_comment": "EcoArena S1 Balanced. Single source of truth for world rules; read by Python and TypeScript. Starting values, tuned in week 2.",
+  "_comment": "EcoArena S1 small world (100x100): fast to run, used for tests and quick debugging. Same rules as s1_large.json, which is the benchmark world.",
   "world_size": 100.0,
   "grass_grid": 50,
   "grass_regrow_rate": 0.02,
   "grass_regrow_floor": 0.0005,
-  "grass_init_min": 0.3,
-  "grass_init_max": 0.9,
+  "grass_init_min": 0.1,
+  "grass_init_max": 0.4,
   "grass_eat_per_step": 0.2,
   "grass_energy_per_unit": 10.0,
   "grass_visible_threshold": 0.5,
-
   "refuge_count": 12,
   "refuge_radius": 6.0,
-  "refuge_grass_cap": 0.15,
-
+  "refuge_grass_cap": 0.35,
   "immigration_floor": 0,
   "immigration_interval": 100,
-
   "n_rays": 16,
   "ray_neighbors": 16,
   "ray_grass_samples": 8,
-
   "prey": {
     "init_count": 150,
     "capacity": 600,
     "radius": 0.5,
     "max_speed": 1.0,
-    "max_accel": 0.10,
+    "max_accel": 0.1,
     "max_turn": 0.35,
     "energy_cap": 100.0,
     "energy_init": 50.0,
-    "base_drain": 0.10,
-    "move_cost": 0.10,
+    "base_drain": 0.1,
+    "move_cost": 0.1,
     "repro_threshold": 70.0,
-    "repro_cooldown": 60,
+    "repro_cooldown": 150,
     "child_energy": 30.0,
     "max_age": 1500,
     "vision_cone_deg": 240.0,
@@ -41,7 +37,6 @@
     "territory_radius": 0.0,
     "territory_max": 0
   },
-
   "predator": {
     "init_count": 30,
     "capacity": 150,
@@ -51,8 +46,8 @@
     "max_turn": 0.2,
     "energy_cap": 100.0,
     "energy_init": 50.0,
-    "base_drain": 0.2,
-    "move_cost": 0.2,
+    "base_drain": 0.15,
+    "move_cost": 0.15,
     "repro_threshold": 90.0,
     "repro_cooldown": 300,
     "child_energy": 45.0,
@@ -61,8 +56,8 @@
     "vision_range": 12.0,
     "catch_radius": 1.5,
     "energy_per_catch": 35.0,
-    "digest_steps": 60,
-    "territory_radius": 0.0,
-    "territory_max": 0
+    "digest_steps": 100,
+    "territory_radius": 15.0,
+    "territory_max": 2
   }
 }
