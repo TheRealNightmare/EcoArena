@@ -10,7 +10,7 @@
   "grass_energy_per_unit": 10.0,
   "grass_visible_threshold": 0.5,
 
-  "refuge_count": 8,
+  "refuge_count": 12,
   "refuge_radius": 6.0,
   "refuge_grass_cap": 0.15,
 
