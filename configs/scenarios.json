@@ -1,0 +1,8 @@
+{
+  "_comment": "Scenario overrides applied on top of s1_balanced.json. Keys use dotted paths.",
+  "S1": {},
+  "S2": {"grass_regrow_rate": 0.01},
+  "S3": {"prey.max_speed": 1.3},
+  "S4": {"prey.init_count": 300, "predator.init_count": 60},
+  "S5": {"predator.init_count": 60}
+}

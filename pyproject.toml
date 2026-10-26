@@ -1,0 +1,27 @@
+[project]
+name = "ecoarena"
+version = "0.1.0"
+description = "A non-episodic predator-prey ecosystem benchmark for comparing reinforcement learning and neuroevolution"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.4",
+    "numpy>=1.26",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+train = ["wandb>=0.17", "evotorch>=0.5"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["ecoarena*"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
