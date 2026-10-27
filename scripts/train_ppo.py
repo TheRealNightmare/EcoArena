@@ -108,7 +108,10 @@ def main() -> None:
     p.add_argument("--worlds", type=int, default=4)
     p.add_argument("--rollout", type=int, default=64)
     p.add_argument("--iters", type=int, default=3000, help="upper bound; training stops at --agent-steps")
-    p.add_argument("--agent-steps", type=float, default=20e6, help="per learning species (fairness budget)")
+    p.add_argument("--world-steps", type=float, default=150_000,
+                   help="fairness budget: world-steps summed over parallel worlds; all learners train throughout")
+    p.add_argument("--agent-steps", type=float, default=0,
+                   help="optional: freeze each species at this many agent-steps (off by default; see ppo.py)")
     p.add_argument("--minibatch", type=int, default=16384)
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--seed", type=int, default=0)
@@ -124,8 +127,8 @@ def main() -> None:
     out = Path(a.out) / name
     wcfg = load_config("S1", base=a.base)
     pcfg = PPOConfig(learn=tuple(learn), opponent=a.opponent, n_worlds=a.worlds, rollout_steps=a.rollout,
-                     iterations=a.iters, agent_step_budget=int(a.agent_steps), minibatch=a.minibatch, lr=a.lr, seed=a.seed, device=a.device)
-    print(f"training {name} on {a.device}: up to {a.agent_steps:,.0f} agent-steps per learning species, "
+                     iterations=a.iters, agent_step_budget=int(a.agent_steps), world_step_budget=int(a.world_steps), minibatch=a.minibatch, lr=a.lr, seed=a.seed, device=a.device)
+    print(f"training {name} on {a.device}: {a.world_steps:,.0f} world-steps, "
           f"{a.rollout} steps x {a.worlds} worlds per iteration", flush=True)
     trainer = PPOTrainer(wcfg, pcfg, out)
     history = trainer.train()

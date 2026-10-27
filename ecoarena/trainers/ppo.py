@@ -101,7 +101,11 @@ class PPOConfig:
     n_worlds: int = 4
     rollout_steps: int = 128
     iterations: int = 200  # upper bound on iterations
-    agent_step_budget: int = 0  # 0 = off; else stop once every learning species has this many agent-steps
+    world_step_budget: int = 0  # 0 = off; else stop after this many world-steps (summed over parallel worlds)
+    # Freezing a species at an agent-step budget is kept as an option but is off by default: in run both-v3
+    # prey reached it at iteration 123 while predators were still untrained, and predators then over-exploited
+    # the frozen prey (1/4 eval worlds kept both species). A shared world-step budget avoids that.
+    agent_step_budget: int = 0
     lr: float = 3e-4
     gamma: float = 0.99
     gae_lambda: float = 0.95
@@ -301,11 +305,13 @@ class PPOTrainer:
         cfg = self.cfg
         t0 = time.time()
         agent_steps = {SPECIES_NAME[sp]: 0 for sp in cfg.learn}
+        world_steps = 0
         # A species that reaches the agent-step budget is frozen: it keeps acting with its trained
         # brain but is no longer updated, so every species gets the same training budget.
         self.frozen: set[int] = set()
         for it in range(1, cfg.iterations + 1):
             buf, stats = self.rollout()
+            world_steps += buf[cfg.learn[0]]["valid"].shape[0] * cfg.n_worlds
             for sp in cfg.learn:
                 if sp not in self.frozen:
                     agent_steps[SPECIES_NAME[sp]] += int(buf[sp]["valid"].sum())
@@ -327,6 +333,7 @@ class PPOTrainer:
                 "births": stats["births"],
                 "deaths": stats["deaths"],
                 "resets_total": self.resets,
+                "world_steps": world_steps,
                 "agent_steps": dict(agent_steps),
                 "frozen": sorted(SPECIES_NAME[sp] for sp in self.frozen),
                 **{f"{k}/{kk}": round(vv, 5) if isinstance(vv, float) else vv
@@ -341,11 +348,12 @@ class PPOTrainer:
                 )
                 print(f"it {it:4d}  t={row['secs']:7.1f}s  pop=({row['pop_prey']:.0f},{row['pop_pred']:.0f})  "
                       f"resets={self.resets}  {msg}", flush=True)
-            budget_done = bool(cfg.agent_step_budget) and len(self.frozen) == len(cfg.learn)
+            budget_done = (bool(cfg.agent_step_budget) and len(self.frozen) == len(cfg.learn)) or (
+                bool(cfg.world_step_budget) and world_steps >= cfg.world_step_budget)
             if it % 25 == 0 or it == cfg.iterations or budget_done:
                 self.save()
             if budget_done:
-                print(f"all learning species reached the budget at iteration {it}", flush=True)
+                print(f"budget reached at iteration {it} ({world_steps:,} world-steps)", flush=True)
                 break
         return self.history
 

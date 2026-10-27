@@ -134,3 +134,10 @@ def test_train_records_frozen_species(tmp_path):
     hist = tr.train()
     assert "prey" in hist[-1]["frozen"]
     assert hist[-1]["agent_steps"]["prey"] < 200 + 8 * 600  # stopped within one rollout of the budget
+
+
+def test_training_stops_at_world_step_budget(tmp_path):
+    tr = tiny_trainer(tmp_path, learn=(PREY, PREDATOR), iterations=50, world_step_budget=24)
+    hist = tr.train()
+    assert len(hist) == 3  # 8 steps x 1 world per iteration
+    assert hist[-1]["world_steps"] == 24 and hist[-1]["frozen"] == []
