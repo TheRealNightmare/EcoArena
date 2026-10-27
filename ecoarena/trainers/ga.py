@@ -47,6 +47,9 @@ class GAConfig:
     generations: int = 100_000  # upper bound; the world-step budget normally stops training
     world_step_budget: int = 150_000
     min_samples: int = 50  # agent-steps a genome needs before it can be an elite
+    # "last": rank on this generation's fitness only (Such et al.). "mean": surviving elites are ranked on the
+    # mean of all their evaluations, so one lucky window cannot keep a weak genome on top for long.
+    elite_score: str = "last"
     init_out_std: float = 0.5  # final-layer init scale (PPO uses 0.01; GA needs varied starting behaviour)
     # GA fitness drops PPO's +1 birth bonus. A genome controls a slot for gen_steps (~128), but an animal lives
     # ~500-1500 steps and breeds on energy mostly banked under earlier genomes, so births are credit for work it
@@ -202,7 +205,16 @@ class GATrainer:
         for j, gid in enumerate(self.ids[sp]):
             if samples[j] > 0 and not torch.isnan(fitness[j]):
                 self.fit_hist[sp].setdefault(gid, []).append(float(fitness[j]))
-        score = torch.where((samples >= cfg.min_samples) & ~torch.isnan(fitness), fitness,
+        ranked = fitness
+        if cfg.elite_score == "mean":
+            ranked = fitness.clone()
+            for j, gid in enumerate(self.ids[sp]):
+                h = self.fit_hist[sp].get(gid, [])
+                if len(h) > 1 and not torch.isnan(fitness[j]):
+                    ranked[j] = sum(h) / len(h)
+        elif cfg.elite_score != "last":
+            raise ValueError(f"elite_score must be 'last' or 'mean', got {cfg.elite_score!r}")
+        score = torch.where((samples >= cfg.min_samples) & ~torch.isnan(fitness), ranked,
                             torch.full_like(fitness, -float("inf")))
         order = torch.argsort(score.cpu(), descending=True)
         elite_idx = order[:n_elite]

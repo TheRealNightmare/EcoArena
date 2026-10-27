@@ -7,6 +7,7 @@ import torch
 
 from ..env import PREDATOR, PREY, EcoWorld
 from ..policies import make_policy
+from ..trainers.common import step_rewards
 
 
 @torch.no_grad()
@@ -19,6 +20,7 @@ def evaluate(cfg, policies: dict, worlds: int, steps: int, seed: int, device: st
     deaths = [0, 0]
     births = [0, 0]
     eaten = 0
+    reward = [0.0, 0.0]  # shared training reward without the birth bonus (= GA fitness)
     encounter_mass = 0.0  # sum over steps and worlds of prey x predators (Lotka-Volterra interaction term)
     pops = np.zeros((steps, worlds, 2))
     for t in range(steps):
@@ -32,6 +34,7 @@ def evaluate(cfg, policies: dict, worlds: int, steps: int, seed: int, device: st
             births[sp] += int(info["births"][sp].sum())
             gained = (w.species[sp].energy - e0[sp]).clamp(min=0)
             food[sp] += float(gained[a0[sp] & ~info["died"][sp]].sum())
+            reward[sp] += float(step_rewards(w, info, sp, e0[sp], a0[sp], birth_bonus=0.0).sum())
         eaten += int(info["eaten"].sum())
         encounter_mass += float((a0[PREY].sum(1).float() * a0[PREDATOR].sum(1).float()).sum())
         pops[t] = info["populations"].cpu().numpy()
@@ -39,6 +42,10 @@ def evaluate(cfg, policies: dict, worlds: int, steps: int, seed: int, device: st
     return {
         "worlds_survived": int(alive_both[-1].sum()),
         "mean_pop": pops.mean(axis=(0, 1)).round(1).tolist(),
+        # energy in, no dying: what every learner is trained on. Read it next to the attack rate: random prey
+        # get caught no more often than trained ones per encounter, yet score far lower here (they starve).
+        "prey_reward_per_1k_agent_steps": round(1000 * reward[PREY] / max(alive_steps[PREY], 1), 3),
+        "pred_reward_per_1k_agent_steps": round(1000 * reward[PREDATOR] / max(alive_steps[PREDATOR], 1), 3),
         "prey_mean_lifespan": round(alive_steps[PREY] / max(deaths[PREY], 1), 1),
         "pred_mean_lifespan": round(alive_steps[PREDATOR] / max(deaths[PREDATOR], 1), 1),
         "prey_share_of_deaths_eaten": round(eaten / max(deaths[PREY], 1), 3),

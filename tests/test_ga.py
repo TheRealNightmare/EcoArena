@@ -93,3 +93,15 @@ def test_train_stops_at_budget_and_saves_loadable_champions(tmp_path):
     for name in ("prey", "predator"):
         pol = load_policy(tmp_path / f"{name}.pt")
         assert pol(torch.zeros(1, 3, D)).shape == (1, 3, 2)
+
+
+def test_mean_elite_score_discounts_one_lucky_window(tmp_path):
+    tr = tiny(tmp_path, elite_score="mean")
+    samples = torch.full((50,), 100.0)
+    # genome 0 has a long, poor record; this generation it gets lucky
+    tr.fit_hist[PREY][tr.ids[PREY][0]] = [-1.0] * 9
+    fit = torch.zeros(50)
+    fit[0] = 0.5
+    before = tr.pop[PREY].clone()
+    tr.next_population(PREY, fit, samples)  # mean over 10 evaluations = -0.85 -> not an elite
+    assert not any(torch.equal(tr.pop[PREY][i], before[0]) for i in range(5))

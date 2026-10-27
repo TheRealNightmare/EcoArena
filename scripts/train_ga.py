@@ -64,6 +64,8 @@ def main() -> None:
     p.add_argument("--sigma", type=float, default=0.02)
     p.add_argument("--gen-steps", type=int, default=128)
     p.add_argument("--world-steps", type=float, default=150_000)
+    p.add_argument("--elite-frac", type=float, default=0.1)
+    p.add_argument("--elite-score", default="last", choices=["last", "mean"])
     p.add_argument("--birth-bonus", type=float, default=0.0, help="0 = attributable fitness (see ga.py)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
@@ -78,7 +80,8 @@ def main() -> None:
     out = Path(a.out) / name
     wcfg = load_config("S1", base=a.base)
     gcfg = GAConfig(learn=tuple(learn), opponent=a.opponent, n_worlds=a.worlds, population=a.population,
-                    sigma=a.sigma, gen_steps=a.gen_steps, birth_bonus=a.birth_bonus, world_step_budget=int(a.world_steps), seed=a.seed,
+                    sigma=a.sigma, gen_steps=a.gen_steps, birth_bonus=a.birth_bonus,
+                    elite_frac=a.elite_frac, elite_score=a.elite_score, world_step_budget=int(a.world_steps), seed=a.seed,
                     device=a.device)
     print(f"evolving {name} on {a.device}: population {a.population}, {a.gen_steps} steps x {a.worlds} worlds "
           f"per generation, {a.world_steps:,.0f} world-steps", flush=True)

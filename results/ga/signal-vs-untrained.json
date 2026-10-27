@@ -1,0 +1,35 @@
+{
+  "genomes": 50,
+  "window": 128,
+  "windows": 4,
+  "worlds": 4,
+  "agent_steps_per_genome_per_window": 4692.39990234375,
+  "by_birth_bonus": {
+    "0.0": {
+      "policy_mean_fitness": {
+        "heuristic": -0.0019629490561783314,
+        "ga": -0.0015693815657868981,
+        "init0": -0.007777920924127102,
+        "init1": -0.00232331664301455,
+        "init2": -0.005936395842581987
+      },
+      "same_policy_std_one_window": 0.0007665626471862197,
+      "best_policy": "ga",
+      "share_of_top10pct_from_best_policy": 0.6000000238418579,
+      "chance_level": 0.2
+    },
+    "1.0": {
+      "policy_mean_fitness": {
+        "heuristic": -0.0005844095139764249,
+        "ga": 0.001435000798664987,
+        "init0": -0.007775409612804651,
+        "init1": 0.0010621617548167706,
+        "init2": -0.005902270786464214
+      },
+      "same_policy_std_one_window": 0.0008395564509555697,
+      "best_policy": "ga",
+      "share_of_top10pct_from_best_policy": 0.6000000238418579,
+      "chance_level": 0.2
+    }
+  }
+}
