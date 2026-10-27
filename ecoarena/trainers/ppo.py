@@ -246,10 +246,12 @@ class PPOTrainer:
             b["ret"] = adv + b["val"]
 
     # ------------------------------------------------------------------ update
-    def update(self, buf: dict) -> dict:
+    def update(self, buf: dict, skip: set | None = None) -> dict:
         cfg = self.cfg
         out = {}
         for sp, b in buf.items():
+            if skip and sp in skip:
+                continue
             m, opt = self.models[sp], self.opts[sp]
             mask = b["valid"]
             obs, act = b["obs"][mask], b["act"][mask]
@@ -299,11 +301,21 @@ class PPOTrainer:
         cfg = self.cfg
         t0 = time.time()
         agent_steps = {SPECIES_NAME[sp]: 0 for sp in cfg.learn}
+        # A species that reaches the agent-step budget is frozen: it keeps acting with its trained
+        # brain but is no longer updated, so every species gets the same training budget.
+        self.frozen: set[int] = set()
         for it in range(1, cfg.iterations + 1):
             buf, stats = self.rollout()
             for sp in cfg.learn:
-                agent_steps[SPECIES_NAME[sp]] += int(buf[sp]["valid"].sum())
-            upd = self.update(buf)
+                if sp not in self.frozen:
+                    agent_steps[SPECIES_NAME[sp]] += int(buf[sp]["valid"].sum())
+            upd = self.update(buf, skip=self.frozen)
+            if cfg.agent_step_budget:
+                for sp in cfg.learn:
+                    if sp not in self.frozen and agent_steps[SPECIES_NAME[sp]] >= cfg.agent_step_budget:
+                        self.frozen.add(sp)
+                        print(f"{SPECIES_NAME[sp]}: budget {cfg.agent_step_budget:,} reached at iteration {it}; "
+                              f"frozen", flush=True)
             pops = self.world.populations().float().mean(0).tolist()
             row = {
                 "iter": it,
@@ -316,6 +328,7 @@ class PPOTrainer:
                 "deaths": stats["deaths"],
                 "resets_total": self.resets,
                 "agent_steps": dict(agent_steps),
+                "frozen": sorted(SPECIES_NAME[sp] for sp in self.frozen),
                 **{f"{k}/{kk}": round(vv, 5) if isinstance(vv, float) else vv
                    for k, v in upd.items() for kk, vv in v.items()},
             }
@@ -328,11 +341,11 @@ class PPOTrainer:
                 )
                 print(f"it {it:4d}  t={row['secs']:7.1f}s  pop=({row['pop_prey']:.0f},{row['pop_pred']:.0f})  "
                       f"resets={self.resets}  {msg}", flush=True)
-            budget_done = cfg.agent_step_budget and min(agent_steps.values()) >= cfg.agent_step_budget
+            budget_done = bool(cfg.agent_step_budget) and len(self.frozen) == len(cfg.learn)
             if it % 25 == 0 or it == cfg.iterations or budget_done:
                 self.save()
             if budget_done:
-                print(f"agent-step budget {cfg.agent_step_budget:,} reached at iteration {it}", flush=True)
+                print(f"all learning species reached the budget at iteration {it}", flush=True)
                 break
         return self.history
 

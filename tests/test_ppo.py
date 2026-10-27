@@ -103,3 +103,34 @@ def test_training_stops_at_agent_step_budget(tmp_path):
     tr = tiny_trainer(tmp_path, iterations=50, agent_step_budget=1)
     hist = tr.train()
     assert len(hist) == 1
+
+
+def test_species_freezes_at_its_own_budget(tmp_path):
+    # prey are ~5x more numerous than predators, so prey hit a small budget first and must stop updating
+    tr = tiny_trainer(tmp_path, learn=(PREY, PREDATOR), iterations=6, agent_step_budget=300)
+    before = {}
+    hist = []
+    for it in range(6):
+        buf, _ = tr.rollout()
+        if it == 0:
+            tr.frozen = set()
+            steps = {sp: 0 for sp in (PREY, PREDATOR)}
+        for sp in (PREY, PREDATOR):
+            if sp not in tr.frozen:
+                steps[sp] += int(buf[sp]["valid"].sum())
+        tr.update(buf, skip=tr.frozen)
+        for sp in (PREY, PREDATOR):
+            if sp not in tr.frozen and steps[sp] >= 300:
+                tr.frozen.add(sp)
+                before[sp] = [p.clone() for p in tr.models[sp].parameters()]
+        hist.append(set(tr.frozen))
+    assert PREY in tr.frozen
+    after = list(tr.models[PREY].parameters())
+    assert all(torch.equal(a, b) for a, b in zip(after, before[PREY]))
+
+
+def test_train_records_frozen_species(tmp_path):
+    tr = tiny_trainer(tmp_path, learn=(PREY, PREDATOR), iterations=40, agent_step_budget=200)
+    hist = tr.train()
+    assert "prey" in hist[-1]["frozen"]
+    assert hist[-1]["agent_steps"]["prey"] < 200 + 8 * 600  # stopped within one rollout of the budget
