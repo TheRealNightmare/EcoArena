@@ -48,7 +48,12 @@ class GAConfig:
     world_step_budget: int = 150_000
     min_samples: int = 50  # agent-steps a genome needs before it can be an elite
     init_out_std: float = 0.5  # final-layer init scale (PPO uses 0.01; GA needs varied starting behaviour)
-    birth_bonus: float = 1.0
+    # GA fitness drops PPO's +1 birth bonus. A genome controls a slot for gen_steps (~128), but an animal lives
+    # ~500-1500 steps and breeds on energy mostly banked under earlier genomes, so births are credit for work it
+    # did not do. Sweep 2026-10-27 (bonus 1.0): mean fitness flat, champions worse than random (attack rate 16.0
+    # vs 14.0). Energy gained/spent and deaths happen inside the window and stay; the child-energy refund keeps
+    # breeding neutral, so GA and PPO still pursue the same thing (energy in, no dying -> more offspring).
+    birth_bonus: float = 0.0
     death_penalty: float = 1.0
     seed: int = 0
     device: str = "cpu"
