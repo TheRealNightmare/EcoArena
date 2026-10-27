@@ -32,6 +32,7 @@ from torch import nn
 
 from ..env import PREDATOR, PREY, EcoWorld, WorldConfig
 from ..policies import make_policy
+from .common import step_rewards
 
 SPECIES_NAME = {PREY: "prey", PREDATOR: "predator"}
 
@@ -199,17 +200,8 @@ class PPOTrainer:
                 stats["births"][sp] += int(info["births"][sp].sum())
                 stats["deaths"][sp] += int(info["deaths"][sp].sum())
             for sp in cfg.learn:
-                sc = w.species_cfg[sp]
-                st = w.species[sp]
-                died = info["died"][sp]
-                r = (st.energy - e0[sp]) / sc.energy_cap
-                wi, _child, par = info["birth_pairs"][sp]
-                if wi.numel():
-                    r[wi, par] += sc.child_energy / sc.energy_cap + cfg.birth_bonus
-                r = torch.where(died, torch.full_like(r, -cfg.death_penalty), r)
-                r = torch.where(alive0[sp], r, torch.zeros_like(r))
-                buf[sp]["rew"][t] = r
-                buf[sp]["done"][t] = died.float()
+                buf[sp]["rew"][t] = step_rewards(w, info, sp, e0[sp], alive0[sp], cfg.birth_bonus, cfg.death_penalty)
+                buf[sp]["done"][t] = info["died"][sp].float()
             if self._maybe_reset():
                 stats["resets"] += 1
                 t_cut = t + 1
