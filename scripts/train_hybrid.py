@@ -76,7 +76,7 @@ def main() -> None:
     phase1_world_steps = hist1[-1]["world_steps"]
 
     # ---- phase 2: PPO from the champions
-    ppo_steps = int(a.world_steps) - phase1_world_steps
+    ppo_steps = max(int(a.world_steps) - phase1_world_steps, a.rollout * a.worlds)  # 0 would mean 'no limit'
     pcfg = PPOConfig(learn=tuple(learn), opponent=a.opponent, n_worlds=a.worlds, rollout_steps=a.rollout,
                      iterations=100_000, world_step_budget=ppo_steps, minibatch=a.minibatch, lr=a.lr,
                      critic_warmup=a.critic_warmup, seed=a.seed, device=a.device)
