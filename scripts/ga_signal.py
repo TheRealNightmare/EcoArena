@@ -40,13 +40,19 @@ def main() -> None:
     a = p.parse_args()
 
     cfg = load_config("S1", base=a.base)
-    w = EcoWorld(cfg, n_worlds=a.worlds, seed=4242, device=a.device)
-    names, pols = [], []
+    seed = 4242
+    w = EcoWorld(cfg, n_worlds=a.worlds, seed=seed, device=a.device)
+    names, specs = [], []
     for spec in a.policies:
         name, _, path = spec.partition(":")
         names.append(name)
-        pols.append(load_policy(path, a.device) if path else make_policy(name, w, PREY))
-    pred = make_policy("heuristic", w, PREDATOR)
+        specs.append(load_policy(path, a.device) if path else name)
+
+    def bind(world):  # baseline policies hold a reference to their world
+        return ([sp if callable(sp) else make_policy(sp, world, PREY) for sp in specs],
+                make_policy("heuristic", world, PREDATOR))
+
+    pols, pred = bind(w)
     K, P = len(pols), a.genomes
     N = w.species[PREY].alive.shape[1]
     genome_of_slot = torch.arange(N, device=a.device) % P
@@ -60,25 +66,35 @@ def main() -> None:
         return out
 
     rows = {bb: [] for bb in (0.0, 1.0)}  # birth bonus -> list of [P] fitness per window
-    for t in range(a.warmup + a.window * a.windows):
+    restarts, t = 0, 0
+    while len(rows[0.0]) < a.windows:
         obs = w.observe()
         e0, a0 = w.species[PREY].energy.clone(), w.species[PREY].alive.clone()
         info = w.step(act(obs[PREY]), pred(obs[PREDATOR]))
-        if bool((w.populations() == 0).any()):
-            sys.exit(f"extinction at step {t}; rerun with another seed")
-        if t < a.warmup:
+        if bool((w.populations() == 0).any()):  # drop the unfinished window, start fresh worlds
+            restarts += 1
+            seed += 1
+            w = EcoWorld(cfg, n_worlds=a.worlds, seed=seed, device=a.device)
+            pols, pred = bind(w)
+            print(f"extinction; restart {restarts} with seed {seed} ({len(rows[0.0])} windows kept)", flush=True)
+            if restarts > 20:
+                sys.exit("too many extinctions")
+            t = 0
             continue
-        if (t - a.warmup) % a.window == 0:
+        t += 1
+        if t <= a.warmup:
+            continue
+        if (t - a.warmup - 1) % a.window == 0:
             acc = {bb: [torch.zeros(P, device=a.device), torch.zeros(P, device=a.device)] for bb in rows}
         for bb in rows:
             r = step_rewards(w, info, PREY, e0, a0, bb, 1.0)
             acc[bb][0].index_add_(0, genome_of_slot, r.sum(0))
             acc[bb][1].index_add_(0, genome_of_slot, a0.sum(0).float())
-        if (t - a.warmup) % a.window == a.window - 1:
+        if (t - a.warmup) % a.window == 0:
             for bb, lst in rows.items():
                 lst.append((acc[bb][0] / acc[bb][1].clamp(min=1)).cpu())
 
-    report = {"genomes": P, "window": a.window, "windows": a.windows, "worlds": a.worlds,
+    report = {"genomes": P, "window": a.window, "windows": a.windows, "worlds": a.worlds, "restarts": restarts,
               "agent_steps_per_genome_per_window": float(acc[0.0][1].mean()), "by_birth_bonus": {}}
     gpol = torch.arange(P) % K
     for bb, lst in rows.items():

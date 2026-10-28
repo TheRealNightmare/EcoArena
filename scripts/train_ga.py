@@ -1,8 +1,9 @@
-"""Train the genetic algorithm (M2) and evaluate its champions against the baselines.
+"""Train the genetic algorithm (M2) or evolution strategies (M3) and evaluate against the baselines.
 
     python scripts/train_ga.py --learn prey                  # prey evolve vs heuristic predators
     python scripts/train_ga.py --learn predator              # predators evolve vs heuristic prey
     python scripts/train_ga.py --learn prey predator         # both co-evolve
+    python scripts/train_es.py --learn prey                  # same, with ES (= train_ga.py --method es)
 
 Same world-step budget (default 150k), network and reward as PPO. Writes results/ga/<name>/.
 """
@@ -20,6 +21,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from ecoarena.env import PREDATOR, PREY, load_config
 from ecoarena.eval.quick import evaluate
+from ecoarena.trainers.es import ESConfig, ESTrainer
 from ecoarena.trainers.ga import GAConfig, GATrainer
 from ecoarena.trainers.ppo import load_policy
 
@@ -54,14 +56,16 @@ def plot_curves(history: list[dict], learn: list[str], path: Path) -> None:
     plt.close(fig)
 
 
-def main() -> None:
+def main(method: str = "ga") -> None:
     p = argparse.ArgumentParser()
+    p.add_argument("--method", default=method, choices=["ga", "es"])
     p.add_argument("--learn", nargs="+", choices=list(NAMES), default=["prey"])
     p.add_argument("--opponent", default="heuristic", choices=["heuristic", "random"])
     p.add_argument("--base", default="s1_large.json")
     p.add_argument("--worlds", type=int, default=4)
     p.add_argument("--population", type=int, default=50)
     p.add_argument("--sigma", type=float, default=0.02)
+    p.add_argument("--lr", type=float, default=0.01, help="ES only")
     p.add_argument("--gen-steps", type=int, default=128)
     p.add_argument("--world-steps", type=float, default=150_000)
     p.add_argument("--elite-frac", type=float, default=0.1)
@@ -72,20 +76,23 @@ def main() -> None:
     p.add_argument("--eval-worlds", type=int, default=4)
     p.add_argument("--eval-steps", type=int, default=3000)
     p.add_argument("--name", default=None)
-    p.add_argument("--out", default="results/ga")
+    p.add_argument("--out", default=None, help="default results/<method>")
     a = p.parse_args()
 
     learn = [NAMES[n] for n in a.learn]
     name = a.name or f"{'+'.join(a.learn)}-vs-{a.opponent}-{Path(a.base).stem}-seed{a.seed}"
-    out = Path(a.out) / name
+    out = Path(a.out or f"results/{a.method}") / name
     wcfg = load_config("S1", base=a.base)
-    gcfg = GAConfig(learn=tuple(learn), opponent=a.opponent, n_worlds=a.worlds, population=a.population,
-                    sigma=a.sigma, gen_steps=a.gen_steps, birth_bonus=a.birth_bonus,
-                    elite_frac=a.elite_frac, elite_score=a.elite_score, world_step_budget=int(a.world_steps), seed=a.seed,
-                    device=a.device)
-    print(f"evolving {name} on {a.device}: population {a.population}, {a.gen_steps} steps x {a.worlds} worlds "
+    common = {"learn": tuple(learn), "opponent": a.opponent, "n_worlds": a.worlds, "population": a.population,
+              "sigma": a.sigma, "gen_steps": a.gen_steps, "birth_bonus": a.birth_bonus,
+              "world_step_budget": int(a.world_steps), "seed": a.seed, "device": a.device}
+    if a.method == "ga":
+        cfg, Trainer = GAConfig(**common, elite_frac=a.elite_frac, elite_score=a.elite_score), GATrainer
+    else:
+        cfg, Trainer = ESConfig(**common, lr=a.lr), ESTrainer
+    print(f"{a.method}: evolving {name} on {a.device}: population {a.population}, {a.gen_steps} steps x {a.worlds} worlds "
           f"per generation, {a.world_steps:,.0f} world-steps", flush=True)
-    trainer = GATrainer(wcfg, gcfg, out)
+    trainer = Trainer(wcfg, cfg, out)
     history = trainer.train()
     plot_curves(history, a.learn, out / "curves.png")
 
@@ -95,13 +102,13 @@ def main() -> None:
     other = {sp: a.opponent for sp in (PREY, PREDATOR) if sp not in learn}
     results = {}
     for label, pols in [
-        ("ga", {**champs, **other}),
+        (a.method, {**champs, **other}),
         ("heuristic", {sp: "heuristic" for sp in learn} | other),
         ("random", {sp: "random" for sp in learn} | other),
     ]:
         results[label] = evaluate(wcfg, pols, a.eval_worlds, a.eval_steps, ev_seed, a.device)
         print(label, json.dumps(results[label]), flush=True)
-    (out / "eval.json").write_text(json.dumps({"learn": a.learn, "opponent": a.opponent, "base": a.base,
+    (out / "eval.json").write_text(json.dumps({"method": a.method, "learn": a.learn, "opponent": a.opponent, "base": a.base,
                                                "eval_worlds": a.eval_worlds, "eval_steps": a.eval_steps,
                                                "results": results}, indent=2))
     print(f"wrote {out}")
