@@ -1,9 +1,10 @@
-"""Train the genetic algorithm (M2) or evolution strategies (M3) and evaluate against the baselines.
+"""Train the GA (M2), ES (M3) or NEAT (M4) and evaluate the champions against the baselines.
 
     python scripts/train_ga.py --learn prey                  # prey evolve vs heuristic predators
     python scripts/train_ga.py --learn predator              # predators evolve vs heuristic prey
     python scripts/train_ga.py --learn prey predator         # both co-evolve
     python scripts/train_es.py --learn prey                  # same, with ES (= train_ga.py --method es)
+    python scripts/train_neat.py --learn prey                # same, with NEAT (= train_ga.py --method neat)
 
 Same world-step budget (default 150k), network and reward as PPO. Writes results/ga/<name>/.
 """
@@ -23,6 +24,7 @@ from ecoarena.env import PREDATOR, PREY, load_config
 from ecoarena.eval.quick import evaluate
 from ecoarena.trainers.es import ESConfig, ESTrainer
 from ecoarena.trainers.ga import GAConfig, GATrainer
+from ecoarena.trainers.neat import NEATConfig, NEATTrainer
 from ecoarena.trainers.ppo import load_policy
 
 NAMES = {"prey": PREY, "predator": PREDATOR}
@@ -58,7 +60,7 @@ def plot_curves(history: list[dict], learn: list[str], path: Path) -> None:
 
 def main(method: str = "ga") -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--method", default=method, choices=["ga", "es"])
+    p.add_argument("--method", default=method, choices=["ga", "es", "neat"])
     p.add_argument("--learn", nargs="+", choices=list(NAMES), default=["prey"])
     p.add_argument("--opponent", default="heuristic", choices=["heuristic", "random"])
     p.add_argument("--base", default="s1_large.json")
@@ -88,8 +90,10 @@ def main(method: str = "ga") -> None:
               "world_step_budget": int(a.world_steps), "seed": a.seed, "device": a.device}
     if a.method == "ga":
         cfg, Trainer = GAConfig(**common, elite_frac=a.elite_frac, elite_score=a.elite_score), GATrainer
-    else:
+    elif a.method == "es":
         cfg, Trainer = ESConfig(**common, lr=a.lr), ESTrainer
+    else:
+        cfg, Trainer = NEATConfig(**common), NEATTrainer
     print(f"{a.method}: evolving {name} on {a.device}: population {a.population}, {a.gen_steps} steps x {a.worlds} worlds "
           f"per generation, {a.world_steps:,.0f} world-steps", flush=True)
     trainer = Trainer(wcfg, cfg, out)

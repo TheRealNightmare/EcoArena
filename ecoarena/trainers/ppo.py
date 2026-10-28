@@ -86,8 +86,14 @@ class PPOPolicy:
         return torch.clamp(a, -1.0, 1.0)
 
 
-def load_policy(path: str | Path, device: str = "cpu", deterministic: bool = True) -> PPOPolicy:
+def load_policy(path: str | Path, device: str = "cpu", deterministic: bool = True):
+    """Load any method's checkpoint as policy(obs) -> actions. PPO, GA and ES share the 64-64 actor; NEAT
+    checkpoints hold their own evolved graph."""
     ck = torch.load(path, map_location=device, weights_only=False)
+    if ck.get("method") == "neat":
+        from .neat import NEATPolicy
+
+        return NEATPolicy.from_checkpoint(ck, device)
     m = ActorCritic(ck["obs_dim"]).to(device)
     m.load_state_dict(ck["state_dict"])
     m.eval()

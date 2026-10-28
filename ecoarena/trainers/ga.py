@@ -160,6 +160,9 @@ class GATrainer:
         self.world = EcoWorld(self.wcfg, n_worlds=self.cfg.n_worlds, seed=self.world_seed, device=self.cfg.device)
         self.fixed = {sp: make_policy(self.cfg.opponent, self.world, sp) for sp in self.fixed}
 
+    def _actions(self, sp: int, obs: torch.Tensor, perm: torch.Tensor) -> torch.Tensor:
+        return batched_actions(self.pop[sp], obs, perm)
+
     # ------------------------------------------------------------------ one generation
     @torch.no_grad()
     def evaluate_generation(self) -> tuple[dict, dict, int]:
@@ -176,7 +179,7 @@ class GATrainer:
             for sp in (PREY, PREDATOR):
                 e0[sp] = w.species[sp].energy.clone()
                 a0[sp] = w.species[sp].alive.clone()
-                acts[sp] = (batched_actions(self.pop[sp], obs[sp], perm[sp]) if sp in cfg.learn
+                acts[sp] = (self._actions(sp, obs[sp], perm[sp]) if sp in cfg.learn
                             else self.fixed[sp](obs[sp]))
             info = w.step(acts[PREY], acts[PREDATOR])
             steps_done += 1
