@@ -24,3 +24,21 @@ skill across ecosystem states: lower = better prey, higher = better predators.
 - One training seed only; the benchmark will use 5 seeds before any claim goes in the paper.
 
 Earlier runs (`*-vs-heuristic-s1_large-seed0`, v1) had no entropy bonus; prey entropy collapsed to 0.
+
+## Reward control: PPO without the birth bonus (2026-10-29)
+
+Same as prey-v2 / predator-v2 but `--birth-bonus 0`, i.e. the exact fitness GA/ES/NEAT use.
+
+| run | attack rate | catches / 1k pred-steps | pred lifespan | prey lifespan | worlds |
+|---|---|---|---|---|---|
+| prey-v2 (bonus 1) | 11.4 | 6.41 | 997 | 504 | 4/4 |
+| **prey-nobonus** | **8.2** | 5.77 | 742 | **958** | 4/4 |
+| predator-v2 (bonus 1) | 13.2 | 5.30 | 997 | 589 | 4/4 |
+| **predator-nobonus** | 12.1 | **7.45** | **1618** | 446 | 4/4 |
+| heuristic | 14.2 | 5.92 | 962 | 505 | 4/4 |
+
+The +1 birth bonus was a confound. Without it PPO prey are the best prey of any method so far, and PPO
+predators reach the evolutionary methods' level (GA 8.18, ES 8.03, NEAT 7.59). The earlier "evolution makes
+better predators" pattern was mostly the reward difference. From now on every method uses birth bonus 0
+(the default in `common.step_rewards`, `PPOConfig` and `train_ppo.py`). The benchmark seed-0 PPO and hybrid
+runs, trained with bonus 1, moved to `results/ppo/bench-bonus1/` and will be retrained.

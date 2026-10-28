@@ -8,7 +8,7 @@ from ..env import EcoWorld
 
 
 def step_rewards(world: EcoWorld, info: dict, sp: int, energy_before: torch.Tensor, alive_before: torch.Tensor,
-                 birth_bonus: float = 1.0, death_penalty: float = 1.0) -> torch.Tensor:
+                 birth_bonus: float = 0.0, death_penalty: float = 1.0) -> torch.Tensor:
     """Per-slot reward for one step, the same rule for every method and both species.
 
         r = Δenergy / energy_cap
@@ -16,6 +16,10 @@ def step_rewards(world: EcoWorld, info: dict, sp: int, energy_before: torch.Tens
           - death_penalty                                             on death (starved, old age, eaten)
 
     Slots that held no living agent at the start of the step get 0.
+
+    birth_bonus is 0 for every method in the benchmark (2026-10-29). PPO was first trained with +1; the control
+    runs prey-nobonus / predator-nobonus showed that bonus was what made PPO look worse than evolution on
+    predators (catches/1k 5.30 -> 7.45) and it also held PPO prey back (attack rate 11.4 -> 8.2).
     """
     sc = world.species_cfg[sp]
     st = world.species[sp]

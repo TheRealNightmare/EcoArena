@@ -23,3 +23,6 @@ PPO phase: fresh critic, 20 value-only warm-up iterations, action std 0.37 at ha
 - Candidate explanation to check: PPO optimises a different reward (birth bonus +1) from the evolutionary
   methods (bonus 0), so the PPO phase pulls evolved policies toward PPO's own solution. Control run queued:
   `train_ppo.py --birth-bonus 0`.
+
+**Update (2026-10-29):** the control confirmed the reward difference matters (PPO bonus 0: prey 8.2, predator
+catches 7.45). These hybrid runs used bonus 1 in the PPO phase; the benchmark hybrid uses bonus 0.

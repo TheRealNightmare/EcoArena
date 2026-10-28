@@ -123,7 +123,7 @@ class PPOConfig:
     min_log_std: float = -2.0  # action std never below ~0.14, so the policy keeps exploring
     vf_coef: float = 0.5
     max_grad_norm: float = 0.5
-    birth_bonus: float = 1.0
+    birth_bonus: float = 0.0  # same reward as GA/ES/NEAT; see common.step_rewards
     death_penalty: float = 1.0
     reset_every: int = 0  # 0 = only reset on extinction
     # Hybrid (M5) starts the actor from an evolved genome. A fresh critic gives junk advantages at first, so the

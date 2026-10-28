@@ -72,7 +72,7 @@ def main() -> None:
                    help="optional: freeze each species at this many agent-steps (off by default; see ppo.py)")
     p.add_argument("--minibatch", type=int, default=16384)
     p.add_argument("--lr", type=float, default=3e-4)
-    p.add_argument("--birth-bonus", type=float, default=1.0, help="0 = the evolutionary methods' fitness")
+    p.add_argument("--birth-bonus", type=float, default=0.0, help="benchmark uses 0 for every method")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--eval-worlds", type=int, default=4)

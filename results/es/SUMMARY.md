@@ -31,3 +31,7 @@ Training fitness (population mean, by quarter of the run):
 Fitness without birth bonus: PPO -0.0018, heuristic -0.0025, GA-old champion -0.0027, GA-nb champion -0.0033,
 random -0.0059. Same-policy spread in one window 0.0030; top-10% genomes from PPO 42% (chance 20%). Noisier than
 the 6-window CPU check suggested: for prey, one 128-step window ranks policies only weakly.
+
+**Correction (2026-10-29):** the predator pattern above compared evolution (birth bonus 0) with PPO trained on a
+different reward (bonus 1). PPO with the same reward reaches 7.45 catches / 1k and lifespan 1618 — see
+`results/ppo/SUMMARY.md`. The prey pattern (only PPO learns prey) stands and got stronger (attack rate 8.2).
