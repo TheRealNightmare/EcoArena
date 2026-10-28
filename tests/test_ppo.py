@@ -141,3 +141,23 @@ def test_training_stops_at_world_step_budget(tmp_path):
     hist = tr.train()
     assert len(hist) == 3  # 8 steps x 1 world per iteration
     assert hist[-1]["world_steps"] == 24 and hist[-1]["frozen"] == []
+
+
+def test_init_actor_copies_policy_and_warmup_keeps_it(tmp_path):
+    from ecoarena.trainers.ga import init_population, to_actor_critic
+    from ecoarena.trainers.ppo import PPOConfig, PPOTrainer
+
+    g = init_population(1, 102, 0.5, torch.Generator().manual_seed(3), "cpu")[0]
+    src = to_actor_critic(g, 102)
+    torch.save({"state_dict": src.state_dict(), "obs_dim": 102}, tmp_path / "prey.pt")
+    wcfg = load_config("S1", refuge_count=0)
+    cfg = PPOConfig(n_worlds=1, rollout_steps=8, iterations=2, minibatch=256, critic_warmup=2)
+    tr = PPOTrainer(wcfg, cfg, tmp_path / "out")
+    tr.init_actor(PREY, tmp_path / "prey.pt", log_std=-1.0)
+    obs = torch.rand(5, 102)
+    assert torch.allclose(tr.models[PREY].actor(obs), src.actor(obs))
+    assert torch.allclose(tr.models[PREY].log_std, torch.full((2,), -1.0))
+    critic0 = [p.clone() for p in tr.models[PREY].critic.parameters()]
+    tr.train()
+    assert torch.allclose(tr.models[PREY].actor(obs), src.actor(obs))  # warm-up: actor untouched
+    assert any(not torch.equal(a, b) for a, b in zip(critic0, tr.models[PREY].critic.parameters(), strict=True))

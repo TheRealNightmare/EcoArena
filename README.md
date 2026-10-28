@@ -44,7 +44,7 @@ All rules live in [`configs/s1_balanced.json`](configs/s1_balanced.json); scenar
 configs/            world rules (shared with the web demo)
 ecoarena/env/       batched PyTorch environment, RNG, config loader
 ecoarena/policies/  B0 random and B1 heuristic baselines
-ecoarena/trainers/  PPO, GA, ES, NEAT, hybrid (coming)
+ecoarena/trainers/  PPO, GA, ES, NEAT; hybrid = scripts/train_hybrid.py (GA/ES then PPO)
 ecoarena/eval/      benchmark runner and metrics (coming)
 scripts/            run_baseline.py, sweep.py, timing.py
 tests/              environment unit tests

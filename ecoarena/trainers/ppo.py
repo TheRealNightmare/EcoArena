@@ -126,6 +126,9 @@ class PPOConfig:
     birth_bonus: float = 1.0
     death_penalty: float = 1.0
     reset_every: int = 0  # 0 = only reset on extinction
+    # Hybrid (M5) starts the actor from an evolved genome. A fresh critic gives junk advantages at first, so the
+    # first `critic_warmup` iterations train the value function only and leave the inherited policy untouched.
+    critic_warmup: int = 0
     seed: int = 0
     device: str = "cpu"
     log_every: int = 5
@@ -148,7 +151,20 @@ class PPOTrainer:
         self.opts = {sp: torch.optim.Adam(m.parameters(), lr=cfg.lr, eps=1e-5) for sp, m in self.models.items()}
         self.fixed = {sp: make_policy(cfg.opponent, self.world, sp) for sp in (PREY, PREDATOR) if sp not in cfg.learn}
         self.resets = 0
+        self.iteration = 0
         self.history: list[dict] = []
+
+    def init_actor(self, sp: int, path: str | Path, log_std: float | None = None) -> None:
+        """Copy the actor (policy mean) of a saved 64-64 checkpoint (PPO, GA or ES) into species sp; the critic
+        stays freshly initialised. Optionally set the starting action noise."""
+        ck = torch.load(path, map_location=self.device, weights_only=False)
+        actor = {k.removeprefix("actor."): v for k, v in ck["state_dict"].items() if k.startswith("actor.")}
+        m = self.models[sp]
+        m.actor.load_state_dict(actor)
+        if log_std is not None:
+            with torch.no_grad():
+                m.log_std.fill_(log_std)
+        self.opts[sp] = torch.optim.Adam(m.parameters(), lr=self.cfg.lr, eps=1e-5)
 
     # ------------------------------------------------------------------ world management
     def _reset_world(self) -> None:
@@ -275,7 +291,10 @@ class PPOTrainer:
                     v_clip = val_old[idx] + (v - val_old[idx]).clamp(-cfg.clip, cfg.clip)
                     vl = 0.5 * torch.max((v - ret[idx]) ** 2, (v_clip - ret[idx]) ** 2).mean()
                     ent = d.entropy().sum(-1).mean()
-                    loss = pg + cfg.vf_coef * vl - cfg.ent_coef * ent
+                    if cfg.critic_warmup and self.iteration <= cfg.critic_warmup:
+                        loss = cfg.vf_coef * vl
+                    else:
+                        loss = pg + cfg.vf_coef * vl - cfg.ent_coef * ent
                     opt.zero_grad()
                     loss.backward()
                     nn.utils.clip_grad_norm_(m.parameters(), cfg.max_grad_norm)
@@ -308,6 +327,7 @@ class PPOTrainer:
         # brain but is no longer updated, so every species gets the same training budget.
         self.frozen: set[int] = set()
         for it in range(1, cfg.iterations + 1):
+            self.iteration = it
             buf, stats = self.rollout()
             world_steps += buf[cfg.learn[0]]["valid"].shape[0] * cfg.n_worlds
             for sp in cfg.learn:
