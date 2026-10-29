@@ -1,0 +1,17 @@
+{
+  "_comment": "Which checkpoint the demo loads for each method and species. Each was trained against hand-coded opponents (stage 1/2 runs). Swap in the benchmark runs (results/bench/train/<method>/<method>-seed0) once they exist, then run: python scripts/export_web.py brains",
+  "brains": [
+    {"method": "ppo", "species": "prey", "label": "PPO", "source": "results/ppo/prey-nobonus/prey.pt"},
+    {"method": "ppo", "species": "predator", "label": "PPO", "source": "results/ppo/predator-nobonus/predator.pt"},
+    {"method": "ga", "species": "prey", "label": "GA", "source": "results/ga/ga-prey-nb-g128-s02/prey.pt"},
+    {"method": "ga", "species": "predator", "label": "GA", "source": "results/ga/ga-predator/predator.pt"},
+    {"method": "es", "species": "prey", "label": "ES", "source": "results/es/es-prey-lr003/prey.pt"},
+    {"method": "es", "species": "predator", "label": "ES", "source": "results/es/es-predator/predator.pt"},
+    {"method": "neat", "species": "prey", "label": "NEAT", "source": "results/neat/neat-prey/prey.pt"},
+    {"method": "neat", "species": "predator", "label": "NEAT", "source": "results/neat/neat-predator/predator.pt"},
+    {"method": "hybrid", "species": "prey", "label": "Hybrid", "source": "results/hybrid/hybrid-prey/prey.pt",
+     "note": "PPO phase trained with the old +1 birth bonus"},
+    {"method": "hybrid", "species": "predator", "label": "Hybrid", "source": "results/hybrid/hybrid-predator/predator.pt",
+     "note": "PPO phase trained with the old +1 birth bonus"}
+  ]
+}

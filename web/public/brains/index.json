@@ -1,0 +1,82 @@
+[
+ {
+  "method": "ppo",
+  "species": "prey",
+  "label": "PPO",
+  "kind": "mlp",
+  "file": "ppo-prey.json",
+  "note": ""
+ },
+ {
+  "method": "ppo",
+  "species": "predator",
+  "label": "PPO",
+  "kind": "mlp",
+  "file": "ppo-predator.json",
+  "note": ""
+ },
+ {
+  "method": "ga",
+  "species": "prey",
+  "label": "GA",
+  "kind": "mlp",
+  "file": "ga-prey.json",
+  "note": ""
+ },
+ {
+  "method": "ga",
+  "species": "predator",
+  "label": "GA",
+  "kind": "mlp",
+  "file": "ga-predator.json",
+  "note": ""
+ },
+ {
+  "method": "es",
+  "species": "prey",
+  "label": "ES",
+  "kind": "mlp",
+  "file": "es-prey.json",
+  "note": ""
+ },
+ {
+  "method": "es",
+  "species": "predator",
+  "label": "ES",
+  "kind": "mlp",
+  "file": "es-predator.json",
+  "note": ""
+ },
+ {
+  "method": "neat",
+  "species": "prey",
+  "label": "NEAT",
+  "kind": "neat",
+  "file": "neat-prey.json",
+  "note": ""
+ },
+ {
+  "method": "neat",
+  "species": "predator",
+  "label": "NEAT",
+  "kind": "neat",
+  "file": "neat-predator.json",
+  "note": ""
+ },
+ {
+  "method": "hybrid",
+  "species": "prey",
+  "label": "Hybrid",
+  "kind": "mlp",
+  "file": "hybrid-prey.json",
+  "note": "PPO phase trained with the old +1 birth bonus"
+ },
+ {
+  "method": "hybrid",
+  "species": "predator",
+  "label": "Hybrid",
+  "kind": "mlp",
+  "file": "hybrid-predator.json",
+  "note": "PPO phase trained with the old +1 birth bonus"
+ }
+]
