@@ -1,7 +1,7 @@
 // Simulation worker: steps the world off the UI thread and posts compact frames.
 /// <reference lib="webworker" />
 import { loadBrain } from "./brains";
-import type { BrainName, Frame, Selected, SimSettings, ToWorker } from "./protocol";
+import type { BrainName, Frame, Herd, Selected, SimSettings, ToWorker } from "./protocol";
 import { loadConfig } from "./sim/config";
 import { brainPolicy, heuristicPolicy, randomPolicy, type Policy } from "./sim/policies";
 import { PREDATOR, PREY, World } from "./sim/world";
@@ -16,6 +16,11 @@ let running = false;
 let targetSps = 30;
 let timer: ReturnType<typeof setTimeout> | null = null;
 let popBuf: number[] = [];
+let bornBuf: number[] = [];
+let catchBuf: number[] = [];
+let deathBuf: number[] = [];
+let isReset = true;
+let eating = new Uint8Array(0); // predator slots digesting a catch (as opposed to stunned after a miss)
 let captures = 0;
 let births: [number, number] = [0, 0];
 let sendStatic = true;
@@ -37,6 +42,10 @@ function init(s: SimSettings) {
   policies = [makePolicy(s.prey, PREY), makePolicy(s.predator, PREDATOR)];
   acts = [new Float32Array(world.species[0].n * 2), new Float32Array(world.species[1].n * 2)];
   popBuf = [...world.populations()];
+  bornBuf = [];
+  catchBuf = [];
+  deathBuf = [];
+  isReset = true;
   captures = 0;
   births = [0, 0];
   extinct = null;
@@ -47,10 +56,27 @@ function init(s: SimSettings) {
 
 function stepOnce() {
   const w = world!;
+  // positions before the step, to place death effects where the animal was
   const obs = w.observe();
   policies[0](w, obs[0], acts[0]);
   policies[1](w, obs[1], acts[1]);
+  const preyX = w.species[0].x.slice(), preyY = w.species[0].y.slice();
+  const predX = w.species[1].x.slice(), predY = w.species[1].y.slice();
   const info = w.step(acts[0], acts[1]);
+  for (let q = 0; q < eating.length; q++) if (w.species[1].digest[q] === 0 || !w.species[1].alive[q]) eating[q] = 0;
+  for (const [q, p] of info.catches) {
+    eating[q] = 1;
+    if (catchBuf.length < 4 * 400) catchBuf.push(preyX[p], preyY[p], q, p);
+  }
+  for (let sp = 0; sp < 2; sp++) {
+    for (const c of info.newborn[sp]) if (bornBuf.length < 2 * 600) bornBuf.push(sp, c);
+    const died = info.died[sp];
+    const xs = sp === 0 ? preyX : predX, ys = sp === 0 ? preyY : predY;
+    for (let i = 0; i < died.length; i++) {
+      if (!died[i] || (sp === 0 && info.eaten[i]) || deathBuf.length >= 4 * 300) continue;
+      deathBuf.push(sp, xs[i], ys[i], i);
+    }
+  }
   captures += info.captures;
   births[0] += info.births[0];
   births[1] += info.births[1];
@@ -60,21 +86,29 @@ function stepOnce() {
   if (selected && selected.diedAt === null && !w.species[selected.sp].alive[selected.slot]) selected.diedAt = w.t;
 }
 
-function packed(sp: number) {
-  const st = world!.species[sp];
+function herd(sp: number): Herd {
+  const w = world!;
+  const st = w.species[sp];
+  const sc = w.sc[sp];
   let n = 0;
   for (let i = 0; i < st.n; i++) n += st.alive[i];
-  const x = new Float32Array(n), y = new Float32Array(n), h = new Float32Array(n), busy = new Uint8Array(n);
+  const h: Herd = {
+    slot: new Int32Array(n), x: new Float32Array(n), y: new Float32Array(n), h: new Float32Array(n),
+    spd: new Float32Array(n), flags: new Uint8Array(n), energy: new Float32Array(n),
+  };
   let k = 0;
   for (let i = 0; i < st.n; i++) {
     if (!st.alive[i]) continue;
-    x[k] = st.x[i];
-    y[k] = st.y[i];
-    h[k] = st.heading[i];
-    busy[k] = st.digest[i] > 0 ? 1 : 0;
+    h.slot[k] = i;
+    h.x[k] = st.x[i];
+    h.y[k] = st.y[i];
+    h.h[k] = st.heading[i];
+    h.spd[k] = st.speed[i] / sc.max_speed;
+    h.flags[k] = (st.digest[i] > 0 ? 1 : 0) | (w.inRefuge(st.x[i], st.y[i]) ? 2 : 0) | (sp === PREDATOR && eating[i] ? 4 : 0);
+    h.energy[k] = st.energy[i] / sc.energy_cap;
     k++;
   }
-  return { x, y, h, busy };
+  return h;
 }
 
 function selectedInfo(): Selected | null {
@@ -116,35 +150,45 @@ function currentObsRow(sp: number, slot: number): Float32Array {
 
 function post() {
   const w = world!;
-  const prey = packed(PREY);
-  const pred = packed(PREDATOR);
-  const sendGrass = sendStatic || frameNo % 4 === 0;
+  const prey = herd(PREY);
+  const pred = herd(PREDATOR);
+  const sendGrass = sendStatic || frameNo % 3 === 0;
   const frame: Frame = {
     type: "frame",
     t: w.t,
     world: w.L,
     grid: w.G,
-    prey: { x: prey.x, y: prey.y, h: prey.h },
+    capacity: [w.species[0].n, w.species[1].n],
+    prey,
     pred,
     grass: sendGrass ? w.grass.slice() : null,
     refuge: sendStatic ? w.refuge.slice() : null,
     refugeCentres: sendStatic ? w.refugeCentres : null,
     refugeRadius: w.cfg.refuge_radius,
+    reset: isReset,
     popHistory: Int32Array.from(popBuf),
     captures,
     births,
+    bornSlots: Int32Array.from(bornBuf),
+    catchEvents: Float32Array.from(catchBuf),
+    deathEvents: Float32Array.from(deathBuf),
     stepsPerSec: spsMeasured,
     running,
     extinct,
     selected: selectedInfo(),
   };
   popBuf = [];
+  bornBuf = [];
+  catchBuf = [];
+  deathBuf = [];
   captures = 0;
   births = [0, 0];
   sendStatic = false;
+  isReset = false;
   frameNo++;
-  const transfer: Transferable[] = [prey.x.buffer, prey.y.buffer, prey.h.buffer, pred.x.buffer, pred.y.buffer,
-    pred.h.buffer, pred.busy.buffer, frame.popHistory.buffer];
+  const transfer: Transferable[] = [frame.popHistory.buffer, frame.bornSlots.buffer, frame.catchEvents.buffer,
+    frame.deathEvents.buffer];
+  for (const hd of [prey, pred]) for (const a of [hd.slot, hd.x, hd.y, hd.h, hd.spd, hd.flags, hd.energy]) transfer.push(a.buffer);
   if (frame.grass) transfer.push(frame.grass.buffer);
   if (frame.refuge) transfer.push(frame.refuge.buffer);
   ctx.postMessage(frame, transfer);
@@ -224,7 +268,7 @@ ctx.onmessage = (e: MessageEvent<ToWorker>) => {
       break;
     case "select": {
       if (!world) break;
-      let best = 16; // within 4 world units
+      let best = 36; // within 6 world units
       let pick: { sp: number; slot: number } | null = null;
       for (const sp of [PREDATOR, PREY]) {
         const st = world.species[sp];
@@ -243,6 +287,12 @@ ctx.onmessage = (e: MessageEvent<ToWorker>) => {
       post();
       break;
     }
+    case "selectSlot":
+      if (world && world.species[m.species]?.alive[m.slot]) {
+        selected = { sp: m.species, slot: m.slot, diedAt: null };
+        post();
+      }
+      break;
     case "deselect":
       selected = null;
       post();

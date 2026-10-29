@@ -49,6 +49,8 @@ export interface StepInfo {
   births: [number, number];
   eaten: Uint8Array; // prey slots caught this step
   died: [Uint8Array, Uint8Array];
+  newborn: [number[], number[]]; // child slots born this step, per species
+  catches: [number, number][]; // (predator slot, prey slot) for each successful catch this step
 }
 
 /** Uniform bucket grid over the torus for neighbour queries. */
@@ -313,7 +315,7 @@ export class World {
     for (let c = 0; c < G2; c++) if (consumed[c] > 0) this.grass[c] = f(this.grass[c] - consumed[c]);
 
     // 4. captures
-    const { eaten, captures } = this.captures();
+    const { eaten, captures, catches } = this.captures();
 
     // 5. drain, ageing, cooldowns
     for (let sp = 0; sp < 2; sp++) {
@@ -351,7 +353,8 @@ export class World {
     }
 
     // 7. births, 8. immigration
-    const births: [number, number] = [this.births(PREY), this.births(PREDATOR)];
+    const newborn: [number[], number[]] = [[], []];
+    const births: [number, number] = [this.births(PREY, newborn[0]), this.births(PREDATOR, newborn[1])];
     this.immigrate(PREY);
     this.immigrate(PREDATOR);
 
@@ -365,12 +368,12 @@ export class World {
     this.capRefugeGrass();
 
     this.t += 1;
-    return { t: this.t, captures, deaths, births, eaten, died };
+    return { t: this.t, captures, deaths, births, eaten, died, newborn, catches };
   }
 
   private predGrid?: Grid;
 
-  private captures(): { eaten: Uint8Array; captures: number } {
+  private captures(): { eaten: Uint8Array; captures: number; catches: [number, number][] } {
     const [prey, pred] = this.species;
     const qc = this.cfg.predator;
     const r2 = f(qc.catch_radius * qc.catch_radius);
@@ -403,12 +406,14 @@ export class World {
     }
     const eaten = new Uint8Array(prey.n);
     let captures = 0;
+    const catches: [number, number][] = [];
     const stream = this.stream(rng.S_CATCH, PREDATOR);
     for (let q = 0; q < pred.n; q++) {
       if (bestP[q] < 0) continue;
       const success = qc.catch_prob >= 1 || rng.uniform(this.seed, this.t, stream, 0, q) < qc.catch_prob;
       if (success) {
         eaten[bestP[q]] = 1;
+        catches.push([q, bestP[q]]);
         pred.energy[q] = Math.min(f(pred.energy[q] + qc.energy_per_catch), qc.energy_cap);
         pred.digest[q] = qc.digest_steps + 1; // +1: step 5 decrements in this same step
         captures++;
@@ -416,10 +421,10 @@ export class World {
         pred.digest[q] = qc.miss_stun_steps + 1;
       }
     }
-    return { eaten, captures };
+    return { eaten, captures, catches };
   }
 
-  private births(sp: number): number {
+  private births(sp: number, newborn: number[] = []): number {
     const st = this.species[sp];
     const sc = this.sc[sp];
     const N = st.n;
@@ -463,6 +468,7 @@ export class World {
       st.cooldown[par] = sc.repro_cooldown;
       st.digest[child] = 0;
       st.alive[child] = 1;
+      newborn.push(child);
     }
     return k;
   }
