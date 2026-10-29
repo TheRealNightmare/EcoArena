@@ -248,7 +248,7 @@ def main() -> None:
             label=NAMES[m],
         )
     ax.set_xticks(range(len(scen)), [SCEN[s] for s in scen])
-    ax.set_ylabel("worlds surviving 10k steps")
+    ax.set_ylabel(f"worlds surviving {max(steps_of.values()) // 1000 or max(steps_of.values())}{'k' if max(steps_of.values()) >= 1000 else ''} steps")
     ax.set_ylim(0, 1.05)
     ax.legend(ncol=4, frameon=False, fontsize=7.5, loc="upper center", bbox_to_anchor=(0.5, 1.28))
     ax.grid(axis="y", alpha=0.25)
