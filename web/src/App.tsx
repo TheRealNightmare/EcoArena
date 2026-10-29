@@ -425,6 +425,7 @@ export default function App() {
       <div className="scene" ref={stage} />
 
       <header className="glass brand">
+        <a className="back" href="#" onClick={(e) => { e.preventDefault(); location.hash = ""; }}>← About the project</a>
         <h1>EcoArena</h1>
         <p>Predators and prey sharing one world, each species driven by the brain you choose.</p>
         <div className="clock mono">{clock}<span className="dim"> · step {stats.t.toLocaleString()}</span></div>

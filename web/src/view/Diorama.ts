@@ -28,7 +28,7 @@ export function makeHeight(L: number) {
     0.2 * Math.cos(a * 7 * x - a * 4 * y);
 }
 
-function mulberry(seed: number) {
+export function mulberry(seed: number) {
   let s = seed >>> 0;
   return () => {
     s = (s + 0x6d2b79f5) >>> 0;
@@ -50,7 +50,7 @@ const SKY = [
   { e: 1.0, top: C("#3a7bd5"), hor: C("#d7ecf7"), sun: C("#fff6e6"), sunI: 3.0, hemi: 0.95, moon: 0.0, exp: 0.85 },
 ];
 
-function skyAt(e: number) {
+export function skyAt(e: number) {
   let i = 0;
   while (i < SKY.length - 2 && e > SKY[i + 1].e) i++;
   const a = SKY[i], b = SKY[i + 1];
@@ -102,7 +102,7 @@ function makeTrack(cap: number, geo: THREE.BufferGeometry, mat: THREE.Material, 
 // ------------------------------------------------------------------------------------------ particles
 const MAX_P = 5000;
 
-class Particles {
+export class Particles {
   points: THREE.Points;
   pos = new Float32Array(MAX_P * 3);
   vel = new Float32Array(MAX_P * 3);
