@@ -1,0 +1,15 @@
+# Only configs/ and web/ are needed to build the web demo; keep the context small for the Pi.
+.git
+.github
+.venv
+**/node_modules
+**/__pycache__
+web/dist
+results
+checkpoints
+wandb
+paper
+docs
+tests
+web/test
+logs.md
