@@ -140,6 +140,8 @@ export default function App() {
 
   const worker = useRef<Worker | null>(null);
   const stage = useRef<HTMLDivElement>(null);
+  const appRef = useRef<HTMLDivElement>(null);
+  const brandRef = useRef<HTMLElement>(null);
   const view = useRef<Diorama | null>(null);
   const chart = useRef<HTMLCanvasElement>(null);
   const sparkPrey = useRef<HTMLCanvasElement>(null);
@@ -287,6 +289,15 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [send]);
 
+  // the left column starts 12 px below the title card, whatever height the card ends up (font, wrapping, width)
+  useEffect(() => {
+    const b = brandRef.current, a = appRef.current;
+    if (!b || !a) return;
+    const ro = new ResizeObserver(() => a.style.setProperty("--brand-bottom", `${b.offsetTop + b.offsetHeight + 12}px`));
+    ro.observe(b);
+    return () => ro.disconnect();
+  }, []);
+
   const notes = useMemo(() => {
     const n: Record<string, string> = {};
     for (const b of BRAIN_INDEX) if (b.note) n[`${b.method}-${b.species}`] = b.note;
@@ -421,10 +432,10 @@ export default function App() {
   ) : null;
 
   return (
-    <div className="app3d">
+    <div className="app3d" ref={appRef}>
       <div className="scene" ref={stage} />
 
-      <header className="glass brand">
+      <header className="glass brand" ref={brandRef}>
         <a className="back" href="#" onClick={(e) => { e.preventDefault(); location.hash = ""; }}>← About the project</a>
         <h1>EcoArena</h1>
         <p>Predators and prey sharing one world, each species driven by the brain you choose.</p>
