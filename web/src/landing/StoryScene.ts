@@ -178,12 +178,30 @@ export class StoryScene {
     this.loop();
   }
 
-  /** Start far out and fly in to the hero shot (the end of the loading screen's push-through). */
-  intro() {
+  /** True while the loading screen covers the scene: nothing is simulated or drawn. */
+  paused = true;
+  private introFly: { t0: number; ms: number; dFar: number; dHero: number; dir: THREE.Vector3; target: THREE.Vector3 } | null = null;
+
+  /**
+   * The loading screen hands over: start far out along the hero shot's line of sight, at the distance where the
+   * island looks as big as the loader's island (`frac` = its on-screen radius / half the viewport height), and
+   * fly in over ms. Returns how much the island grows, so the loader can grow its island in step.
+   */
+  reveal(frac: number, ms: number): number {
     const s = SHOTS[0];
-    const t = new THREE.Vector3(...s.target);
-    this.shown.pos.copy(new THREE.Vector3(...s.pos).sub(t).multiplyScalar(2.8).add(t).add(new THREE.Vector3(0, 40, 0)));
+    const target = new THREE.Vector3(...s.target), hero = new THREE.Vector3(...s.pos);
+    const dir = hero.clone().sub(target);
+    const dHero = dir.length();
+    dir.normalize();
+    const dFar = Math.max(dHero * 1.2, (S * 0.62) / (Math.max(0.05, frac) * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))));
+    this.introFly = { t0: performance.now(), ms, dFar, dHero, dir, target };
+    this.shown.target.copy(target);
+    this.shown.pos.copy(target).addScaledVector(dir, dFar);
     this.camera.position.copy(this.shown.pos);
+    this.camera.lookAt(target);
+    this.paused = false;
+    this.clock.getDelta(); // don't let the paused time count as one long frame
+    return dFar / dHero;
   }
 
   private buildActors() {
@@ -655,6 +673,7 @@ export class StoryScene {
   private loop = () => {
     if (this.disposed) return;
     this.raf = requestAnimationFrame(this.loop);
+    if (this.paused) return;
     const dt = Math.min(0.05, this.clock.getDelta());
     const t = (this.time.uTime.value += dt);
 
@@ -802,6 +821,20 @@ export class StoryScene {
   }
 
   private updateCamera(dt: number, t: number) {
+    if (this.introFly) {
+      // apparent size (1/distance) follows the same ease-in-out curve as the loader's island
+      const f = this.introFly;
+      const u = Math.min(1, (performance.now() - f.t0) / f.ms);
+      const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+      const inv = 1 / f.dFar + (1 / f.dHero - 1 / f.dFar) * e;
+      this.shown.pos.copy(f.target).addScaledVector(f.dir, 1 / inv);
+      this.shown.target.copy(f.target);
+      this.camera.position.copy(this.shown.pos);
+      this.camera.lookAt(f.target);
+      this.applySky(this.shown.elev);
+      if (u >= 1) this.introFly = null;
+      return;
+    }
     if (this.glide) {
       const g = this.glide;
       const u = Math.min(1, (performance.now() - g.t0) / g.ms);

@@ -938,12 +938,25 @@ export class Diorama {
     else this.renderer.render(this.scene, this.camera);
   }
 
-  /** The loading screen's push-through ends here: start high above the island and glide down to the view. */
-  intro() {
+  /** True while the loading screen covers the view: frames are still applied, but nothing is drawn. */
+  paused = false;
+  private introFly: { t0: number; ms: number; dFar: number; dHome: number; dir: THREE.Vector3; target: THREE.Vector3 } | null = null;
+
+  /** Hand-over from the loading screen: start far out where the island looks as big as the loader's island
+   * (`frac` of the half viewport height), fly in to the normal view over ms; returns how much it grows. */
+  reveal(frac: number, ms: number): number {
+    const target = this.controls.target.clone(), home = this.camera.position.clone();
+    const dir = home.clone().sub(target);
+    const dHome = dir.length();
+    dir.normalize();
     const L = this.L || 200;
-    const to = this.camera.position.clone(), tTo = this.controls.target.clone();
-    this.camera.position.set(to.x * 0.4, L * 2.4, to.z * 0.4 + L * 0.2);
-    this.camTween = { from: this.camera.position.clone(), to, tFrom: tTo.clone(), tTo, t: 0, dur: 2.2 };
+    const dFar = Math.max(dHome * 1.2, (L * 0.62) / (Math.max(0.05, frac) * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))));
+    this.introFly = { t0: performance.now(), ms, dFar, dHome, dir, target };
+    this.camera.position.copy(target).addScaledVector(dir, dFar);
+    this.camTween = null;
+    this.paused = false;
+    this.clock.getDelta();
+    return dFar / dHome;
   }
 
   setOverlay(o: Overlay) {
@@ -1112,6 +1125,7 @@ export class Diorama {
   private loop = () => {
     if (this.disposed) return;
     this.raf = requestAnimationFrame(this.loop);
+    if (this.paused) return;
     const dt = Math.min(0.1, this.clock.getDelta());
     this.time.uTime.value += dt;
     const now = performance.now() / 1000;
@@ -1142,7 +1156,15 @@ export class Diorama {
     }
     this.particles.update(dt);
 
-    if (this.camTween) {
+    if (this.introFly) {
+      const f = this.introFly;
+      const u = Math.min(1, (performance.now() - f.t0) / f.ms);
+      const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+      const inv = 1 / f.dFar + (1 / f.dHome - 1 / f.dFar) * e;
+      this.camera.position.copy(f.target).addScaledVector(f.dir, 1 / inv);
+      this.controls.target.copy(f.target);
+      if (u >= 1) this.introFly = null;
+    } else if (this.camTween) {
       const tw = this.camTween;
       tw.t += dt / tw.dur;
       const e = tw.t >= 1 ? 1 : 1 - Math.pow(1 - tw.t, 3);

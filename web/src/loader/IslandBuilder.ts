@@ -36,7 +36,9 @@ export class IslandBuilder {
   private hareAnim: THREE.InstancedBufferAttribute;
   private wolfAnim: THREE.InstancedBufferAttribute;
   private motes: THREE.Points;
-  private push: { t0: number; done: () => void } | null = null;
+  private fly: { t0: number; ms: number; ratio: number } | null = null;
+  private spin = 0.25;
+  private spinAngle = 0;
   private disposed = false;
   private readonly home = new THREE.Vector3(0, 4.6, 11.5);
 
@@ -165,9 +167,16 @@ export class IslandBuilder {
     this.target = clamp01(p);
   }
 
-  /** Dolly the camera into the island, then call done. */
-  pushThrough(done: () => void) {
-    this.push = { t0: performance.now(), done };
+  /** Island radius on screen as a fraction of this canvas's half-height (to line the real island up with it). */
+  apparentRadius(): number {
+    const d = this.home.distanceTo(new THREE.Vector3(0, 0.2, 0));
+    return 3.05 / d / Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
+  }
+
+  /** Stop turning and fly toward the island so it grows by `ratio` over ms, on the same ease-in-out curve the
+   * real scene's camera uses, so the two islands grow together during the hand-over. */
+  flyIn(ms: number, ratio: number) {
+    this.fly = { t0: performance.now(), ms, ratio };
   }
 
   private resize() {
@@ -219,21 +228,21 @@ export class IslandBuilder {
     this.placeAnimal(this.wolf, this.wolfAnim, lap - 0.9, 1.75, Math.max(0.0001, k * 0.85), t * 7.5, 0.9);
 
     // gentle turn and float
-    this.group.rotation.y = t * 0.25;
+    if (this.fly) this.spin += (0 - this.spin) * Math.min(1, dt * 3);
+    this.spinAngle += this.spin * dt;
+    this.group.rotation.y = this.spinAngle;
     this.group.position.y = Math.sin(t * 1.2) * 0.08;
     this.motes.rotation.y = -t * 0.05;
 
-    if (this.push) {
-      const pu = Math.min(1, (performance.now() - this.push.t0) / 950);
-      const e = pu * pu * pu;
-      this.camera.position.lerpVectors(this.home, new THREE.Vector3(0, 0.9, 1.2), e);
-      this.camera.fov = 32 + 40 * e;
-      this.camera.updateProjectionMatrix();
-      if (pu >= 1) {
-        const d = this.push.done;
-        this.push = null;
-        d();
-      }
+    if (this.fly) {
+      const u = Math.min(1, (performance.now() - this.fly.t0) / this.fly.ms);
+      const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+      // distance shrinks by `ratio` over the flight, interpolated in 1/d so apparent size grows like the real one
+      const target = new THREE.Vector3(0, 0.2, 0);
+      const dir = this.home.clone().sub(target);
+      const d0 = dir.length();
+      const inv = 1 / d0 + (this.fly.ratio / d0 - 1 / d0) * e;
+      this.camera.position.copy(target).add(dir.normalize().multiplyScalar(1 / inv));
     }
     this.camera.lookAt(0, 0.2, 0);
     this.renderer.render(this.scene, this.camera);

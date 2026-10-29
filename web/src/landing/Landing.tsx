@@ -280,10 +280,11 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
     <div className={`landing ${leaving ? "leaving" : ""} ${loading ? "" : "revealed"}`}>
       {loading ? (
         <Loader title="EcoArena" steps={StoryScene.STEPS} done={loaded} minMs={2000}
-          onReveal={() => story.current?.intro()} onFinished={() => setLoading(false)} />
+          onReveal={(frac, ms) => story.current?.reveal(frac, ms)} onFinished={() => setLoading(false)} />
       ) : null}
       <div className="story-canvas" ref={host} aria-hidden="true" />
       <div className="veil" aria-hidden="true" />
+      <div className="dusk-cover" aria-hidden="true" />
       <div className="progress" aria-hidden="true"><span style={{ transform: `scaleX(${index / (N - 1)})` }} /></div>
 
       <header className={`lnav ${index > 0 ? "solid" : ""}`}>

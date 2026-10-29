@@ -333,3 +333,17 @@
   .veil { background: linear-gradient(180deg, rgba(8, 12, 8, 0.4) 0%, rgba(8, 12, 8, 0) 22%, rgba(8, 12, 8, 0) 60%, rgba(8, 12, 8, 0.35) 100%); }
   .hero { justify-content: flex-end; padding-bottom: 96px; }
 }
+
+/* entering the simulation: as the camera dives in, the screen deepens into the loading screen's dusk sky, so
+   the simulation's loader appears without a cut */
+.dusk-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(60% 50% at 50% 62%, rgba(244, 193, 82, 0.18), transparent 70%),
+    linear-gradient(180deg, #0c1424 0%, #1c2740 55%, #3d2f3a 100%);
+}
+.landing.leaving .dusk-cover { opacity: 1; transition: opacity 0.85s cubic-bezier(.4, 0, .6, 1) 0.75s; }

@@ -207,6 +207,7 @@ export default function App() {
       setQuality("low");
       setToast("Switched to Low quality for smoother motion. You can change it in the dock.");
     };
+    v.paused = true; // hidden behind the loading screen until the hand-over
     v.onCameraMode = (m) => setCamMode(m);
     v.onTourPick = (species, slot) => send({ type: "selectSlot", species, slot });
     view.current = v;
@@ -472,7 +473,7 @@ export default function App() {
       {loading ? (
         <Loader title="Entering the arena"
           steps={["Starting the simulation", "Building the world and loading the brains", animalsLabel, "Compiling shaders", "Rendering the first frame"]}
-          done={loadDone} minMs={1800} onReveal={() => view.current?.intro()} onFinished={() => setLoading(false)} />
+          done={loadDone} minMs={1800} onReveal={(frac, ms) => view.current?.reveal(frac, ms)} onFinished={() => setLoading(false)} />
       ) : null}
       <div className="scene" ref={stage} />
 

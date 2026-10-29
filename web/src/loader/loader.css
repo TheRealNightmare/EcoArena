@@ -20,7 +20,6 @@
   color: var(--l-fg);
   background: var(--l-bg-top);
   font-family: var(--font-body);
-  transition: opacity 0.75s ease, transform 0.95s cubic-bezier(.6, 0, .8, .4);
 }
 .loader-sky {
   position: absolute;
@@ -66,9 +65,19 @@
 .loader-pct { margin: 2px 0 0; font-size: 13px; color: var(--l-gold); letter-spacing: 0.08em; }
 .loader-hint { margin: 0; font-size: 12px; color: var(--l-dim); }
 
-/* the hand-over: the camera pushes into the island while the whole screen swells and dissolves */
-.loader.exiting { opacity: 0; transform: scale(1.35); pointer-events: none; }
-.loader.exiting .loader-text { opacity: 0; transition: opacity 0.3s; }
+/* the hand-over (see Loader.tsx): settle to the centre, then the sky and the little island dissolve while the
+   real island, lined up behind, grows on the same curve */
+.loader { transition: none; }
+.loader-text, .loader-ring { transition: opacity 0.45s ease; }
+.loader-stage { transition: translate 0.6s cubic-bezier(.45, 0, .2, 1); }
+.loader-sky { transition: opacity 0.6s ease; }
+.loader-island { transition: opacity 0.75s ease 0.45s; }
+.loader.settle .loader-text, .loader.reveal .loader-text,
+.loader.settle .loader-ring, .loader.reveal .loader-ring { opacity: 0; }
+.loader.settle .loader-stage, .loader.reveal .loader-stage { translate: var(--dx, 0) var(--dy, 0); }
+.loader.reveal { background: transparent; pointer-events: none; }
+.loader.reveal .loader-sky { opacity: 0; }
+.loader.reveal .loader-island { opacity: 0; }
 
 @media (max-width: 760px) {
   .loader { flex-direction: column; justify-content: center; gap: 22px; }
@@ -77,6 +86,6 @@
   .loader-steps li { justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .loader, .loader.exiting { transform: none; transition: opacity 0.3s; }
+  .loader-stage { transition: none; }
   .loader-steps li.now .mark { animation: none; }
 }
