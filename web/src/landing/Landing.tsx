@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { CHAPTERS, StoryScene } from "./StoryScene";
 import "./landing.css";
 
@@ -131,12 +131,23 @@ const METHODS = [
 ] as const;
 
 // ------------------------------------------------------------------------------------------ page
+const LABELS: Record<(typeof CHAPTERS)[number], string> = {
+  hero: "Start", world: "The world", prey: "Prey", predators: "Predators", refuges: "Refuges", vision: "Senses",
+  methods: "Methods", "findings-prey": "Findings: prey", "findings-predators": "Findings: predators",
+  "findings-reward": "Findings: reward", enter: "Simulation",
+};
+const N = CHAPTERS.length;
+const at = (name: (typeof CHAPTERS)[number]) => CHAPTERS.indexOf(name);
+
+/** Glide length for a jump of `n` chapters (longer jumps fly a little longer). */
+const glideMs = (n: number) => Math.min(2200, 1200 + 250 * (Math.abs(n) - 1));
+
 export default function Landing({ onEnter }: { onEnter: () => void }) {
   const host = useRef<HTMLDivElement>(null);
-  const scroller = useRef<HTMLDivElement>(null);
   const story = useRef<StoryScene | null>(null);
-  const [chapter, setChapter] = useState(0);
+  const [index, setIndex] = useState(0);
   const [leaving, setLeaving] = useState(false);
+  const live = useRef({ index: 0, lockedUntil: 0, needQuiet: false, lastWheel: 0, wheelSum: 0 });
 
   useEffect(() => {
     let q: "high" | "low" = window.innerWidth < 700 ? "low" : "high";
@@ -151,36 +162,95 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
     return () => s.dispose();
   }, []);
 
-  // scroll position -> chapter progress (0 = hero centred, 1 = first chapter centred, ...)
-  useEffect(() => {
-    const el = scroller.current!;
-    let raf = 0;
-    const measure = () => {
-      raf = 0;
-      const secs = Array.from(el.querySelectorAll<HTMLElement>("[data-ch]"));
-      const mid = el.scrollTop + el.clientHeight / 2;
-      const centres = secs.map((s) => s.offsetTop + s.offsetHeight / 2);
-      let p = 0;
-      if (mid >= centres[centres.length - 1]) p = centres.length - 1;
-      else if (mid > centres[0]) {
-        const i = centres.findIndex((c, k) => mid >= c && mid < centres[k + 1]);
-        p = i + (mid - centres[i]) / (centres[i + 1] - centres[i]);
-      }
-      story.current?.setProgress(p);
-      setChapter(Math.round(p));
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(measure);
-    };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    measure();
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
+  /** Fly to chapter i. Gestures that arrive during the flight are ignored. */
+  const go = useCallback((i: number) => {
+    const L = live.current;
+    const to = Math.max(0, Math.min(N - 1, i));
+    if (to === L.index) return;
+    const ms = glideMs(to - L.index);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    story.current?.goTo(to, reduce ? 0 : ms);
+    L.index = to;
+    L.lockedUntil = performance.now() + (reduce ? 300 : ms * 0.85);
+    L.needQuiet = true;
+    L.wheelSum = 0;
+    setIndex(to);
   }, []);
+
+  const step = useCallback((d: number) => {
+    const L = live.current;
+    if (performance.now() < L.lockedUntil) return;
+    go(L.index + d);
+  }, [go]);
+
+  // Inner panels that are taller than the screen scroll first; the page moves on at their edge.
+  const innerCanScroll = (target: EventTarget | null, dir: number) => {
+    let el = target as HTMLElement | null;
+    while (el && !el.classList?.contains("slide")) {
+      if (el.scrollHeight > el.clientHeight + 2 && getComputedStyle(el).overflowY !== "visible") {
+        if (dir > 0 && el.scrollTop + el.clientHeight < el.scrollHeight - 2) return true;
+        if (dir < 0 && el.scrollTop > 2) return true;
+      }
+      el = el.parentElement;
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    const L = live.current;
+    const onWheel = (e: WheelEvent) => {
+      const dir = Math.sign(e.deltaY);
+      if (!dir || innerCanScroll(e.target, dir)) return;
+      e.preventDefault();
+      const now = performance.now();
+      // a trackpad keeps firing after the flick: wait for a short pause before the next gesture counts
+      if (L.needQuiet) {
+        const quiet = now - L.lastWheel > 160;
+        L.lastWheel = now;
+        if (!quiet || now < L.lockedUntil) return;
+        L.needQuiet = false;
+      }
+      L.lastWheel = now;
+      L.wheelSum += e.deltaY;
+      if (Math.abs(L.wheelSum) >= 24) step(Math.sign(L.wheelSum));
+    };
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      const k = e.key;
+      let d = 0;
+      if (k === "ArrowDown" || k === "PageDown" || (k === " " && !e.shiftKey && tag !== "BUTTON")) d = 1;
+      else if (k === "ArrowUp" || k === "PageUp" || (k === " " && e.shiftKey && tag !== "BUTTON")) d = -1;
+      else if (k === "Home") return go(0), e.preventDefault();
+      else if (k === "End") return go(N - 1), e.preventDefault();
+      if (!d) return;
+      e.preventDefault();
+      step(d);
+    };
+    let ty = 0, tx = 0, tTarget: EventTarget | null = null;
+    const onTouchStart = (e: TouchEvent) => {
+      ty = e.touches[0].clientY;
+      tx = e.touches[0].clientX;
+      tTarget = e.target;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      const dy = ty - e.changedTouches[0].clientY, dx = tx - e.changedTouches[0].clientX;
+      if (Math.abs(dy) < 50 || Math.abs(dy) < Math.abs(dx) * 1.2) return;
+      const dir = Math.sign(dy);
+      if (innerCanScroll(tTarget, dir)) return;
+      step(dir);
+    };
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [go, step]);
 
   const enter = () => {
     if (leaving) return;
@@ -190,28 +260,29 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
     else story.current.diveIn(onEnter);
   };
 
-  const goTo = (i: number) => {
-    const el = scroller.current!;
-    const sec = el.querySelector<HTMLElement>(`[data-ch="${i}"]`);
-    if (sec) el.scrollTo({ top: sec.offsetTop + sec.offsetHeight / 2 - el.clientHeight / 2, behavior: "smooth" });
-  };
+  const slide = (i: number, cls: string, children: ReactNode) => (
+    <section key={i} className={`slide ${cls} ${i === index ? "active" : i < index ? "past" : "future"}`}
+      aria-hidden={i !== index} {...(i !== index ? ({ inert: "" } as Record<string, string>) : {})} aria-label={LABELS[CHAPTERS[i]]}>
+      {children}
+    </section>
+  );
 
-  const labels: Record<(typeof CHAPTERS)[number], string> = {
-    hero: "Start", world: "The world", prey: "Prey", predators: "Predators", refuges: "Refuges", vision: "Senses",
-    methods: "Methods", findings: "Findings", enter: "Simulation",
-  };
+  const caveat = <p className="caveat">Preliminary: one training run per method, each species trained against hand-coded opponents and tested on 4 fresh worlds for 3,000 steps. The full benchmark, 5 seeds across 5 scenarios, is running now.</p>;
+  const worldOn = index >= at("world") && index <= at("vision");
+  const findOn = index >= at("findings-prey") && index <= at("findings-reward");
 
   return (
     <div className={`landing ${leaving ? "leaving" : ""}`}>
       <div className="story-canvas" ref={host} aria-hidden="true" />
       <div className="veil" aria-hidden="true" />
+      <div className="progress" aria-hidden="true"><span style={{ transform: `scaleX(${index / (N - 1)})` }} /></div>
 
-      <header className={`lnav ${chapter > 0 ? "solid" : ""}`}>
-        <button type="button" className="wordmark" onClick={() => goTo(0)}>EcoArena</button>
+      <header className={`lnav ${index > 0 ? "solid" : ""}`}>
+        <button type="button" className="wordmark" onClick={() => go(0)}>EcoArena</button>
         <nav aria-label="Sections">
-          <button type="button" onClick={() => goTo(1)} className={chapter >= 1 && chapter <= 5 ? "on" : ""}>The world</button>
-          <button type="button" onClick={() => goTo(6)} className={chapter === 6 ? "on" : ""}>Methods</button>
-          <button type="button" onClick={() => goTo(7)} className={chapter === 7 ? "on" : ""}>Findings</button>
+          <button type="button" onClick={() => go(at("world"))} className={worldOn ? "on" : ""}>The world</button>
+          <button type="button" onClick={() => go(at("methods"))} className={index === at("methods") ? "on" : ""}>Methods</button>
+          <button type="button" onClick={() => go(at("findings-prey"))} className={findOn ? "on" : ""}>Findings</button>
         </nav>
         <button type="button" className="cta small" onClick={enter}>Open the simulation</button>
       </header>
@@ -219,103 +290,117 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
       <ol className="dots" aria-label="Chapters">
         {CHAPTERS.map((c, i) => (
           <li key={c}>
-            <button type="button" className={chapter === i ? "on" : ""} aria-current={chapter === i ? "step" : undefined} onClick={() => goTo(i)}>
+            <button type="button" className={index === i ? "on" : ""} aria-current={index === i ? "step" : undefined} onClick={() => go(i)}>
               <span className="dot" aria-hidden="true" />
-              <span className="lbl">{labels[c]}</span>
+              <span className="lbl">{LABELS[c]}</span>
             </button>
           </li>
         ))}
       </ol>
 
-      <div className="scroller" ref={scroller}>
-        <section className="ch hero" data-ch={0}>
-          <p className="eyebrow">A benchmark for learning in a living world</p>
-          <h1>EcoArena</h1>
-          <p className="lede">
-            Predators and prey share one world that never resets. We give each species a brain trained by a different
-            machine-learning method and ask a simple question: does the ecosystem survive?
-          </p>
-          <div className="hero-actions">
-            <button type="button" className="cta" onClick={enter}>Open the simulation</button>
-            <button type="button" className="ghost" onClick={() => goTo(1)}>See how it works</button>
-          </div>
-          <p className="scroll-cue" aria-hidden="true"><span />Scroll</p>
-        </section>
-
-        {STORY.map((s, k) => (
-          <section key={s.kicker} className={`ch story ${s.side}`} data-ch={k + 1}>
-            <article className="card glass">
-              <p className="kicker"><span className="num mono">{String(k + 1).padStart(2, "0")}</span>{s.kicker}</p>
-              <h2>{s.title}</h2>
-              <p>{s.body}</p>
-              <ul className="stats">
-                {s.stats.map((x) => <li key={x}>{x}</li>)}
-              </ul>
-            </article>
-          </section>
+      <main className="slides">
+        {slide(0, "hero", (
+          <>
+            <p className="eyebrow">A benchmark for learning in a living world</p>
+            <h1>EcoArena</h1>
+            <p className="lede">
+              Predators and prey share one world that never resets. We give each species a brain trained by a different
+              machine-learning method and ask a simple question: does the ecosystem survive?
+            </p>
+            <div className="hero-actions">
+              <button type="button" className="cta" onClick={enter}>Open the simulation</button>
+              <button type="button" className="ghost" onClick={() => go(1)}>See how it works</button>
+            </div>
+            <p className="scroll-cue" aria-hidden="true"><span />Scroll</p>
+          </>
         ))}
 
-        <section className="ch methods" data-ch={6}>
-          <div className="section-head glass">
-            <p className="kicker">Methods</p>
-            <h2>Five ways to grow a brain</h2>
-            <p>Every method gets the same network (two layers of 64), the same reward (energy gained, minus a penalty for dying) and the same budget of 150,000 world-steps. Only the way it learns differs.</p>
-          </div>
-          <div className="method-grid">
-            {METHODS.map((m) => (
-              <article key={m.name} className="method glass">
-                <p className="family">{m.family}</p>
-                <h3>{m.name}</h3>
-                <p>{m.body}</p>
-                <p className="tag">{m.tag}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+        {STORY.map((s, k) => slide(k + 1, `story ${s.side}`, (
+          <article className="card glass">
+            <p className="kicker"><span className="num mono">{String(k + 1).padStart(2, "0")}</span>{s.kicker}</p>
+            <h2>{s.title}</h2>
+            <p>{s.body}</p>
+            <ul className="stats">
+              {s.stats.map((x) => <li key={x}>{x}</li>)}
+            </ul>
+          </article>
+        )))}
 
-        <section className={`ch findings ${chapter === 7 ? "active" : ""}`} data-ch={7}>
-          <div className="section-head glass">
-            <p className="kicker">Findings so far</p>
-            <h2>Every method learns to hunt. Only reinforcement learning learns to survive as prey.</h2>
+        {slide(at("methods"), "methods", (
+          <div className="slide-body">
+            <div className="section-head glass">
+              <p className="kicker">Methods</p>
+              <h2>Five ways to grow a brain</h2>
+              <p>Every method gets the same network (two layers of 64), the same reward (energy gained, minus a penalty for dying) and the same budget of 150,000 world-steps. Only the way it learns differs.</p>
+            </div>
+            <div className="method-grid">
+              {METHODS.map((m) => (
+                <article key={m.name} className="method glass">
+                  <p className="family">{m.family}</p>
+                  <h3>{m.name}</h3>
+                  <p>{m.body}</p>
+                  <p className="tag">{m.tag}</p>
+                </article>
+              ))}
+            </div>
           </div>
-          <div className="finding-grid">
+        ))}
+
+        {slide(at("findings-prey"), "finding-slide", (
+          <div className="slide-body narrow">
+            <p className="kicker on-scene">Findings so far · 1 of 3</p>
+            <h2 className="scene-title">Only reinforcement learning learns to survive as prey</h2>
             <figure className="finding glass">
               <figcaption>
-                <h3>Prey: how often they get caught</h3>
+                <h3>How often prey get caught</h3>
                 <p>Catches per prey, per predator, per step (×10⁶). Lower is better. PPO prey learned to stay out of reach; every evolutionary method ended close to, or worse than, the hand-coded rules.</p>
               </figcaption>
               <BarChart id="prey" bars={PREY_ATTACK} max={16} unit="catches per million encounters" />
               <p className="foot">Random prey look good here only because they barely meet predators: they starve, and none of their test worlds kept both species.</p>
             </figure>
+            {caveat}
+          </div>
+        ))}
+
+        {slide(at("findings-predators"), "finding-slide right", (
+          <div className="slide-body narrow">
+            <p className="kicker on-scene">Findings so far · 2 of 3</p>
+            <h2 className="scene-title">Every method learns to hunt</h2>
             <figure className="finding glass">
               <figcaption>
-                <h3>Predators: how often they eat</h3>
-                <p>Catches per 1,000 predator-steps. Higher is better. Every learned predator beats the hand-coded hunter by 25 to 40 percent.</p>
+                <h3>How often predators eat</h3>
+                <p>Catches per 1,000 predator-steps. Higher is better. Every learned predator beats the hand-coded hunter by 25 to 40 percent, and they ambush at the refuge edges: prey have to leave the rocks to eat, and that is where they are caught.</p>
               </figcaption>
               <BarChart id="pred" bars={PRED_CATCH} max={10} unit="catches per 1,000 steps" decimals={2} />
             </figure>
+            {caveat}
+          </div>
+        ))}
+
+        {slide(at("findings-reward"), "finding-slide", (
+          <div className="slide-body narrow">
+            <p className="kicker on-scene">Findings so far · 3 of 3</p>
+            <h2 className="scene-title">One reward term flipped the result</h2>
             <figure className="finding glass">
               <figcaption>
-                <h3>One reward term flipped the result</h3>
-                <p>PPO first earned a +1 bonus for each birth. Removing it, so every method optimised exactly the same thing, made PPO the best prey and put its predators level with evolution.</p>
+                <h3>PPO with and without a birth bonus</h3>
+                <p>PPO first earned a +1 bonus for each birth. Removing it, so every method optimised exactly the same thing, made PPO the best prey and put its predators level with evolution. A small reward detail decided which family of methods looked better.</p>
               </figcaption>
               <Dumbbell />
             </figure>
-            <article className="finding glass insight">
-              <h3>Predators wait at the refuge edges</h3>
-              <p>Mapping where catches happen shows hot rings around the rocks: prey have to leave the refuges to eat, and that is where they are caught. Turn on the Catches map in the simulation to watch it form.</p>
-            </article>
+            {caveat}
           </div>
-          <p className="caveat glass">Preliminary: one training run per method, each species trained against hand-coded opponents and tested on 4 fresh worlds for 3,000 steps. The full benchmark, 5 seeds across 5 scenarios, is running now.</p>
-        </section>
+        ))}
 
-        <section className="ch enter" data-ch={8}>
-          <h2>See it for yourself</h2>
-          <p>Pick a brain for each species, change the scenario, follow a single animal, or let the camera tour the hunts.</p>
-          <button type="button" className="cta big" onClick={enter}>Enter the arena</button>
-          <p className="fine">Runs entirely in your browser. The same rules as the Python benchmark, checked against it step by step.</p>
-        </section>
-      </div>
+        {slide(at("enter"), "enter", (
+          <>
+            <h2>See it for yourself</h2>
+            <p>Pick a brain for each species, change the scenario, follow a single animal, or let the camera tour the hunts. Turn on the Catches map to watch the refuge-edge ambushes form.</p>
+            <button type="button" className="cta big" onClick={enter}>Enter the arena</button>
+            <p className="fine">Runs entirely in your browser. The same rules as the Python benchmark, checked against it step by step.</p>
+          </>
+        ))}
+      </main>
     </div>
   );
 }

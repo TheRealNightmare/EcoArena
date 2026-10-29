@@ -11,7 +11,9 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { animateMaterial, predatorGeometry, preyGeometry } from "../view/creatures";
 import { makeHeight, mulberry, Particles, skyAt } from "../view/Diorama";
 
-export const CHAPTERS = ["hero", "world", "prey", "predators", "refuges", "vision", "methods", "findings", "enter"] as const;
+export const CHAPTERS = ["hero", "world", "prey", "predators", "refuges", "vision", "methods",
+  "findings-prey", "findings-predators", "findings-reward", "enter"] as const;
+const CH = (name: (typeof CHAPTERS)[number]) => CHAPTERS.indexOf(name);
 
 const S = 80; // island size (world units)
 const G = 64; // grass cells per side
@@ -31,7 +33,9 @@ const SHOTS: { pos: V3; target: V3; elev: number }[] = [
   { pos: [36, 13, 4], target: [18, 0.5, -12], elev: 0.35 }, // refuges: the rocks the hare runs to
   { pos: [-2, 22, 16], target: [-11, 0.5, 4], elev: 0.5 }, // vision: from above one hare
   { pos: [0, 118, 34], target: [0, 0, 0], elev: 0.7 }, // methods: map view
-  { pos: [-78, 34, -52], target: [0, -4, 0], elev: 0.04 }, // findings: dusk from the far side
+  { pos: [-78, 34, -52], target: [0, -4, 0], elev: 0.07 }, // findings 1: golden dusk from the far side
+  { pos: [-6, 15, 46], target: [17, 0, 12], elev: 0.03 }, // findings 2: the wolves' side of the island
+  { pos: [72, 42, -58], target: [0, -4, 0], elev: -0.01 }, // findings 3: sunset from the other corner
   { pos: [40, 22, 52], target: [0, 0, 0], elev: -0.05 }, // enter: twilight, fireflies
 ];
 
@@ -449,8 +453,20 @@ export class StoryScene {
   // ---------------------------------------------------------------------------------------- public
   /** Chapter position: 0 = hero, 1 = first chapter, ... fractional between chapters. */
   setProgress(c: number) {
+    this.glide = null;
     this.progress = Math.max(0, Math.min(SHOTS.length - 1, c));
   }
+
+  /** Fly to chapter i over ms milliseconds (ease in-out), passing through the shots in between. */
+  goTo(i: number, ms: number) {
+    const to = Math.max(0, Math.min(SHOTS.length - 1, i));
+    if (ms <= 0) {
+      this.setProgress(to);
+      return;
+    }
+    this.glide = { from: this.progress, to, t0: performance.now(), ms };
+  }
+  private glide: { from: number; to: number; t0: number; ms: number } | null = null;
 
   /** Swoop down into the island, then call done (the page switches to the simulation). */
   diveIn(done: () => void) {
@@ -699,9 +715,9 @@ export class StoryScene {
 
   private updateOverlays(t: number) {
     // refuge outline glows in the refuges chapter
-    (this.refugeRing.material as THREE.MeshBasicMaterial).opacity = this.weight(4) * (0.55 + 0.25 * Math.sin(t * 3));
+    (this.refugeRing.material as THREE.MeshBasicMaterial).opacity = this.weight(CH("refuges")) * (0.55 + 0.25 * Math.sin(t * 3));
     // vision fan around the focus hare in the vision chapter
-    const w = this.weight(5);
+    const w = this.weight(CH("vision"));
     const mat = this.fan.material as THREE.MeshBasicMaterial;
     mat.opacity = w * 0.6;
     this.fan.visible = w > 0.01;
@@ -753,12 +769,20 @@ export class StoryScene {
   }
 
   private updateCamera(dt: number, t: number) {
-    const c = this.progress, i = Math.floor(c), f = smooth(c - i);
+    if (this.glide) {
+      const g = this.glide;
+      const u = Math.min(1, (performance.now() - g.t0) / g.ms);
+      const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+      this.progress = g.from + (g.to - g.from) * e;
+      if (u >= 1) this.glide = null;
+    }
+    // a glide already eases in and out, so between shots it moves linearly (no stop at each shot on long jumps)
+    const c = this.progress, i = Math.floor(c), f = this.glide ? c - i : smooth(c - i);
     const a = SHOTS[i], b = SHOTS[Math.min(SHOTS.length - 1, i + 1)];
     const pos = new THREE.Vector3(...a.pos).lerp(new THREE.Vector3(...b.pos), f);
     const target = new THREE.Vector3(...a.target).lerp(new THREE.Vector3(...b.target), f);
     // slow drift in the hero and at the end so the island always feels alive
-    const drift = Math.max(this.weight(0), this.weight(8), this.weight(6) * 0.4);
+    const drift = Math.max(this.weight(CH("hero")), this.weight(CH("enter")), this.weight(CH("methods")) * 0.4);
     if (drift > 0) {
       const ang = Math.sin(t * 0.07) * 0.35 * drift;
       const rel = pos.clone().sub(target);
@@ -766,7 +790,7 @@ export class StoryScene {
       pos.copy(target).add(rel);
     }
     const elev = a.elev + (b.elev - a.elev) * f;
-    const k = 1 - Math.exp(-dt * 3.2);
+    const k = 1 - Math.exp(-dt * (this.glide ? 10 : 4));
     if (this.dive) {
       const d = this.dive;
       d.t += dt / 1.6;
