@@ -1,0 +1,61 @@
+{
+  "method": "ga",
+  "learn": [
+    "prey",
+    "predator"
+  ],
+  "opponent": "heuristic",
+  "base": "s1_large.json",
+  "eval_worlds": 2,
+  "eval_steps": 1000,
+  "results": {
+    "ga": {
+      "worlds_survived": 2,
+      "mean_pop": [
+        662.8,
+        127.8
+      ],
+      "prey_reward_per_1k_agent_steps": -1.108,
+      "pred_reward_per_1k_agent_steps": -1.055,
+      "prey_mean_lifespan": 643.3,
+      "pred_mean_lifespan": 1039.0,
+      "prey_share_of_deaths_eaten": 0.809,
+      "prey_births_per_1k_agent_steps": 1.39,
+      "pred_births_per_1k_agent_steps": 0.76,
+      "pred_catches_per_1k_agent_steps": 6.53,
+      "attack_rate_e6": 9.66
+    },
+    "heuristic": {
+      "worlds_survived": 2,
+      "mean_pop": [
+        629.8,
+        215.5
+      ],
+      "prey_reward_per_1k_agent_steps": -1.736,
+      "pred_reward_per_1k_agent_steps": -0.012,
+      "prey_mean_lifespan": 385.0,
+      "pred_mean_lifespan": 2243.5,
+      "prey_share_of_deaths_eaten": 0.918,
+      "prey_births_per_1k_agent_steps": 2.0,
+      "pred_births_per_1k_agent_steps": 1.14,
+      "pred_catches_per_1k_agent_steps": 6.97,
+      "attack_rate_e6": 12.171
+    },
+    "random": {
+      "worlds_survived": 2,
+      "mean_pop": [
+        904.5,
+        166.5
+      ],
+      "prey_reward_per_1k_agent_steps": -1.086,
+      "pred_reward_per_1k_agent_steps": -0.396,
+      "prey_mean_lifespan": 655.2,
+      "pred_mean_lifespan": 1632.2,
+      "prey_share_of_deaths_eaten": 0.799,
+      "prey_births_per_1k_agent_steps": 1.45,
+      "pred_births_per_1k_agent_steps": 0.97,
+      "pred_catches_per_1k_agent_steps": 6.63,
+      "attack_rate_e6": 7.482
+    }
+  }
+}
