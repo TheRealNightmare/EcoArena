@@ -186,7 +186,6 @@
   font: 700 clamp(64px, 13vw, 196px)/0.86 var(--font-display);
   letter-spacing: -0.045em;
   text-shadow: 0 2px 40px rgba(0, 0, 0, 0.35);
-  animation: hero-in 1.1s cubic-bezier(.2, .8, .2, 1) both;
 }
 .hero .lede {
   margin: 0;
@@ -196,10 +195,15 @@
   color: var(--on-scene);
   text-shadow: 0 1px 14px rgba(0, 0, 0, 0.5);
   text-wrap: pretty;
-  animation: hero-in 1.1s 0.15s cubic-bezier(.2, .8, .2, 1) both;
 }
-.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; animation: hero-in 1.1s 0.3s cubic-bezier(.2, .8, .2, 1) both; }
-@keyframes hero-in { from { translate: 0 24px; } to { translate: 0 0; } }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+/* the hero rises in once the loading screen has handed over */
+.landing.revealed .hero .eyebrow { animation: hero-in 1s 0.35s cubic-bezier(.2, .8, .2, 1) both; }
+.landing.revealed .hero h1 { animation: hero-in 1.1s 0.45s cubic-bezier(.2, .8, .2, 1) both; }
+.landing.revealed .hero .lede { animation: hero-in 1.1s 0.6s cubic-bezier(.2, .8, .2, 1) both; }
+.landing.revealed .hero-actions { animation: hero-in 1.1s 0.75s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes hero-in { from { translate: 0 28px; opacity: 0; } to { translate: 0 0; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .landing.revealed .hero * { animation: none !important; } }
 .scroll-cue {
   position: absolute;
   bottom: 28px;

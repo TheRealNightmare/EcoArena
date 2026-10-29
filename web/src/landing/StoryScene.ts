@@ -62,23 +62,23 @@ export class StoryScene {
   private groundTex = new THREE.DataTexture(this.groundData, G, G, THREE.RGBAFormat);
   private herd: Animal[] = [];
   private wolves: Animal[] = [];
-  private chaseHare: Animal;
-  private chaseWolf: Animal;
-  private preyMesh: THREE.InstancedMesh;
-  private predMesh: THREE.InstancedMesh;
-  private preyAnim: THREE.InstancedBufferAttribute;
-  private predAnim: THREE.InstancedBufferAttribute;
-  private particles: Particles;
-  private ring: THREE.Mesh;
+  private chaseHare!: Animal;
+  private chaseWolf!: Animal;
+  private preyMesh!: THREE.InstancedMesh;
+  private predMesh!: THREE.InstancedMesh;
+  private preyAnim!: THREE.InstancedBufferAttribute;
+  private predAnim!: THREE.InstancedBufferAttribute;
+  private particles!: Particles;
+  private ring!: THREE.Mesh;
   private ringT = 0;
-  private fan: THREE.Mesh;
+  private fan!: THREE.Mesh;
   private skyMat: THREE.ShaderMaterial;
   private sun: THREE.DirectionalLight;
   private hemi: THREE.HemisphereLight;
   private stars: THREE.Points;
-  private fireflies: THREE.Points;
+  private fireflies!: THREE.Points;
   private clouds = new THREE.Group();
-  private refugeRing: THREE.Mesh;
+  private refugeRing!: THREE.Mesh;
   private progress = 0;
   private shown = { pos: new THREE.Vector3(...SHOTS[0].pos), target: new THREE.Vector3(...SHOTS[0].target), elev: SHOTS[0].elev };
   private clock = new THREE.Clock();
@@ -86,7 +86,7 @@ export class StoryScene {
   private disposed = false;
   private loopIndex = -1;
   private lastGrassTick = 0;
-  private dive: { t: number; from: THREE.Vector3; fromT: THREE.Vector3; done: () => void } | null = null;
+  private dive: { t0: number; from: THREE.Vector3; fromT: THREE.Vector3; done: () => void } | null = null;
   private rnd = mulberry(2026);
   private births: { a: Animal; t: number }[] = [];
   private nextBirth = 3;
@@ -136,11 +136,57 @@ export class StoryScene {
     this.scene.add(this.hemi, this.sun, this.sun.target);
     this.scene.fog = new THREE.Fog(0xd7ecf7, 250, 1100);
 
+    if (quality === "high") {
+      const c = new EffectComposer(this.renderer);
+      c.addPass(new RenderPass(this.scene, this.camera));
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.45, 0.6, 0.86);
+      c.addPass(this.bloom);
+      c.addPass(new OutputPass());
+      this.composer = c;
+    }
+    new ResizeObserver(() => this.resize()).observe(host);
+    this.resize();
+    this.camera.position.copy(this.shown.pos);
+    this.camera.lookAt(this.shown.target);
+  }
+
+  /** Steps reported while the scene is built, for the loading screen. */
+  static readonly STEPS = ["Shaping the island", "Growing the grass", "Placing refuges and trees", "Waking the animals", "Lighting the sky"];
+
+  /** Build the scene in stages, yielding between them so the loading screen can animate and show progress. */
+  async build(onStep: (done: number) => void) {
+    const tick = () => new Promise<void>((r) => setTimeout(r, 0));
     this.buildIsland();
+    onStep(1);
+    await tick();
     this.buildGrass();
+    onStep(2);
+    await tick();
     this.buildRefuges();
     this.buildClouds();
+    onStep(3);
+    await tick();
+    this.buildActors();
+    onStep(4);
+    await tick();
+    // compile every shader now, so the first visible frames don't stutter
+    this.updateCamera(0, 0);
+    await this.renderer.compileAsync(this.scene, this.camera);
+    if (this.composer) this.composer.render();
+    else this.renderer.render(this.scene, this.camera);
+    onStep(5);
+    this.loop();
+  }
 
+  /** Start far out and fly in to the hero shot (the end of the loading screen's push-through). */
+  intro() {
+    const s = SHOTS[0];
+    const t = new THREE.Vector3(...s.target);
+    this.shown.pos.copy(new THREE.Vector3(...s.pos).sub(t).multiplyScalar(2.8).add(t).add(new THREE.Vector3(0, 40, 0)));
+    this.camera.position.copy(this.shown.pos);
+  }
+
+  private buildActors() {
     // animals
     const preyMat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 });
     const predMat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.75 });
@@ -214,19 +260,6 @@ export class StoryScene {
     this.fireflies.frustumCulled = false;
     this.scene.add(this.fireflies);
 
-    if (quality === "high") {
-      const c = new EffectComposer(this.renderer);
-      c.addPass(new RenderPass(this.scene, this.camera));
-      this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.45, 0.6, 0.86);
-      c.addPass(this.bloom);
-      c.addPass(new OutputPass());
-      this.composer = c;
-    }
-    new ResizeObserver(() => this.resize()).observe(host);
-    this.resize();
-    this.camera.position.copy(this.shown.pos);
-    this.camera.lookAt(this.shown.target);
-    this.loop();
   }
 
   // ---------------------------------------------------------------------------------------- build
@@ -470,7 +503,7 @@ export class StoryScene {
 
   /** Swoop down into the island, then call done (the page switches to the simulation). */
   diveIn(done: () => void) {
-    this.dive = { t: 0, from: this.camera.position.clone(), fromT: this.shown.target.clone(), done };
+    this.dive = { t0: performance.now(), from: this.camera.position.clone(), fromT: this.shown.target.clone(), done };
   }
 
   resize() {
@@ -484,7 +517,7 @@ export class StoryScene {
     this.camera.fov = w / h < 0.8 ? 58 : 40;
     this.camera.updateProjectionMatrix();
     this.composer?.setSize(w, h);
-    (this.particles.points.material as THREE.ShaderMaterial).uniforms.uScale.value = h * 0.9;
+    if (this.particles) (this.particles.points.material as THREE.ShaderMaterial).uniforms.uScale.value = h * 0.9;
   }
 
   dispose() {
@@ -793,13 +826,13 @@ export class StoryScene {
     const k = 1 - Math.exp(-dt * (this.glide ? 10 : 4));
     if (this.dive) {
       const d = this.dive;
-      d.t += dt / 1.6;
-      const e = d.t >= 1 ? 1 : d.t * d.t * (3 - 2 * d.t);
+      const u = Math.min(1, (performance.now() - d.t0) / 1600);
+      const e = u * u * (3 - 2 * u);
       const goal = new THREE.Vector3(-10, 2.2, 6), goalT = new THREE.Vector3(-14, 0.6, 2);
       this.camera.position.lerpVectors(d.from, goal, e);
       this.shown.target.lerpVectors(d.fromT, goalT, e);
       this.camera.lookAt(this.shown.target);
-      if (d.t >= 1) {
+      if (u >= 1) {
         const done = d.done;
         this.dive = null;
         done();

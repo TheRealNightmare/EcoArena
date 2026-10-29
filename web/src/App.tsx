@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BRAIN_INDEX } from "./brainIndex";
+import Loader from "./loader/Loader";
 import type { BrainName, Frame, Selected, SimSettings, ToWorker } from "./protocol";
 import { drawChart } from "./view/Chart";
 import { Diorama, type CameraMode, type Overlay, type Quality, type SkyMode } from "./view/Diorama";
@@ -136,6 +137,12 @@ export default function App() {
   const [sheet, setSheet] = useState<"none" | "brains" | "chart" | "world">("none");
   const [worldOpen, setWorldOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // loading screen: steps tick off as the worker, world, shaders and first frame really finish
+  const [loading, setLoading] = useState(true);
+  const [loadDone, setLoadDone] = useState(0);
+  const [animalsLabel, setAnimalsLabel] = useState("Growing grass and waking the animals");
+  const loadingRef = useRef(true);
+  loadingRef.current = loading;
   const [clock, setClock] = useState("");
 
   const worker = useRef<Worker | null>(null);
@@ -186,8 +193,15 @@ export default function App() {
     spark(sparkPred.current, h.pred, colors.predator);
   }, []);
 
-  // 3D view + worker, created once
+  // 3D view + worker, created once (after the loading screen has painted, so it animates from the start)
+  const [canBuild, setCanBuild] = useState(false);
   useEffect(() => {
+    let a = 0, b = 0;
+    a = requestAnimationFrame(() => (b = requestAnimationFrame(() => setTimeout(() => setCanBuild(true), 60))));
+    return () => { cancelAnimationFrame(a); cancelAnimationFrame(b); };
+  }, []);
+  useEffect(() => {
+    if (!canBuild) return;
     const v = new Diorama(stage.current!, (x, y) => send({ type: "select", x, y }), quality);
     v.onSlowDevice = () => {
       setQuality("low");
@@ -198,9 +212,10 @@ export default function App() {
     view.current = v;
     const w = new SimWorker();
     worker.current = w;
+    setLoadDone(1);
     let lastChart = 0;
-    w.onmessage = (e: MessageEvent<Frame>) => {
-      const f = e.data;
+    let boot: "waiting" | "building" | "done" = "waiting";
+    const handle = (f: Frame) => {
       const h = hist.current;
       if (f.reset) {
         h.prey = [];
@@ -231,20 +246,41 @@ export default function App() {
         redrawCharts();
       }
     };
+    w.onmessage = (e: MessageEvent<Frame>) => {
+      const f = e.data;
+      if (boot === "done") return handle(f);
+      if (boot === "building") return; // the world is being built from the first frame
+      // first frame: the worker has built the world and loaded the brains
+      boot = "building";
+      setLoadDone(2);
+      setAnimalsLabel(`Growing grass, waking ${f.prey.slot.length.toLocaleString()} prey and ${f.pred.slot.length.toLocaleString()} predators`);
+      setTimeout(() => {
+        handle(f); // builds terrain, grass, refuges and animals
+        setLoadDone(3);
+        v.compile().then(() => {
+          setLoadDone(4);
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            boot = "done";
+            setLoadDone(5);
+          }));
+        });
+      }, 40);
+    };
     return () => {
       w.terminate();
       v.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [send, redrawCharts]);
+  }, [canBuild, send, redrawCharts]);
 
   useEffect(() => {
-    send({ type: "init", settings, running: live.current.running, speed: live.current.speed });
+    if (!canBuild) return;
+    send({ type: "init", settings, running: live.current.running && !loadingRef.current, speed: live.current.speed });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.base, settings.scenario, settings.seed, send]);
+  }, [canBuild, settings.base, settings.scenario, settings.seed, send]);
   useEffect(() => send({ type: "brain", species: "prey", brain: settings.prey }), [settings.prey, send]);
   useEffect(() => send({ type: "brain", species: "predator", brain: settings.predator }), [settings.predator, send]);
-  useEffect(() => send({ type: "run", running }), [running, send]);
+  useEffect(() => send({ type: "run", running: running && !loading }), [running, loading, send]);
   useEffect(() => send({ type: "speed", stepsPerSec: speed }), [speed, send]);
   useEffect(() => redrawCharts(), [chartMode, open, sheet, redrawCharts]);
   useEffect(() => {
@@ -433,6 +469,11 @@ export default function App() {
 
   return (
     <div className="app3d" ref={appRef}>
+      {loading ? (
+        <Loader title="Entering the arena"
+          steps={["Starting the simulation", "Building the world and loading the brains", animalsLabel, "Compiling shaders", "Rendering the first frame"]}
+          done={loadDone} minMs={1800} onReveal={() => view.current?.intro()} onFinished={() => setLoading(false)} />
+      ) : null}
       <div className="scene" ref={stage} />
 
       <header className="glass brand" ref={brandRef}>

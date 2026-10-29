@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import Loader from "../loader/Loader";
 import { CHAPTERS, StoryScene } from "./StoryScene";
 import "./landing.css";
 
@@ -147,7 +148,10 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
   const story = useRef<StoryScene | null>(null);
   const [index, setIndex] = useState(0);
   const [leaving, setLeaving] = useState(false);
-  const live = useRef({ index: 0, lockedUntil: 0, needQuiet: false, lastWheel: 0, wheelSum: 0 });
+  const [loaded, setLoaded] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const live = useRef({ index: 0, lockedUntil: 0, needQuiet: false, lastWheel: 0, wheelSum: 0, loading: true });
+  live.current.loading = loading;
 
   useEffect(() => {
     let q: "high" | "low" = window.innerWidth < 700 ? "low" : "high";
@@ -159,6 +163,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
     }
     const s = new StoryScene(host.current!, q);
     story.current = s;
+    s.build(setLoaded);
     return () => s.dispose();
   }, []);
 
@@ -179,7 +184,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
 
   const step = useCallback((d: number) => {
     const L = live.current;
-    if (performance.now() < L.lockedUntil) return;
+    if (L.loading || performance.now() < L.lockedUntil) return;
     go(L.index + d);
   }, [go]);
 
@@ -272,7 +277,11 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
   const findOn = index >= at("findings-prey") && index <= at("findings-reward");
 
   return (
-    <div className={`landing ${leaving ? "leaving" : ""}`}>
+    <div className={`landing ${leaving ? "leaving" : ""} ${loading ? "" : "revealed"}`}>
+      {loading ? (
+        <Loader title="EcoArena" steps={StoryScene.STEPS} done={loaded} minMs={2000}
+          onReveal={() => story.current?.intro()} onFinished={() => setLoading(false)} />
+      ) : null}
       <div className="story-canvas" ref={host} aria-hidden="true" />
       <div className="veil" aria-hidden="true" />
       <div className="progress" aria-hidden="true"><span style={{ transform: `scaleX(${index / (N - 1)})` }} /></div>

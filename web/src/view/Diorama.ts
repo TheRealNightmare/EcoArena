@@ -929,6 +929,23 @@ export class Diorama {
     this.skyMode = mode;
   }
 
+  /** Compile every shader up front (after the first frame built the world) so the reveal doesn't stutter. */
+  async compile() {
+    if (this.prey) this.drawTrack(this.prey, 1, 0, performance.now() / 1000, 0);
+    if (this.pred) this.drawTrack(this.pred, 1, 0, performance.now() / 1000, 1);
+    await this.renderer.compileAsync(this.scene, this.camera);
+    if (this.composer) this.composer.render();
+    else this.renderer.render(this.scene, this.camera);
+  }
+
+  /** The loading screen's push-through ends here: start high above the island and glide down to the view. */
+  intro() {
+    const L = this.L || 200;
+    const to = this.camera.position.clone(), tTo = this.controls.target.clone();
+    this.camera.position.set(to.x * 0.4, L * 2.4, to.z * 0.4 + L * 0.2);
+    this.camTween = { from: this.camera.position.clone(), to, tFrom: tTo.clone(), tTo, t: 0, dur: 2.2 };
+  }
+
   setOverlay(o: Overlay) {
     this.overlay = o;
     if (this.ovMesh) this.ovMesh.visible = o !== "none";

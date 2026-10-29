@@ -1,0 +1,82 @@
+/* Loading screen: one deliberate dusk look (the island floats in an evening sky), the same in light and dark
+   themes. A ring of progress circles the island; the real setup steps tick off beside it. */
+.loader {
+  --l-bg-top: #0c1424;
+  --l-bg-mid: #1c2740;
+  --l-bg-low: #3d2f3a;
+  --l-fg: #f4efe4;
+  --l-dim: rgba(244, 239, 228, 0.55);
+  --l-gold: #f4c152;
+  --l-track: rgba(255, 255, 255, 0.1);
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(20px, 5vw, 72px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  color: var(--l-fg);
+  background: var(--l-bg-top);
+  font-family: var(--font-body);
+  transition: opacity 0.75s ease, transform 0.95s cubic-bezier(.6, 0, .8, .4);
+}
+.loader-sky {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 50% 62%, rgba(244, 193, 82, 0.18), transparent 70%),
+    linear-gradient(180deg, var(--l-bg-top) 0%, var(--l-bg-mid) 55%, var(--l-bg-low) 100%);
+}
+.loader-stage { position: relative; width: min(54vh, 440px, 82vw); aspect-ratio: 1; flex: none; }
+.loader-island { position: absolute; inset: 0; }
+.loader-island canvas { display: block; }
+.loader-ring { position: absolute; inset: -4%; width: 108%; height: 108%; transform: rotate(-90deg); pointer-events: none; }
+.loader-ring circle { fill: none; stroke-width: 1.2; }
+.loader-ring .track { stroke: var(--l-track); }
+.loader-ring .fill { stroke: var(--l-gold); stroke-linecap: round; filter: drop-shadow(0 0 3px rgba(244, 193, 82, 0.8)); }
+
+.loader-text { position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0; max-width: 340px; }
+.loader-title {
+  margin: 0;
+  font: 700 clamp(34px, 4.6vw, 56px)/0.95 var(--font-display);
+  letter-spacing: -0.035em;
+}
+.loader-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.loader-steps li { display: flex; align-items: center; gap: 10px; font-size: 14.5px; transition: color 0.3s, opacity 0.3s; }
+.loader-steps li.next { color: var(--l-dim); opacity: 0.6; }
+.loader-steps li.now { color: var(--l-fg); }
+.loader-steps li.done { color: var(--l-dim); }
+.loader-steps .mark { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid currentColor; flex: none; position: relative; }
+.loader-steps li.now .mark { border-color: var(--l-gold); border-top-color: transparent; animation: spin 0.9s linear infinite; }
+.loader-steps li.done .mark { border-color: var(--l-gold); background: var(--l-gold); }
+.loader-steps li.done .mark::after {
+  content: "";
+  position: absolute;
+  left: 3.5px;
+  top: 1px;
+  width: 4px;
+  height: 7px;
+  border: solid #1b1405;
+  border-width: 0 1.6px 1.6px 0;
+  transform: rotate(45deg);
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-pct { margin: 2px 0 0; font-size: 13px; color: var(--l-gold); letter-spacing: 0.08em; }
+.loader-hint { margin: 0; font-size: 12px; color: var(--l-dim); }
+
+/* the hand-over: the camera pushes into the island while the whole screen swells and dissolves */
+.loader.exiting { opacity: 0; transform: scale(1.35); pointer-events: none; }
+.loader.exiting .loader-text { opacity: 0; transition: opacity 0.3s; }
+
+@media (max-width: 760px) {
+  .loader { flex-direction: column; justify-content: center; gap: 22px; }
+  .loader-stage { width: min(72vw, 46vh); }
+  .loader-text { align-items: center; text-align: center; }
+  .loader-steps li { justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loader, .loader.exiting { transform: none; transition: opacity 0.3s; }
+  .loader-steps li.now .mark { animation: none; }
+}
