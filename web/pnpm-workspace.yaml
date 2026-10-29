@@ -1,0 +1,5 @@
+# Only install package versions that have been public for at least 7 days (supply-chain safety; pnpm 11+
+# enforces a minimum release age by default and rejects lockfiles that break it).
+minimumReleaseAge: 10080
+onlyBuiltDependencies:
+  - esbuild
