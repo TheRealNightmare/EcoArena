@@ -70,9 +70,14 @@ def main(method: str = "ga") -> None:
     p.add_argument("--lr", type=float, default=0.01, help="ES only")
     p.add_argument("--gen-steps", type=int, default=128)
     p.add_argument("--world-steps", type=float, default=150_000)
+    p.add_argument("--episodic", action="store_true", help="study 2: fresh worlds every generation, no resets")
+    p.add_argument("--assign", default="mixed", choices=["mixed", "group"], help="study 2: group = one genome per world")
     p.add_argument("--elite-frac", type=float, default=0.1)
     p.add_argument("--elite-score", default="last", choices=["last", "mean"])
     p.add_argument("--birth-bonus", type=float, default=0.0, help="0 = attributable fitness (see ga.py)")
+    p.add_argument("--eco-lambda", type=float, default=0.0, help="study 2: shared ecosystem-health reward")
+    p.add_argument("--prey-every", type=int, default=1, help="study 2: update prey every k-th step; 0 = frozen")
+    p.add_argument("--pred-every", type=int, default=1, help="study 2: update predators every k-th step; 0 = frozen")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--eval-worlds", type=int, default=4)
@@ -87,7 +92,9 @@ def main(method: str = "ga") -> None:
     wcfg = load_config("S1", base=a.base)
     common = {"learn": tuple(learn), "opponent": a.opponent, "n_worlds": a.worlds, "population": a.population,
               "sigma": a.sigma, "gen_steps": a.gen_steps, "birth_bonus": a.birth_bonus,
-              "world_step_budget": int(a.world_steps), "seed": a.seed, "device": a.device}
+              "world_step_budget": int(a.world_steps), "seed": a.seed, "device": a.device,
+              "episodic": a.episodic, "assign": a.assign, "eco_lambda": a.eco_lambda,
+              "prey_every": a.prey_every, "pred_every": a.pred_every}
     if a.method == "ga":
         cfg, Trainer = GAConfig(**common, elite_frac=a.elite_frac, elite_score=a.elite_score), GATrainer
     elif a.method == "es":
@@ -100,6 +107,10 @@ def main(method: str = "ga") -> None:
     history = trainer.train()
     plot_curves(history, a.learn, out / "curves.png")
 
+    if a.eval_worlds <= 0:
+        (out / "eval.json").write_text(json.dumps({"method": a.method, "learn": a.learn, "results": {}}))
+        print(f"wrote {out} (no quick evaluation)")
+        return
     print("evaluating champions...", flush=True)
     ev_seed = 10_000 + a.seed
     champs = {sp: load_policy(out / f"{n}.pt", a.device) for n, sp in NAMES.items() if sp in learn}

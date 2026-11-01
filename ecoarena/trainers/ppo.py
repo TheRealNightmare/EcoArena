@@ -129,6 +129,10 @@ class PPOConfig:
     # Hybrid (M5) starts the actor from an evolved genome. A fresh critic gives junk advantages at first, so the
     # first `critic_warmup` iterations train the value function only and leave the inherited policy untouched.
     critic_warmup: int = 0
+    # ---- study 2 options (defaults reproduce the benchmark) ----
+    eco_lambda: float = 0.0  # shared ecosystem-health reward, see common.step_rewards
+    prey_every: int = 1  # learning-speed asymmetry: update this species every k-th iteration; 0 = never
+    pred_every: int = 1
     seed: int = 0
     device: str = "cpu"
     log_every: int = 5
@@ -222,7 +226,8 @@ class PPOTrainer:
                 stats["births"][sp] += int(info["births"][sp].sum())
                 stats["deaths"][sp] += int(info["deaths"][sp].sum())
             for sp in cfg.learn:
-                buf[sp]["rew"][t] = step_rewards(w, info, sp, e0[sp], alive0[sp], cfg.birth_bonus, cfg.death_penalty)
+                buf[sp]["rew"][t] = step_rewards(w, info, sp, e0[sp], alive0[sp], cfg.birth_bonus, cfg.death_penalty,
+                                                 cfg.eco_lambda)
                 buf[sp]["done"][t] = info["died"][sp].float()
             if self._maybe_reset():
                 stats["resets"] += 1
@@ -333,7 +338,9 @@ class PPOTrainer:
             for sp in cfg.learn:
                 if sp not in self.frozen:
                     agent_steps[SPECIES_NAME[sp]] += int(buf[sp]["valid"].sum())
-            upd = self.update(buf, skip=self.frozen)
+            every = {PREY: cfg.prey_every, PREDATOR: cfg.pred_every}
+            resting = {sp for sp in cfg.learn if every[sp] <= 0 or it % every[sp]}
+            upd = self.update(buf, skip=self.frozen | resting)
             if cfg.agent_step_budget:
                 for sp in cfg.learn:
                     if sp not in self.frozen and agent_steps[SPECIES_NAME[sp]] >= cfg.agent_step_budget:

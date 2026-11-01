@@ -58,6 +58,19 @@ class GAConfig:
     # breeding neutral, so GA and PPO still pursue the same thing (energy in, no dying -> more offspring).
     birth_bonus: float = 0.0
     death_penalty: float = 1.0
+    # ---- study 2 options (defaults reproduce the benchmark) ----
+    # episodic: every generation starts from fresh worlds (new seed) and runs all gen_steps even if a species
+    #   dies out, so a collapse inside the window is paid for instead of hidden by a reset.
+    episodic: bool = False
+    # assign: "mixed" = every world holds animals of all genomes (slot s -> genome perm[s % P]; individual
+    #   selection). "group" = each world holds a single prey genome and a single predator genome (world w ->
+    #   genome perm[w % P]), so a genome's fitness includes what its own lineage does to its world (multi-level /
+    #   group selection). Needs n_worlds to be a multiple of the population.
+    assign: str = "mixed"
+    eco_lambda: float = 0.0  # shared ecosystem-health reward, see common.step_rewards
+    # learning-speed asymmetry: species k is updated every k-th generation; 0 = never (frozen at initialisation)
+    prey_every: int = 1
+    pred_every: int = 1
     seed: int = 0
     device: str = "cpu"
     log_every: int = 5
@@ -130,6 +143,14 @@ def batched_actions(flat: torch.Tensor, obs: torch.Tensor, perm: torch.Tensor) -
     return torch.clamp(a, -1.0, 1.0)
 
 
+def world_actions(flat: torch.Tensor, obs: torch.Tensor, wperm: torch.Tensor) -> torch.Tensor:
+    """Group assignment: every slot of world w uses genome wperm[w]. obs [W, N, D] -> actions [W, N, 2]."""
+    p = unflatten(flat[wperm], obs.shape[2])  # one parameter set per world
+    h = torch.tanh(torch.bmm(obs, p["w1"]) + p["b1"].unsqueeze(1))
+    h = torch.tanh(torch.bmm(h, p["w2"]) + p["b2"].unsqueeze(1))
+    return torch.clamp(torch.bmm(h, p["w3"]) + p["b3"].unsqueeze(1), -1.0, 1.0)
+
+
 # ---------------------------------------------------------------------------------------- trainer
 class GATrainer:
     def __init__(self, world_cfg: WorldConfig, cfg: GAConfig, out_dir: str | Path):
@@ -137,9 +158,13 @@ class GATrainer:
         self.out = Path(out_dir)
         self.out.mkdir(parents=True, exist_ok=True)
         self.device = torch.device(cfg.device)
+        if cfg.assign not in ("mixed", "group"):
+            raise ValueError(f"assign must be 'mixed' or 'group', got {cfg.assign!r}")
+        if cfg.assign == "group" and cfg.n_worlds % cfg.population:
+            raise ValueError(f"group assignment needs n_worlds ({cfg.n_worlds}) to be a multiple of the population")
         for sp in cfg.learn:
             cap = (world_cfg.prey, world_cfg.predator)[sp].capacity
-            if cap % cfg.population:
+            if cfg.assign == "mixed" and cap % cfg.population:
                 raise ValueError(f"population {cfg.population} must divide {SPECIES_NAME[sp]} capacity {cap}")
         self.gen = torch.Generator().manual_seed(cfg.seed)
         self.world_seed = cfg.seed * 1000
@@ -160,18 +185,36 @@ class GATrainer:
         self.world = EcoWorld(self.wcfg, n_worlds=self.cfg.n_worlds, seed=self.world_seed, device=self.cfg.device)
         self.fixed = {sp: make_policy(self.cfg.opponent, self.world, sp) for sp in self.fixed}
 
+    def _fresh_worlds(self) -> None:
+        """Episodic mode: a new set of worlds (new seed) for this generation."""
+        self.world_seed += 1
+        self.world = EcoWorld(self.wcfg, n_worlds=self.cfg.n_worlds, seed=self.world_seed, device=self.cfg.device)
+        self.fixed = {sp: make_policy(self.cfg.opponent, self.world, sp) for sp in self.fixed}
+
     def _actions(self, sp: int, obs: torch.Tensor, perm: torch.Tensor) -> torch.Tensor:
+        if self.cfg.assign == "group":
+            return world_actions(self.pop[sp], obs, perm)
         return batched_actions(self.pop[sp], obs, perm)
+
+    def _updates(self, sp: int, g: int) -> bool:
+        k = self.cfg.prey_every if sp == PREY else self.cfg.pred_every
+        return k > 0 and g % k == 0
 
     # ------------------------------------------------------------------ one generation
     @torch.no_grad()
     def evaluate_generation(self) -> tuple[dict, dict, int]:
-        cfg, w = self.cfg, self.world
+        cfg = self.cfg
+        if cfg.episodic:
+            self._fresh_worlds()
+        w = self.world
         P = cfg.population
-        perm = {sp: torch.randperm(P, generator=self.gen).to(self.device) for sp in cfg.learn}
+        group = cfg.assign == "group"
+        # mixed: perm[j] = genome of slots with s % P == j; group: wperm[w] = genome of world w
+        perm = {sp: (torch.randperm(cfg.n_worlds, generator=self.gen) % P if group
+                     else torch.randperm(P, generator=self.gen)).to(self.device) for sp in cfg.learn}
         rsum = {sp: torch.zeros(P, device=self.device) for sp in cfg.learn}
         nsteps = {sp: torch.zeros(P, device=self.device) for sp in cfg.learn}
-        stats = {"captures": 0, "resets": 0}
+        stats = {"captures": 0, "resets": 0, "extinct_worlds": 0}
         steps_done = 0
         for _ in range(cfg.gen_steps):
             obs = w.observe()
@@ -185,14 +228,20 @@ class GATrainer:
             steps_done += 1
             stats["captures"] += int(info["captures"].sum())
             for sp in cfg.learn:
-                r = step_rewards(w, info, sp, e0[sp], a0[sp], cfg.birth_bonus, cfg.death_penalty)
+                r = step_rewards(w, info, sp, e0[sp], a0[sp], cfg.birth_bonus, cfg.death_penalty, cfg.eco_lambda)
                 Wn, N = r.shape
-                # slot s -> column s % P after reshaping [W, N/P, P]; column j holds genome perm[j]
-                col_r = r.reshape(Wn, N // P, P).sum((0, 1))
-                col_n = a0[sp].reshape(Wn, N // P, P).sum((0, 1)).float()
-                rsum[sp].index_add_(0, perm[sp], col_r)
-                nsteps[sp].index_add_(0, perm[sp], col_n)
-            if bool((w.populations() == 0).any()):
+                if group:  # world w -> genome perm[w]
+                    rsum[sp].index_add_(0, perm[sp], r.sum(1))
+                    nsteps[sp].index_add_(0, perm[sp], a0[sp].sum(1).float())
+                else:  # slot s -> column s % P after reshaping [W, N/P, P]; column j holds genome perm[j]
+                    col_r = r.reshape(Wn, N // P, P).sum((0, 1))
+                    col_n = a0[sp].reshape(Wn, N // P, P).sum((0, 1)).float()
+                    rsum[sp].index_add_(0, perm[sp], col_r)
+                    nsteps[sp].index_add_(0, perm[sp], col_n)
+            extinct = (w.populations() == 0).any(1)
+            if cfg.episodic:
+                stats["extinct_worlds"] = int(extinct.sum())
+            elif bool(extinct.any()):
                 self._reset_world()
                 stats["resets"] += 1
                 break
@@ -261,15 +310,18 @@ class GATrainer:
                    "resets_total": self.resets, "captures": stats["captures"]}
             pops = self.world.populations().float().mean(0).tolist()
             row["pop_prey"], row["pop_pred"] = round(pops[0], 1), round(pops[1], 1)
+            row["extinct_worlds"] = stats["extinct_worlds"]
             for sp in cfg.learn:
+                if not self._updates(sp, g):
+                    continue  # this species sits out this generation (learning-speed asymmetry)
                 samples = torch.tensor(stats["samples"][SPECIES_NAME[sp]], device=self.device)
                 summ = self.next_population(sp, fitness[sp], samples)
                 for k, v in summ.items():
                     row[f"{SPECIES_NAME[sp]}/{k}"] = round(v, 6) if isinstance(v, float) else v
             self.history.append(row)
             if g % cfg.log_every == 0 or g == 1:
-                msg = " ".join(f"{SPECIES_NAME[sp]} best={row[f'{SPECIES_NAME[sp]}/best']:+.4f} "
-                               f"mean={row[f'{SPECIES_NAME[sp]}/mean']:+.4f}" for sp in cfg.learn)
+                msg = " ".join(f"{SPECIES_NAME[sp]} best={row.get(f'{SPECIES_NAME[sp]}/best', float('nan')):+.4f} "
+                               f"mean={row.get(f'{SPECIES_NAME[sp]}/mean', float('nan')):+.4f}" for sp in cfg.learn)
                 print(f"gen {g:4d}  t={row['secs']:7.1f}s  ws={world_steps:,}  pop=({row['pop_prey']:.0f},"
                       f"{row['pop_pred']:.0f})  resets={self.resets}  {msg}", flush=True)
             done = world_steps >= cfg.world_step_budget

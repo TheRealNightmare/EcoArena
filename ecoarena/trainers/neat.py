@@ -205,6 +205,8 @@ class NEATPolicy:
 # ---------------------------------------------------------------------------------------- trainer
 class NEATTrainer(GATrainer):
     def __init__(self, world_cfg: WorldConfig, cfg: NEATConfig, out_dir: str | Path):
+        if cfg.assign != "mixed":
+            raise ValueError("NEAT supports only mixed assignment")
         super().__init__(world_cfg, cfg, out_dir)
         self.D = D = world_cfg.obs_dim
         self.rng = random.Random(cfg.seed)

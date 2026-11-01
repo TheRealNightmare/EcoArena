@@ -72,7 +72,12 @@ def main() -> None:
                    help="optional: freeze each species at this many agent-steps (off by default; see ppo.py)")
     p.add_argument("--minibatch", type=int, default=16384)
     p.add_argument("--lr", type=float, default=3e-4)
+    p.add_argument("--gamma", type=float, default=0.99)
+    p.add_argument("--gae-lambda", type=float, default=0.95)
     p.add_argument("--birth-bonus", type=float, default=0.0, help="benchmark uses 0 for every method")
+    p.add_argument("--eco-lambda", type=float, default=0.0, help="study 2: shared ecosystem-health reward")
+    p.add_argument("--prey-every", type=int, default=1, help="study 2: update prey every k-th step; 0 = frozen")
+    p.add_argument("--pred-every", type=int, default=1, help="study 2: update predators every k-th step; 0 = frozen")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--eval-worlds", type=int, default=4)
@@ -86,7 +91,9 @@ def main() -> None:
     out = Path(a.out) / name
     wcfg = load_config("S1", base=a.base)
     pcfg = PPOConfig(learn=tuple(learn), opponent=a.opponent, n_worlds=a.worlds, rollout_steps=a.rollout,
-                     iterations=a.iters, agent_step_budget=int(a.agent_steps), world_step_budget=int(a.world_steps), minibatch=a.minibatch, lr=a.lr, birth_bonus=a.birth_bonus, seed=a.seed, device=a.device)
+                     iterations=a.iters, agent_step_budget=int(a.agent_steps), world_step_budget=int(a.world_steps), minibatch=a.minibatch, lr=a.lr, birth_bonus=a.birth_bonus, seed=a.seed, device=a.device,
+                     gamma=a.gamma, gae_lambda=a.gae_lambda, eco_lambda=a.eco_lambda,
+                     prey_every=a.prey_every, pred_every=a.pred_every)
     print(f"training {name} on {a.device}: {a.world_steps:,.0f} world-steps, "
           f"{a.rollout} steps x {a.worlds} worlds per iteration", flush=True)
     trainer = PPOTrainer(wcfg, pcfg, out)
@@ -94,6 +101,10 @@ def main() -> None:
     plot_curves(history, a.learn, out / "curves.png")
 
     # Evaluation on fresh seeds: trained species vs the same opponent, compared with both baselines.
+    if a.eval_worlds <= 0:
+        (out / "eval.json").write_text(json.dumps({"learn": a.learn, "results": {}}))
+        print(f"wrote {out} (no quick evaluation)")
+        return
     print("evaluating...", flush=True)
     ev_seed = 10_000 + a.seed
     trained = {sp: load_policy(out / f"{n}.pt", a.device) for n, sp in NAMES.items() if sp in learn}
