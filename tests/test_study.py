@@ -100,3 +100,14 @@ def test_eco_lambda_raises_reward_of_healthy_world(tmp_path):
     diff = (r1 - r0)[live]
     assert torch.allclose(diff, torch.full_like(diff, 3.0 / 1000 * float(ecosystem_health(w)[0, 0])))
     assert torch.equal(r1[~a0], r0[~a0])
+
+
+def test_tactics_random_baseline_is_near_chance():
+    from ecoarena.eval.behaviour import measure_tactics
+
+    cfg = load_config("S1")
+    r = measure_tactics(cfg, {PREY: "random", PREDATOR: "random"}, worlds=1, steps=60, seed=3, device="cpu", every=5)
+    for k in ("prey_in_refuge", "ambush_index", "pursuit_share", "flee_alignment", "prey_clustering"):
+        assert r[k] == r[k], k  # not NaN
+    assert 0.5 < r["ambush_index"] < 1.6  # random predators sit about as far from refuges as random points
+    assert abs(r["flee_alignment"]) < 0.3
