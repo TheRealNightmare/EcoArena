@@ -69,7 +69,7 @@
   "label": "Hybrid",
   "kind": "mlp",
   "file": "hybrid-prey.json",
-  "note": "PPO phase trained with the old +1 birth bonus"
+  "note": ""
  },
  {
   "method": "hybrid",
@@ -77,6 +77,6 @@
   "label": "Hybrid",
   "kind": "mlp",
   "file": "hybrid-predator.json",
-  "note": "PPO phase trained with the old +1 birth bonus"
+  "note": ""
  }
 ]

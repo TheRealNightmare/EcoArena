@@ -4,26 +4,28 @@ import { CHAPTERS, StoryScene } from "./StoryScene";
 import "./landing.css";
 
 // ------------------------------------------------------------------------------------------ findings data
-// Preliminary results: one training run per method (150k world-steps), evaluated on 4 fresh worlds x 3,000 steps
-// against hand-coded opponents. Sources: results/{ppo,ga,es,neat,hybrid}/SUMMARY.md in the repo.
+// Benchmark results: every method controls both species, 5 training seeds x 150k world-steps each, evaluated on
+// 5 fresh worlds x 10,000 steps in each of 5 scenarios. Source: results/bench/STATS.md in the repo.
 type Bar = { label: string; v: number; tone?: "rl" | "evo" | "base" };
-const PREY_ATTACK: Bar[] = [
-  { label: "PPO", v: 8.2, tone: "rl" },
-  { label: "Random", v: 14.0, tone: "base" },
-  { label: "Hand-coded", v: 14.2, tone: "base" },
-  { label: "ES", v: 14.8, tone: "evo" },
-  { label: "Hybrid", v: 15.0, tone: "evo" },
-  { label: "GA", v: 15.2, tone: "evo" },
-  { label: "NEAT", v: 16.0, tone: "evo" },
+// share of worlds where both species were still alive after 10,000 steps (S1-S5 pooled; 125 worlds per method)
+const SURVIVAL: Bar[] = [
+  { label: "Random", v: 92, tone: "base" },
+  { label: "ES", v: 77, tone: "evo" },
+  { label: "Hybrid", v: 64, tone: "evo" },
+  { label: "Hand-coded", v: 64, tone: "base" },
+  { label: "PPO", v: 22, tone: "rl" },
+  { label: "GA", v: 10, tone: "evo" },
+  { label: "NEAT", v: 0, tone: "evo" },
 ];
-const PRED_CATCH: Bar[] = [
-  { label: "GA", v: 8.18, tone: "evo" },
-  { label: "ES", v: 8.03, tone: "evo" },
-  { label: "Hybrid", v: 7.64, tone: "evo" },
-  { label: "NEAT", v: 7.59, tone: "evo" },
-  { label: "PPO", v: 7.45, tone: "rl" },
-  { label: "Hand-coded", v: 5.92, tone: "base" },
-  { label: "Random", v: 4.78, tone: "base" },
+// S1: mean predator lifespan in steps (mean of 5 training seeds)
+const PRED_LIFE: Bar[] = [
+  { label: "PPO", v: 1196, tone: "rl" },
+  { label: "Random", v: 1072, tone: "base" },
+  { label: "ES", v: 1059, tone: "evo" },
+  { label: "Hand-coded", v: 1056, tone: "base" },
+  { label: "Hybrid", v: 1055, tone: "evo" },
+  { label: "GA", v: 782, tone: "evo" },
+  { label: "NEAT", v: 633, tone: "evo" },
 ];
 
 function BarChart({ id, bars, max, unit, decimals = 1 }: { id: string; bars: Bar[]; max: number; unit: string; decimals?: number }) {
@@ -272,7 +274,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
     </section>
   );
 
-  const caveat = <p className="caveat">Preliminary: one training run per method, each species trained against hand-coded opponents and tested on 4 fresh worlds for 3,000 steps. The full benchmark, 5 seeds across 5 scenarios, is running now.</p>;
+  const caveat = <p className="caveat">Benchmark: every method controls both species; 5 training seeds per method, each tested on 5 fresh worlds for 10,000 steps in 5 scenarios.</p>;
   const worldOn = index >= at("world") && index <= at("vision");
   const findOn = index >= at("findings-prey") && index <= at("findings-reward");
 
@@ -358,15 +360,15 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
 
         {slide(at("findings-prey"), "finding-slide", (
           <div className="slide-body narrow">
-            <p className="kicker on-scene">Findings so far · 1 of 3</p>
-            <h2 className="scene-title">Only reinforcement learning learns to survive as prey</h2>
+            <p className="kicker on-scene">Findings · 1 of 3</p>
+            <h2 className="scene-title">Trained animals break the ecosystem</h2>
             <figure className="finding glass">
               <figcaption>
-                <h3>How often prey get caught</h3>
-                <p>Catches per prey, per predator, per step (×10⁶). Lower is better. PPO prey learned to stay out of reach; every evolutionary method ended close to, or worse than, the hand-coded rules.</p>
+                <h3>Worlds where both species survive</h3>
+                <p>Percent of test worlds with prey and predators still alive after 10,000 steps, across all five scenarios. Random animals keep the balance best. Of the trained methods only ES and the hybrid usually do, and every collapse is the same: the predators starve. Prey never died out.</p>
               </figcaption>
-              <BarChart id="prey" bars={PREY_ATTACK} max={16} unit="catches per million encounters" />
-              <p className="foot">Random prey look good here only because they barely meet predators: they starve, and none of their test worlds kept both species.</p>
+              <BarChart id="surv" bars={SURVIVAL} max={100} unit="percent of worlds" decimals={0} />
+              <p className="foot">Training rewards each animal for its own energy over a short window, so nothing rewards keeping the other species alive. Even ES ranges from a perfect record on four seeds to collapse on the fifth.</p>
             </figure>
             {caveat}
           </div>
@@ -374,14 +376,14 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
 
         {slide(at("findings-predators"), "finding-slide right", (
           <div className="slide-body narrow">
-            <p className="kicker on-scene">Findings so far · 2 of 3</p>
-            <h2 className="scene-title">Every method learns to hunt</h2>
+            <p className="kicker on-scene">Findings · 2 of 3</p>
+            <h2 className="scene-title">The keenest hunters die youngest</h2>
             <figure className="finding glass">
               <figcaption>
-                <h3>How often predators eat</h3>
-                <p>Catches per 1,000 predator-steps. Higher is better. Every learned predator beats the hand-coded hunter by 25 to 40 percent, and they ambush at the refuge edges: prey have to leave the rocks to eat, and that is where they are caught.</p>
+                <h3>How long a predator lives</h3>
+                <p>Mean predator lifespan in steps, baseline world. GA and NEAT predators catch the most prey per step, yet live the shortest lives: they spend more energy chasing than they win back, and their populations dwindle within a few thousand steps. Their prey, meanwhile, live about twice as long as PPO prey.</p>
               </figcaption>
-              <BarChart id="pred" bars={PRED_CATCH} max={10} unit="catches per 1,000 steps" decimals={2} />
+              <BarChart id="pred" bars={PRED_LIFE} max={1400} unit="steps" decimals={0} />
             </figure>
             {caveat}
           </div>
@@ -389,7 +391,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
 
         {slide(at("findings-reward"), "finding-slide", (
           <div className="slide-body narrow">
-            <p className="kicker on-scene">Findings so far · 3 of 3</p>
+            <p className="kicker on-scene">Findings · 3 of 3</p>
             <h2 className="scene-title">One reward term flipped the result</h2>
             <figure className="finding glass">
               <figcaption>
@@ -398,7 +400,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
               </figcaption>
               <Dumbbell />
             </figure>
-            {caveat}
+            <p className="caveat">Earlier controlled experiment: one PPO run per setting, each species trained against hand-coded opponents. The benchmark uses no birth bonus for any method.</p>
           </div>
         ))}
 

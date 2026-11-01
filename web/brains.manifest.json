@@ -1,17 +1,65 @@
 {
-  "_comment": "Which checkpoint the demo loads for each method and species. Each was trained against hand-coded opponents (stage 1/2 runs). Swap in the benchmark runs (results/bench/train/<method>/<method>-seed0) once they exist, then run: python scripts/export_web.py brains",
+  "_comment": "Which checkpoint the demo loads for each method and species: the benchmark runs (both species trained together, 150k world-steps). For each method the seed whose worlds stayed balanced most often in results/bench/eval was picked (PPO 3, GA 0, ES 0, NEAT 0, Hybrid 4). After editing, run: python scripts/export_web.py brains",
   "brains": [
-    {"method": "ppo", "species": "prey", "label": "PPO", "source": "results/ppo/prey-nobonus/prey.pt"},
-    {"method": "ppo", "species": "predator", "label": "PPO", "source": "results/ppo/predator-nobonus/predator.pt"},
-    {"method": "ga", "species": "prey", "label": "GA", "source": "results/ga/ga-prey-nb-g128-s02/prey.pt"},
-    {"method": "ga", "species": "predator", "label": "GA", "source": "results/ga/ga-predator/predator.pt"},
-    {"method": "es", "species": "prey", "label": "ES", "source": "results/es/es-prey-lr003/prey.pt"},
-    {"method": "es", "species": "predator", "label": "ES", "source": "results/es/es-predator/predator.pt"},
-    {"method": "neat", "species": "prey", "label": "NEAT", "source": "results/neat/neat-prey/prey.pt"},
-    {"method": "neat", "species": "predator", "label": "NEAT", "source": "results/neat/neat-predator/predator.pt"},
-    {"method": "hybrid", "species": "prey", "label": "Hybrid", "source": "results/hybrid/hybrid-prey/prey.pt",
-     "note": "PPO phase trained with the old +1 birth bonus"},
-    {"method": "hybrid", "species": "predator", "label": "Hybrid", "source": "results/hybrid/hybrid-predator/predator.pt",
-     "note": "PPO phase trained with the old +1 birth bonus"}
+    {
+      "method": "ppo",
+      "species": "prey",
+      "label": "PPO",
+      "source": "results/bench/train/ppo/ppo-seed3/prey.pt"
+    },
+    {
+      "method": "ppo",
+      "species": "predator",
+      "label": "PPO",
+      "source": "results/bench/train/ppo/ppo-seed3/predator.pt"
+    },
+    {
+      "method": "ga",
+      "species": "prey",
+      "label": "GA",
+      "source": "results/bench/train/ga/ga-seed0/prey.pt"
+    },
+    {
+      "method": "ga",
+      "species": "predator",
+      "label": "GA",
+      "source": "results/bench/train/ga/ga-seed0/predator.pt"
+    },
+    {
+      "method": "es",
+      "species": "prey",
+      "label": "ES",
+      "source": "results/bench/train/es/es-seed0/prey.pt"
+    },
+    {
+      "method": "es",
+      "species": "predator",
+      "label": "ES",
+      "source": "results/bench/train/es/es-seed0/predator.pt"
+    },
+    {
+      "method": "neat",
+      "species": "prey",
+      "label": "NEAT",
+      "source": "results/bench/train/neat/neat-seed0/prey.pt"
+    },
+    {
+      "method": "neat",
+      "species": "predator",
+      "label": "NEAT",
+      "source": "results/bench/train/neat/neat-seed0/predator.pt"
+    },
+    {
+      "method": "hybrid",
+      "species": "prey",
+      "label": "Hybrid",
+      "source": "results/bench/train/hybrid/hybrid-seed4/prey.pt"
+    },
+    {
+      "method": "hybrid",
+      "species": "predator",
+      "label": "Hybrid",
+      "source": "results/bench/train/hybrid/hybrid-seed4/predator.pt"
+    }
   ]
 }

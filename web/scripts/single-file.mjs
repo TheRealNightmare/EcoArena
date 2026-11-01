@@ -7,7 +7,8 @@ const assets = readdirSync(new URL("assets/", dir));
 const css = assets.filter((f) => f.endsWith(".css")).map((f) => readFileSync(new URL(`assets/${f}`, dir), "utf8")).join("\n");
 const js = assets.filter((f) => f.endsWith(".js")).map((f) => readFileSync(new URL(`assets/${f}`, dir), "utf8")).join("\n");
 const safe = (s) => s.replace(/<\/(script|style)/gi, "<\\/$1");
-const html = `<title>EcoArena</title>
+const html = `<meta charset="utf-8">
+<title>EcoArena</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

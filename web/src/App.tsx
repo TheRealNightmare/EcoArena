@@ -121,7 +121,7 @@ function Panel({ id, title, icon, children, open, onToggle, className = "", extr
 }
 
 export default function App() {
-  const [settings, setSettings] = useState<SimSettings>({ base: "s1_large.json", scenario: "S1", seed: 1, prey: "ppo", predator: "ppo" });
+  const [settings, setSettings] = useState<SimSettings>({ base: "s1_large.json", scenario: "S1", seed: 1, prey: "es", predator: "es" });
   const [running, setRunning] = useState(true);
   const [speed, setSpeed] = useState(30);
   const [chartMode, setChartMode] = useState<"time" | "phase">("time");
@@ -383,7 +383,7 @@ export default function App() {
     <>
       {brainRow("prey")}
       {brainRow("predator")}
-      <p className="caption">Each trained network learned against hand-coded opponents, so two trained species meeting is new to both. A switch takes effect on the next step.</p>
+      <p className="caption">Each method trained its prey and predators together; mixing two methods pairs animals that never met in training. A switch takes effect on the next step.</p>
     </>
   );
 

@@ -189,8 +189,9 @@ def main() -> None:
         ax.set_ylim(-0.03, 1.03)
         ax.grid(alpha=0.25)
     axes[0].set_ylabel("share of worlds with both species")
-    axes[-1].legend(frameon=False, fontsize=8, loc="lower left")
-    fig.tight_layout()
+    h, lab = axes[0].get_legend_handles_labels()
+    fig.legend(h, lab, frameon=False, fontsize=8, loc="lower center", ncol=len(lab))
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
     fig.savefig(figs / "survival.png", dpi=200)
     plt.close(fig)
 
@@ -248,7 +249,9 @@ def main() -> None:
             label=NAMES[m],
         )
     ax.set_xticks(range(len(scen)), [SCEN[s] for s in scen])
-    ax.set_ylabel(f"worlds surviving {max(steps_of.values()) // 1000 or max(steps_of.values())}{'k' if max(steps_of.values()) >= 1000 else ''} steps")
+    ax.set_ylabel(
+        f"worlds surviving {max(steps_of.values()) // 1000 or max(steps_of.values())}{'k' if max(steps_of.values()) >= 1000 else ''} steps"
+    )
     ax.set_ylim(0, 1.05)
     ax.legend(ncol=4, frameon=False, fontsize=7.5, loc="upper center", bbox_to_anchor=(0.5, 1.28))
     ax.grid(axis="y", alpha=0.25)
