@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EcoArena Team Handbook</title>
+<style>
+@page { size: A4; margin: 20mm 19mm 22mm 19mm; }
+@page :first { margin: 0; }
+:root {
+  --ink: #1d2320; --dim: #5b635e; --rule: #d9ddd6; --tint: #f3f5ef; --green: #2e6b3b; --gold: #b07a12;
+  --red: #b8452f; --blue: #2b6ca3; --purple: #6a4f98; --paper: #ffffff;
+}
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin: 0; font: 10.6pt/1.55 "Lora", Georgia, serif; color: var(--ink); background: var(--paper); }
+h1, h2, h3, h4, .sans, table, figcaption, .callout .label, .toc, .kicker, .tag { font-family: "Inter", "DejaVu Sans", sans-serif; }
+h1 { font-size: 24pt; line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 6pt; font-weight: 700; }
+h2 { font-size: 14.5pt; margin: 20pt 0 6pt; font-weight: 650; letter-spacing: -0.01em; break-after: avoid; }
+h3 { font-size: 11.5pt; margin: 14pt 0 4pt; font-weight: 650; break-after: avoid; }
+h4 { font-size: 10pt; margin: 10pt 0 2pt; font-weight: 650; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; break-after: avoid; }
+p { margin: 0 0 7pt; orphans: 3; widows: 3; }
+ul, ol { margin: 0 0 8pt; padding-left: 16pt; }
+li { margin: 0 0 3pt; }
+a { color: var(--green); text-decoration: none; }
+code, pre, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; }
+code { background: var(--tint); padding: 0.5pt 3pt; border-radius: 3px; }
+pre { background: #f6f7f3; border: 1px solid var(--rule); border-radius: 6px; padding: 7pt 9pt; margin: 4pt 0 10pt; white-space: pre-wrap; line-height: 1.45; break-inside: avoid; }
+pre .c { color: #7a8279; }
+pre.tree { white-space: pre; font-size: 7.9pt; }
+.chapter { break-before: page; }
+.kicker { font-size: 8.5pt; font-weight: 600; color: var(--green); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4pt; }
+.lead { font-size: 11.6pt; line-height: 1.5; color: #333a36; margin-bottom: 12pt; }
+table { border-collapse: collapse; width: 100%; font-size: 8.4pt; line-height: 1.35; margin: 4pt 0 10pt; break-inside: avoid; }
+th { text-align: left; font-weight: 600; border-bottom: 1.2px solid var(--ink); padding: 3pt 5pt; vertical-align: bottom; }
+td { border-bottom: 1px solid var(--rule); padding: 3pt 5pt; vertical-align: top; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+tr.hl td { background: #eef4ea; }
+figure { margin: 6pt 0 12pt; break-inside: avoid; }
+figure img { width: 100%; display: block; }
+figure svg { width: 100%; height: auto; display: block; }
+figcaption { font-size: 8.3pt; color: var(--dim); margin-top: 4pt; line-height: 1.4; }
+figcaption b { color: var(--ink); }
+.callout { border-left: 3px solid var(--green); background: var(--tint); padding: 7pt 10pt; margin: 8pt 0 11pt; border-radius: 0 6px 6px 0; break-inside: avoid; }
+.callout.warn { border-color: var(--gold); background: #fbf6ea; }
+.callout.idea { border-color: var(--blue); background: #eef4f9; }
+.callout .label { font-size: 8pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); display: block; margin-bottom: 2pt; }
+.callout.warn .label { color: var(--gold); }
+.callout.idea .label { color: var(--blue); }
+.callout p:last-child { margin-bottom: 0; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14pt; }
+.eq { font-family: "Latin Modern Math", "DejaVu Math TeX Gyre", serif; font-size: 11.5pt; text-align: center; margin: 6pt 0 9pt; }
+.tag { display: inline-block; font-size: 7.5pt; font-weight: 600; padding: 0.5pt 5pt; border-radius: 8px; background: var(--tint); color: var(--green); }
+/* cover */
+.cover { height: 297mm; position: relative; background: #12201a; color: #f1efe6; padding: 30mm 22mm; overflow: hidden; break-after: page; }
+.cover .kicker { color: #e9b949; font-size: 9pt; }
+.cover h1 { font-size: 40pt; color: #fff; margin-top: 8pt; }
+.cover .sub { font: 400 14pt/1.45 "Lora", serif; color: #d5d9cc; max-width: 125mm; margin-top: 12pt; }
+.cover .meta { position: absolute; left: 22mm; bottom: 26mm; font: 9pt/1.6 "Inter", sans-serif; color: #b8bfb0; }
+.cover svg { position: absolute; right: -12mm; bottom: 42mm; width: 150mm; opacity: 0.95; }
+/* contents */
+.toc { font-size: 10pt; }
+.toc ol { list-style: none; padding: 0; margin: 0; counter-reset: none; }
+.toc li { display: grid; grid-template-columns: 22pt 1fr; padding: 5pt 0; border-bottom: 1px solid var(--rule); }
+.toc li span.num { color: var(--green); font-weight: 700; }
+.toc li small { display: block; font-size: 8.5pt; color: var(--dim); font-weight: 400; }
+.glossary dt { font-family: "Inter", sans-serif; font-weight: 650; font-size: 9.2pt; margin-top: 6pt; break-after: avoid; }
+.glossary dd { margin: 0 0 2pt 0; }
+.glossary { column-count: 2; column-gap: 16pt; font-size: 9.6pt; }
+.glossary div { break-inside: avoid; }
+.small { font-size: 9pt; }
+.dim { color: var(--dim); }
+</style>
+</head>
+<body>
+
+<!-- ============================================================== COVER -->
+<section class="cover">
+  <div class="kicker">Team handbook · Machine Learning course project</div>
+  <h1>EcoArena</h1>
+  <div class="sub">What we are building, why, how every part works, what we have found so far, and how to run it yourself. Written for a teammate who is new to the project.</div>
+  <svg viewBox="0 0 600 420" aria-hidden="true">
+    <defs>
+      <radialGradient id="cg" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#3d7a46"/><stop offset="1" stop-color="#1e4426"/></radialGradient>
+    </defs>
+    <ellipse cx="300" cy="300" rx="270" ry="70" fill="#0b1510"/>
+    <path d="M40 250 L300 140 L560 250 L300 360 Z" fill="url(#cg)"/>
+    <path d="M40 250 L300 360 L300 392 L40 282 Z" fill="#6b4a2c"/>
+    <path d="M560 250 L300 360 L300 392 L560 282 Z" fill="#4e3520"/>
+    <g fill="#7b8590"><ellipse cx="380" cy="230" rx="34" ry="14"/><ellipse cx="200" cy="270" rx="26" ry="11"/><ellipse cx="300" cy="190" rx="20" ry="8"/></g>
+    <g fill="#1f3b24"><path d="M150 230 l14 -46 l14 46z"/><path d="M455 262 l12 -40 l12 40z"/><path d="M260 300 l11 -36 l11 36z"/></g>
+    <g fill="#c9a26b"><circle cx="230" cy="232" r="5"/><circle cx="246" cy="244" r="5"/><circle cx="330" cy="268" r="5"/><circle cx="350" cy="256" r="5"/><circle cx="410" cy="282" r="5"/><circle cx="276" cy="216" r="5"/><circle cx="190" cy="250" r="5"/></g>
+    <g fill="#c4401f"><path d="M312 236 l14 -5 l-3 9z"/><path d="M420 250 l14 -5 l-3 9z"/></g>
+  </svg>
+  <div class="meta">Repository: github.com/TheRealNightmare/EcoArena (private)<br>State of the project: 2 November 2026<br>Course paper due January 2027</div>
+</section>
+
+<!-- ============================================================== CONTENTS -->
+<section>
+  <div class="kicker">Contents</div>
+  <h1>How to read this</h1>
+  <p class="lead">Read chapters 1 to 3 first: they explain the project, the ideas behind it and the world the animals live in. Chapters 4 to 6 explain how we keep the comparison fair, how each learning method is built, and what we have found. Chapter 7 is the hands-on part. Keep the glossary open when a term is new.</p>
+  <div class="toc">
+  <ol>
+    <li><span class="num">1</span><div>The project in one chapter<small>The question, the answer so far, what is done</small></div></li>
+    <li><span class="num">2</span><div>Background you need<small>Predator–prey ecology, reinforcement learning and PPO, genetic algorithms, evolution strategies, NEAT, the hybrid</small></div></li>
+    <li><span class="num">3</span><div>The world: EcoArena's rules<small>Space, grass, energy, refuges, hunting, births and deaths, what animals see and do</small></div></li>
+    <li><span class="num">4</span><div>A fair comparison<small>Same reward, same brain size, same budget; how we evaluate and measure; statistics</small></div></li>
+    <li><span class="num">5</span><div>How each method is built here<small>The tricks that make PPO and evolution work in a world that never resets</small></div></li>
+    <li><span class="num">6</span><div>The journey: what we tried and why we changed it<small>Timeline and the eight decisions that shaped the benchmark</small></div></li>
+    <li><span class="num">7</span><div>Results<small>The benchmark, two ways to collapse, figures and what they mean</small></div></li>
+    <li><span class="num">8</span><div>Running it yourself<small>Repository map, setup, every command, where outputs go</small></div></li>
+    <li><span class="num">9</span><div>The web demo<small>How the browser version works and stays identical to Python</small></div></li>
+    <li><span class="num">10</span><div>Where we are now<small>What is running, and how you can help</small></div></li>
+    <li><span class="num">11</span><div>Glossary<small>Every term in one place</small></div></li>
+  </ol>
+  </div>
+</section>
+
+<!-- ============================================================== 1 -->
+<section class="chapter">
+  <div class="kicker">Chapter 1</div>
+  <h1>The project in one chapter</h1>
+  <p class="lead">EcoArena is a small simulated ecosystem of rabbit-like prey and wolf-like predators. We let different machine-learning methods control the animals and ask which methods build an ecosystem that works, not just which method makes the best single animal.</p>
+
+  <h2>The question</h2>
+  <p>Most machine-learning benchmarks give each method one agent, one task and a score, then reset and repeat. Real ecosystems are different: many animals act at once, they are born and die, the world never resets, and what is good for one animal can be bad for its species. A predator that eats every prey it sees is a great hunter for a while, then starves.</p>
+  <p>So EcoArena asks two questions at once:</p>
+  <ul>
+    <li><b>Agent level:</b> how good are the learned prey at not being eaten, and the learned predators at eating?</li>
+    <li><b>Ecosystem level:</b> when a method controls <i>both</i> species, does the world keep both of them alive? How steady are the populations? Do they cycle like real predator–prey systems?</li>
+  </ul>
+
+  <h2>The five methods we compare</h2>
+  <table>
+    <tr><th>Code</th><th>Method</th><th>Family</th><th>One-line idea</th></tr>
+    <tr><td>M1</td><td>PPO</td><td>Reinforcement learning</td><td>Improve one shared brain step by step, using every moment's reward and a learned estimate of the future</td></tr>
+    <tr><td>M2</td><td>GA (genetic algorithm)</td><td>Neuroevolution</td><td>Keep a population of brains, copy the best, add random mutations</td></tr>
+    <tr><td>M3</td><td>ES (evolution strategies)</td><td>Neuroevolution</td><td>Try many small random changes to one brain and move it toward the ones that scored best</td></tr>
+    <tr><td>M4</td><td>NEAT</td><td>Neuroevolution</td><td>Evolve the brain's wiring too: start tiny and grow neurons and connections</td></tr>
+    <tr><td>M5</td><td>Hybrid</td><td>Both</td><td>Evolve for half the budget, then hand the best brain to PPO</td></tr>
+    <tr><td>B0, B1</td><td>Random, Hand-coded</td><td>Baselines</td><td>Random actions; simple rules we wrote (prey flee to refuges, predators chase)</td></tr>
+  </table>
+
+  <h2>The answer so far</h2>
+  <p>We trained every method with 5 random seeds and tested each on 5 fresh worlds for 10,000 steps in 5 different scenarios (Chapter 7). The headline result surprised us:</p>
+  <div class="callout">
+    <span class="label">Main finding</span>
+    <p><b>When animals learn, the ecosystem usually breaks.</b> Random animals kept both species alive in 92% of test worlds; ES managed 77%, the Hybrid 64%, PPO 22%, GA 10% and NEAT 0%. Every single collapse was the predators dying out: prey never went extinct.</p>
+  </div>
+  <p>And the methods fail in two different ways. GA and NEAT predators slowly starve: they catch the most prey per step but spend more energy chasing than they gain. PPO predators do the opposite: they multiply, over-eat the prey, then crash. This is now the centre of the paper.</p>
+
+  <h2>What exists today</h2>
+  <figure>
+  <svg viewBox="0 0 790 200" font-family="Inter, sans-serif" font-size="12.5"><defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5b635e"/></marker></defs><text x="4" y="20" font-weight="700" font-size="13.5">How the pieces connect</text><rect x="4" y="36" width="176" height="58" rx="8" fill="#eef4ea" stroke="#2e6b3b" stroke-width="1.5"/><text x="92.0" y="61" text-anchor="middle" font-weight="600">World (PyTorch)</text><text x="92.0" y="79" text-anchor="middle" font-size="10.5" fill="#5b635e">many worlds at once on GPU</text><rect x="200" y="36" width="176" height="58" rx="8" fill="#eef4ea" stroke="#2e6b3b" stroke-width="1.5"/><text x="288.0" y="61" text-anchor="middle" font-weight="600">5 methods + 2 baselines</text><text x="288.0" y="79" text-anchor="middle" font-size="10.5" fill="#5b635e">PPO, GA, ES, NEAT, Hybrid</text><rect x="396" y="36" width="176" height="58" rx="8" fill="#eef4ea" stroke="#2e6b3b" stroke-width="1.5"/><text x="484.0" y="61" text-anchor="middle" font-weight="600">Benchmark</text><text x="484.0" y="79" text-anchor="middle" font-size="10.5" fill="#5b635e">25 runs, 875 test worlds</text><rect x="592" y="36" width="176" height="58" rx="8" fill="#eef4ea" stroke="#2e6b3b" stroke-width="1.5"/><text x="680.0" y="61" text-anchor="middle" font-weight="600">Analysis</text><text x="680.0" y="79" text-anchor="middle" font-size="10.5" fill="#5b635e">statistics, figures, dynamics</text><rect x="4" y="130" width="176" height="58" rx="8" fill="#eef4ea" stroke="#2e6b3b" stroke-width="1.5"/><text x="92.0" y="155" text-anchor="middle" font-weight="600">Web demo (three.js)</text><text x="92.0" y="173" text-anchor="middle" font-size="10.5" fill="#5b635e">same rules in the browser</text><rect x="396" y="130" width="176" height="58" rx="8" fill="#eef4ea" stroke="#2e6b3b" stroke-width="1.5"/><text x="484.0" y="155" text-anchor="middle" font-weight="600">Landing page</text><text x="484.0" y="173" text-anchor="middle" font-size="10.5" fill="#5b635e">findings shown on the site</text><rect x="592" y="130" width="176" height="58" rx="8" fill="#fbf6ea" stroke="#b07a12" stroke-width="1.5"/><text x="680.0" y="155" text-anchor="middle" font-weight="600">Paper (January 2027)</text><text x="680.0" y="173" text-anchor="middle" font-size="10.5" fill="#5b635e">plus a conference version</text><g fill="none" stroke="#5b635e" stroke-width="1.2" marker-end="url(#a1)"><path d="M180 65H198"/><path d="M376 65H394"/><path d="M572 65H590"/><path d="M92.0 94V128"/><path d="M680.0 94V128"/><path d="M592 159H574"/></g></svg>
+  <figcaption><b>Figure 1.1.</b> The pipeline. Everything up to the analysis and the web demo is done; the paper is being written and a second study (Chapter 10) is running.</figcaption>
+  </figure>
+  <ul>
+    <li><b>The world</b>: a fast simulator written in PyTorch, checked by 85 automated Python tests and 4 browser parity tests.</li>
+    <li><b>All five methods</b>, trained with the same reward, brain size and compute.</li>
+    <li><b>The benchmark</b>: 25 trained runs (5 methods × 5 seeds), evaluated in 5 scenarios, with statistics and figures.</li>
+    <li><b>A web demo</b> where anyone can watch the trained brains live in a 3D low-poly world, with a scroll-through landing page that explains the project.</li>
+  </ul>
+</section>
+
+<!-- ============================================================== 2 -->
+<section class="chapter">
+  <div class="kicker">Chapter 2</div>
+  <h1>Background you need</h1>
+  <p class="lead">Four ideas carry the whole project: predator–prey population dynamics, reinforcement learning, evolution of neural networks, and the difference between optimising an individual and keeping a group alive. This chapter explains each from the beginning.</p>
+
+  <h2>2.1 Predator–prey ecology in five minutes</h2>
+  <p>Picture an island with rabbits and foxes. When rabbits are plentiful, foxes eat well and have many cubs. More foxes eat more rabbits, so rabbits become scarce. Now foxes go hungry and their numbers fall, which lets the rabbits recover. The two populations rise and fall in a repeating loop, with the predator peak arriving a little after the prey peak.</p>
+  <p>In the 1920s Lotka and Volterra wrote this down as two equations. With x prey and y predators:</p>
+  <div class="eq">dx/dt = a·x − b·x·y &nbsp;&nbsp;&nbsp;&nbsp; dy/dt = −c·y + d·x·y</div>
+  <p>Prey grow on their own (a·x) and are eaten in proportion to how often prey and predators meet (b·x·y). Predators die off on their own (c·y) and grow by eating (d·x·y). The meeting term x·y matters a lot for us: <b>how many catches happen per prey, per predator, per step</b> is a direct measure of hunting skill that does not depend on how many animals are alive. We call it the <b>attack rate</b>.</p>
+  <p>Three more ideas from ecology appear in this project:</p>
+  <ul>
+    <li><b>Refuges.</b> Places where prey cannot be caught (burrows, thick bushes). They stabilise real ecosystems because predators can never eat the last prey. EcoArena has refuge patches.</li>
+    <li><b>Handling time.</b> A predator that has just eaten needs time to digest. This caps how fast any predator can eat, however skilled.</li>
+    <li><b>Extinction.</b> With few animals left, bad luck alone can wipe out a species. Small worlds die out more often than large ones, which is why our benchmark world is large (200 × 200 units, about 600 prey and 120 predators at the start).</li>
+  </ul>
+
+  <h2>2.2 Brains: what a policy is</h2>
+  <p>Every animal is controlled by a <b>policy</b>: a function from what the animal sees (its <b>observation</b>, 102 numbers) to what it does (its <b>action</b>, 2 numbers: how much to turn and how much to speed up). In EcoArena every learned policy is the same small neural network: 102 inputs, two hidden layers of 64 neurons with tanh activations, and 2 outputs. All animals of one species share one network, but each animal sees its own surroundings, so they behave differently. Training means finding good weights for that network, about 11,000 numbers.</p>
+  <p>There are two big families of ways to find those weights, and the project compares them.</p>
+
+  <h2>2.3 Reinforcement learning and PPO</h2>
+  <figure>
+  <svg viewBox="0 0 760 150" font-family="Inter, sans-serif" font-size="12">
+    <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5b635e"/></marker></defs>
+    <rect x="60" y="45" width="190" height="60" rx="8" fill="#eef4ea" stroke="#2e6b3b" stroke-width="1.5"/>
+    <rect x="510" y="45" width="190" height="60" rx="8" fill="#f3f5ef" stroke="#5b635e" stroke-width="1.2"/>
+    <text x="155" y="70" text-anchor="middle" font-weight="600">Agent (policy network)</text><text x="155" y="88" text-anchor="middle" font-size="10" fill="#5b635e">chooses turn and thrust</text>
+    <text x="605" y="70" text-anchor="middle" font-weight="600">Environment (the world)</text><text x="605" y="88" text-anchor="middle" font-size="10" fill="#5b635e">moves animals, applies rules</text>
+    <g fill="none" stroke="#5b635e" stroke-width="1.2" marker-end="url(#a2)"><path d="M250 58H510"/><path d="M510 92H250"/></g>
+    <text x="380" y="50" text-anchor="middle">action a<tspan font-size="9">t</tspan></text>
+    <text x="380" y="112" text-anchor="middle">observation o<tspan font-size="9">t+1</tspan> and reward r<tspan font-size="9">t</tspan></text>
+    <text x="16" y="22" font-weight="700" font-size="13">The reinforcement-learning loop, repeated every step</text>
+  </svg>
+  <figcaption><b>Figure 2.1.</b> In reinforcement learning (RL) the agent acts, the environment answers with what happens next and a reward, and the agent adjusts its policy to collect more reward over time.</figcaption>
+  </figure>
+  <p>In RL an agent learns by trial and error from a <b>reward</b>: a number after every step saying how good that step was. The agent wants to maximise the <b>return</b>, the sum of future rewards, where rewards further in the future count a bit less. The <b>discount</b> γ (gamma) sets how much less. We use γ = 0.99, so a reward 100 steps away still counts about 37%, and one 500 steps away less than 1%. In plain words: the agent plans about a hundred steps ahead.</p>
+  <p><b>PPO</b> (Proximal Policy Optimization, Schulman et al. 2017) is the most widely used modern RL algorithm. One round of PPO goes like this:</p>
+  <ol>
+    <li><b>Collect experience.</b> Run the current policy for a while (for us, 64 steps in 4 worlds, with hundreds of animals) and record every observation, action and reward. Actions are sampled with a little randomness so the policy explores.</li>
+    <li><b>Estimate how good each action was.</b> A second network, the <b>critic</b> or value function, learns to predict the return from any situation. The <b>advantage</b> of an action is how much better it turned out than the critic expected. We compute it with GAE (generalised advantage estimation), which blends short- and long-range estimates.</li>
+    <li><b>Update carefully.</b> Make actions with positive advantage more likely and negative ones less likely, but <b>clip</b> the change so the new policy never moves far from the old one in one round. This clipping is what makes PPO stable.</li>
+  </ol>
+  <p>Two details matter for us. First, PPO gets feedback at every step, so it can tell which exact moment helped or hurt: this is called <b>credit assignment</b>. Second, it needs the gradient of the network, so it only works with differentiable networks of a fixed shape.</p>
+
+  <h2>2.4 Neuroevolution: GA, ES and NEAT</h2>
+  <p>Neuroevolution skips gradients entirely. It treats the network's weights as a <b>genome</b>, tries many genomes, measures each one's <b>fitness</b> (for us: the same reward, averaged over the time the genome controlled animals), and breeds the next generation from the good ones. It only needs a score, never a gradient, so it can handle rewards that are rare, noisy or delayed in a way gradients struggle with. The price is that it learns from far less information per step: one number per genome per generation.</p>
+  <figure>
+  <svg viewBox="0 0 760 200" font-family="Inter, sans-serif" font-size="11">
+    <g stroke-width="1.3">
+      <rect x="4" y="30" width="240" height="160" rx="8" fill="#fbf6ea" stroke="#b07a12"/>
+      <rect x="260" y="30" width="240" height="160" rx="8" fill="#fbefe9" stroke="#c4501f"/>
+      <rect x="516" y="30" width="240" height="160" rx="8" fill="#f2eef8" stroke="#6a4f98"/>
+    </g>
+    <text x="124" y="52" text-anchor="middle" font-weight="700" font-size="12.5">GA: copy the best</text>
+    <text x="380" y="52" text-anchor="middle" font-weight="700" font-size="12.5">ES: step toward better</text>
+    <text x="636" y="52" text-anchor="middle" font-weight="700" font-size="12.5">NEAT: grow the wiring</text>
+    <g fill="#b07a12"><circle cx="40" cy="90" r="7"/><circle cx="64" cy="82" r="7" opacity=".5"/><circle cx="88" cy="96" r="7" opacity=".3"/><circle cx="112" cy="84" r="7"/><circle cx="136" cy="98" r="7" opacity=".3"/><circle cx="160" cy="88" r="7" opacity=".5"/><circle cx="184" cy="94" r="7" opacity=".3"/><circle cx="208" cy="86" r="7" opacity=".3"/></g>
+    <text x="124" y="122" text-anchor="middle" fill="#3a3a3a">50 genomes; the top 5 (solid)</text>
+    <text x="124" y="138" text-anchor="middle" fill="#3a3a3a">survive unchanged, the rest are</text>
+    <text x="124" y="154" text-anchor="middle" fill="#3a3a3a">mutated copies of them</text>
+    <text x="124" y="174" text-anchor="middle" fill="#7a5a10" font-size="10">mutation = add noise, σ = 0.02</text>
+    <circle cx="380" cy="96" r="7" fill="#c4501f"/>
+    <g stroke="#c4501f" stroke-width="1" opacity=".7"><path d="M380 96L352 76"/><path d="M380 96L408 116"/><path d="M380 96L404 74"/><path d="M380 96L356 118"/></g>
+    <g fill="none" stroke="#c4501f"><circle cx="352" cy="76" r="4"/><circle cx="408" cy="116" r="4"/><circle cx="404" cy="74" r="4"/><circle cx="356" cy="118" r="4"/></g>
+    <path d="M380 96L428 86" stroke="#1d2320" stroke-width="2"/><path d="M428 86l-8 -4l1 8z" fill="#1d2320"/>
+    <text x="380" y="140" text-anchor="middle" fill="#3a3a3a">one brain θ; 25 mirrored pairs</text>
+    <text x="380" y="156" text-anchor="middle" fill="#3a3a3a">θ ± σε are scored, and θ moves</text>
+    <text x="380" y="172" text-anchor="middle" fill="#3a3a3a">along the score-weighted average</text>
+    <g fill="#6a4f98"><circle cx="580" cy="78" r="5"/><circle cx="580" cy="98" r="5"/><circle cx="580" cy="118" r="5"/><circle cx="690" cy="88" r="5"/><circle cx="690" cy="108" r="5"/><circle cx="636" cy="98" r="5" fill="#fff" stroke="#6a4f98" stroke-width="1.5"/></g>
+    <g stroke="#6a4f98" stroke-width="1" opacity=".7"><path d="M580 78L690 88"/><path d="M580 118L690 108"/><path d="M580 98L636 98"/><path d="M636 98L690 88"/><path d="M636 98L690 108"/></g>
+    <text x="636" y="140" text-anchor="middle" fill="#3a3a3a">starts with inputs wired straight</text>
+    <text x="636" y="156" text-anchor="middle" fill="#3a3a3a">to outputs, then adds neurons (white)</text>
+    <text x="636" y="172" text-anchor="middle" fill="#3a3a3a">and links; species protect new ideas</text>
+    <text x="16" y="18" font-weight="700" font-size="13">Three ways to evolve a brain</text>
+  </svg>
+  <figcaption><b>Figure 2.2.</b> The three evolutionary methods. All three use the same fitness and the same compute budget as PPO.</figcaption>
+  </figure>
+  <h3>Genetic algorithm (GA)</h3>
+  <p>Our GA follows the "deep GA" of Such et al. (2017). Keep 50 genomes. Each generation, measure all of them, keep the top 10% (5 genomes) unchanged as <b>elites</b>, and fill the other 45 places with copies of random elites plus small Gaussian noise (standard deviation σ = 0.02 on every weight). That is all: no crossover, no gradient. It is surprisingly strong on some problems and weak on others.</p>
+  <h3>Evolution strategies (ES)</h3>
+  <p>OpenAI-ES (Salimans et al. 2017) keeps one brain θ instead of a population. Each generation it samples 25 random directions ε, scores the 50 brains θ + σε and θ − σε (the mirrored pairs are called <b>antithetic sampling</b> and cancel out a lot of noise), turns the scores into ranks, and moves θ toward the directions that did better. Mathematically this estimates a gradient of the average fitness without backpropagation. We apply that estimate with the Adam optimiser.</p>
+  <h3>NEAT</h3>
+  <p>NEAT (NeuroEvolution of Augmenting Topologies, Stanley and Miikkulainen 2002) also evolves the network's shape. Every genome starts minimal (inputs wired straight to the 2 outputs). Mutations add neurons and connections. Three tricks make this work: every new connection gets a global <b>innovation number</b>, so two different networks can be lined up for crossover; genomes are grouped into <b>species</b> of similar structure that compete mainly among themselves, so a new structure gets time to tune its weights before it has to beat everyone; and a species that stops improving for 20 generations is removed.</p>
+
+  <h2>2.5 The hybrid</h2>
+  <p>Evolution explores broadly but learns slowly per step; PPO learns quickly from detailed feedback but can get stuck near where it started. The hybrid tries to get both: GA (or ES) runs for the first half of the budget, then its best brain becomes the starting point for PPO for the second half. The handover needs care because the critic starts from scratch (Chapter 5).</p>
+
+  <h2>2.6 Individuals versus the group</h2>
+  <p>This last idea became central once we saw the results. All five methods train each animal to do well <i>for itself</i>: gain energy, avoid dying. None of them is told to keep its species, or the other species, alive. Ecology has names for what can go wrong:</p>
+  <ul>
+    <li><b>Tragedy of the commons:</b> each predator gains by eating as much as it can, but if all do, the prey vanish and every predator starves.</li>
+    <li><b>The prudent predator:</b> a population of restrained hunters outlives a greedy one, but individual selection rarely favours restraint (Slobodkin 1961). Whether group-level selection can produce it is a long-running debate.</li>
+    <li><b>The life–dinner principle</b> (Dawkins and Krebs 1979): a prey that fails dies, a predator that fails only misses a meal. Prey are therefore under stronger pressure to improve, and arms races tend to favour them.</li>
+  </ul>
+  <p>Chapter 7 shows that both failure modes appear in EcoArena, and Chapter 10 describes how we are testing them.</p>
+</section>
+
+<!-- ============================================================== 3 -->
+<section class="chapter">
+  <div class="kicker">Chapter 3</div>
+  <h1>The world: EcoArena's rules</h1>
+  <p class="lead">EcoArena is a flat square world, 200 × 200 units, whose edges wrap around (walk off the right edge and you come back on the left). Grass grows on it, prey eat the grass, predators eat the prey. Nothing is scripted: populations rise and fall only because of these rules and what the animals choose to do.</p>
+
+  <h2>3.1 Grass, energy and refuges</h2>
+  <p>The ground is a 100 × 100 grid of grass cells, each holding between 0 and 1 unit of grass. Grass regrows <b>logistically</b>: slowly when a cell is almost bare, fastest when half full, slowly again when nearly full (rate 0.02 per step, plus a tiny floor so bare cells always come back).</p>
+  <p>Every animal has an <b>energy</b> store between 0 and 100. Energy is the currency of the whole world:</p>
+  <figure>
+  <svg viewBox="0 0 760 230" font-family="Inter, sans-serif" font-size="11.5">
+    <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5b635e"/></marker></defs>
+    <g fill="none" stroke="#5b635e" stroke-width="1.2" marker-end="url(#a3)">
+      <path d="M126 80H186"/><path d="M336 80H396"/><path d="M546 80H606"/><path d="M261 104V140"/><path d="M471 104V140"/><path d="M681 104V140"/>
+    </g>
+    <rect x="6" y="56" width="120" height="48" rx="8" fill="#eef4ea" stroke="#2e6b3b" stroke-width="1.4"/>
+    <rect x="186" y="56" width="150" height="48" rx="8" fill="#fbf6ea" stroke="#b07a12" stroke-width="1.4"/>
+    <rect x="396" y="56" width="150" height="48" rx="8" fill="#fbf6ea" stroke="#b07a12" stroke-width="1.4"/>
+    <rect x="606" y="56" width="150" height="48" rx="8" fill="#fbefe9" stroke="#b8452f" stroke-width="1.4"/>
+    <text x="66" y="77" text-anchor="middle" font-weight="600">Grass</text><text x="66" y="93" text-anchor="middle" font-size="10" fill="#5b635e">regrows logistically</text>
+    <text x="261" y="77" text-anchor="middle" font-weight="600">Prey energy</text><text x="261" y="93" text-anchor="middle" font-size="10" fill="#5b635e">+2 per step while grazing</text>
+    <text x="471" y="77" text-anchor="middle" font-weight="600">Prey eaten</text><text x="471" y="93" text-anchor="middle" font-size="10" fill="#5b635e">lunge succeeds 50%</text>
+    <text x="681" y="77" text-anchor="middle" font-weight="600">Predator energy</text><text x="681" y="93" text-anchor="middle" font-size="10" fill="#5b635e">+35 per catch, then digest</text>
+    
+    
+    
+    <g font-size="10.5">
+    <rect x="186" y="140" width="150" height="76" rx="8" fill="none" stroke="#5b635e"/>
+    <text x="261" y="158" text-anchor="middle" font-weight="600">Prey spend energy</text>
+    <text x="261" y="174" text-anchor="middle">0.1 per step to live</text><text x="261" y="188" text-anchor="middle">+ 0.1 × thrust² to move</text><text x="261" y="202" text-anchor="middle">breed at 70: child gets 30</text>
+    <rect x="396" y="140" width="150" height="76" rx="8" fill="none" stroke="#5b635e"/>
+    <text x="471" y="158" text-anchor="middle" font-weight="600">Death</text>
+    <text x="471" y="174" text-anchor="middle">energy reaches 0 (starved)</text><text x="471" y="188" text-anchor="middle">age 1,500 steps</text><text x="471" y="202" text-anchor="middle">or eaten (prey only)</text>
+    <rect x="606" y="140" width="150" height="76" rx="8" fill="none" stroke="#5b635e"/>
+    <text x="681" y="158" text-anchor="middle" font-weight="600">Predators spend</text>
+    <text x="681" y="174" text-anchor="middle">0.15 per step to live</text><text x="681" y="188" text-anchor="middle">+ 0.15 × thrust² to move</text><text x="681" y="202" text-anchor="middle">breed at 90: child gets 45</text>
+    </g>
+    <text x="16" y="24" font-weight="700" font-size="13">Energy flows from grass to prey to predators</text>
+  </svg>
+  <figcaption><b>Figure 3.1.</b> The energy economy. Moving fast costs extra (the cost grows with thrust squared), so chasing everything is expensive. This trade-off is behind one of our main findings.</figcaption>
+  </figure>
+  <p><b>Refuges</b> are 48 round patches (radius 6) scattered over the map. A prey standing in a refuge cannot be caught. But grass inside a refuge never grows above 0.35, so a prey that hides forever slowly starves: it has to come out to eat. The refuge layout depends only on the world's seed.</p>
+
+  <h2>3.2 Hunting</h2>
+  <p>A predator can catch a prey within 1.5 units. Several rules make hunting realistic instead of trivial:</p>
+  <ul>
+    <li>A lunge succeeds only half the time (<code>catch_prob</code> 0.5). A miss stuns the predator for 40 steps.</li>
+    <li>After eating, a predator <b>digests</b> for 60 steps and cannot catch anything. This is the handling time from Chapter 2.</li>
+    <li>Each prey is caught at most once per step and each predator eats at most one prey per step.</li>
+    <li>A predator cannot breed while more than two other predators are within 15 units (territories), and must wait 300 steps between births (prey wait 150). This stops predator numbers exploding in crowds.</li>
+    <li>Predators are a little faster (top speed 1.1 against 1.0) but turn more slowly (0.20 against 0.35 radians per step).</li>
+  </ul>
+
+  <h2>3.3 One step of the world</h2>
+  <p>Every step, every world does the following in this exact order. The browser version must follow the same order, and a test checks that it does (Chapter 9).</p>
+  <table>
+    <tr><th>#</th><th>Phase</th><th>What happens</th></tr>
+    <tr><td>1</td><td>Actions</td><td>Each animal turns by up to its max turn and changes speed by up to its max acceleration</td></tr>
+    <tr><td>2</td><td>Move</td><td>Positions update; edges wrap around</td></tr>
+    <tr><td>3</td><td>Graze</td><td>Prey eat the grass under them (a cell is shared equally by the prey on it)</td></tr>
+    <tr><td>4</td><td>Captures</td><td>Predators within 1.5 units of an exposed prey lunge; 50% succeed; misses are stunned</td></tr>
+    <tr><td>5</td><td>Costs</td><td>Living and moving cost energy; ages and timers tick</td></tr>
+    <tr><td>6</td><td>Deaths</td><td>Starved, too old or eaten</td></tr>
+    <tr><td>7</td><td>Births</td><td>Animals above their energy threshold and off cooldown give birth into a free slot</td></tr>
+    <tr><td>8</td><td>Immigration</td><td>Optional; switched off in the benchmark</td></tr>
+    <tr><td>9</td><td>Regrowth</td><td>Grass regrows</td></tr>
+  </table>
+  <p>The world <b>never resets</b>. There are no episodes: animals are born and die mid-run, and the world keeps going. This is the main thing that makes EcoArena harder than an ordinary RL benchmark.</p>
+
+  <h2>3.4 What an animal sees: the observation</h2>
+  <div class="two">
+  <div>
+  <p>Each animal sees through a cone in front of it, cut into 16 equal <b>sectors</b>. Prey have wide eyes (240°, range 20); predators have forward-facing eyes (120°, range 12), like real rabbits and wolves.</p>
+  <p>For each sector the animal gets 6 numbers: the distance to the nearest thing in that sector, and which kind it is (grass, prey, predator, refuge or nothing). That is 16 × 6 = 96 numbers. Six more describe the animal itself: energy, speed, age, whether it is busy (a predator digesting or stunned), the grass under it, and whether it stands in a refuge. Total: <b>102 numbers</b>.</p>
+  <p>The <b>action</b> is 2 numbers in [−1, 1]: turn (left or right) and thrust (speed up or brake).</p>
+  </div>
+  <figure style="margin-top:0">
+  <svg viewBox="0 0 380 250" font-family="Inter, sans-serif" font-size="10.5">
+    <path d="M120 135 L70.0 48.4 A100 100 0 1 1 70.0 221.6 Z" fill="#eef4ea" stroke="#2e6b3b" stroke-width="1.2"/><g stroke="#2e6b3b" stroke-width="0.6" opacity="0.55"><path d="M120 135L94.1 38.4"/><path d="M120 135L120.0 35.0"/><path d="M120 135L145.9 38.4"/><path d="M120 135L170.0 48.4"/><path d="M120 135L190.7 64.3"/><path d="M120 135L206.6 85.0"/><path d="M120 135L216.6 109.1"/><path d="M120 135L220.0 135.0"/><path d="M120 135L216.6 160.9"/><path d="M120 135L206.6 185.0"/><path d="M120 135L190.7 205.7"/><path d="M120 135L170.0 221.6"/><path d="M120 135L145.9 231.6"/><path d="M120 135L120.0 235.0"/><path d="M120 135L94.1 231.6"/></g>
+    <circle cx="120" cy="135" r="6" fill="#c9a26b"/><path d="M126 135h10" stroke="#1d2320" stroke-width="1.6"/>
+    <circle cx="182" cy="97" r="5" fill="#c4401f"/>
+    <rect x="112" y="183" width="16" height="12" rx="2" fill="#7b8590"/>
+    <path d="M300 135 L330.0 83.0 A60 60 0 0 1 330.0 187.0 Z" fill="#fbefe9" stroke="#b8452f" stroke-width="1.2"/><g stroke="#b8452f" stroke-width="0.6" opacity="0.55"><path d="M300 135L336.5 87.4"/><path d="M300 135L342.4 92.6"/><path d="M300 135L347.6 98.5"/><path d="M300 135L352.0 105.0"/><path d="M300 135L355.4 112.0"/><path d="M300 135L358.0 119.5"/><path d="M300 135L359.5 127.2"/><path d="M300 135L360.0 135.0"/><path d="M300 135L359.5 142.8"/><path d="M300 135L358.0 150.5"/><path d="M300 135L355.4 158.0"/><path d="M300 135L352.0 165.0"/><path d="M300 135L347.6 171.5"/><path d="M300 135L342.4 177.4"/><path d="M300 135L336.5 182.6"/></g>
+    <circle cx="300" cy="135" r="6" fill="#c4401f"/><path d="M306 135h10" stroke="#1d2320" stroke-width="1.6"/>
+    <circle cx="340" cy="147" r="5" fill="#c9a26b"/>
+    <text x="120" y="18" text-anchor="middle" font-weight="600" font-size="11.5">Prey: 240°, range 20</text>
+    <text x="300" y="18" text-anchor="middle" font-weight="600" font-size="11.5">Predator: 120°, range 12</text>
+    <text x="190" y="246" text-anchor="middle" fill="#5b635e">16 sectors each; thin lines are sector edges; black tick = heading</text>
+  </svg>
+  <figcaption><b>Figure 3.2.</b> Fields of view (drawn to scale against each other). The prey here sees the predator (red) in one sector and a refuge (grey) in another.</figcaption>
+  </figure>
+  </div>
+
+  <h2>3.5 Many worlds at once: slots</h2>
+  <p>To make training fast, the simulator runs many worlds in parallel on the GPU. Each species has a fixed number of <b>slots</b> per world (2,400 for prey, 600 for predators) stored in tensors of shape [worlds, slots]. A slot is either alive or free. A birth fills a free slot; a death frees one. No animal is a Python object, so one tensor operation updates every animal in every world at once. On the RTX 5060 Ti the large world runs at about 190 world-steps per second with untrained animals; each world holds about 1,000 animals.</p>
+  <p>All randomness comes from a hash of (seed, step, stream, world, slot) instead of a random-number generator with hidden state. Any random number can be recomputed exactly, in Python or in the browser, which is how the web demo reproduces the Python world (Chapter 9).</p>
+
+  <h2>3.6 The two world sizes and five scenarios</h2>
+  <p>The <b>benchmark world</b> (<code>configs/s1_large.json</code>) is 200 × 200 with 600 prey and 120 predators at the start. The <b>small world</b> (<code>s1_balanced.json</code>, 100 × 100, a quarter of everything) has the same rules and is used for tests. On the small world predator numbers dip to 1–3 at the bottom of a cycle and die out by chance, so it is not used for results.</p>
+  <table>
+    <tr><th>Scenario</th><th>Change from S1</th><th>What it tests</th></tr>
+    <tr><td>S1 baseline</td><td>none</td><td>the main result</td></tr>
+    <tr><td>S2 slow grass</td><td>grass regrows at half speed</td><td>a poorer world: less food for everyone</td></tr>
+    <tr><td>S3 fast prey</td><td>prey top speed × 1.3</td><td>harder hunting</td></tr>
+    <tr><td>S4 crowded start</td><td>twice as many of both species at the start</td><td>a shock at the beginning</td></tr>
+    <tr><td>S5 many predators</td><td>twice as many predators at the start</td><td>heavy predation pressure</td></tr>
+  </table>
+  <p>Scenarios are written as multipliers (<code>"x2"</code>) in <code>configs/scenarios.json</code>, so they apply to either world size. Policies are always trained on S1 and only tested on S2–S5: the scenarios check how well a learned behaviour carries over to conditions it never saw.</p>
+</section>
+
+<!-- ============================================================== 4 -->
+<section class="chapter">
+  <div class="kicker">Chapter 4</div>
+  <h1>A fair comparison</h1>
+  <p class="lead">Comparing RL and evolution is easy to get wrong: give one method a better reward, a bigger brain or more compute and it wins for the wrong reason. Most of the engineering effort in this project went into making sure the methods differ only in how they learn.</p>
+
+  <h2>4.1 What is kept the same</h2>
+  <table>
+    <tr><th>Held equal</th><th>Value</th><th>Why it matters</th></tr>
+    <tr><td>Reward / fitness</td><td>the same formula for every method and both species (below)</td><td>one early run used a different reward for PPO and it reversed a conclusion (Chapter 6)</td></tr>
+    <tr><td>Brain</td><td>MLP 102 → 64 → 64 → 2, tanh, about 11k weights (NEAT grows its own)</td><td>capacity is not a factor</td></tr>
+    <tr><td>Compute budget</td><td>150,000 world-steps per run (4 parallel worlds × 37,500 steps)</td><td>every method sees the same amount of simulation</td></tr>
+    <tr><td>World</td><td>S1, 200 × 200, the same seeds per training seed</td><td>same difficulty</td></tr>
+    <tr><td>Evaluation</td><td>fresh worlds the method never trained on, same seeds for all</td><td>no method is tested on easier worlds</td></tr>
+  </table>
+
+  <h2>4.2 The reward</h2>
+  <p>Each step, each living animal gets:</p>
+  <div class="eq">r = Δenergy / 100 &nbsp;+&nbsp; child energy / 100 per birth &nbsp;−&nbsp; 1 if it died</div>
+  <p>Gaining energy is good, spending it is bad, and dying costs a full point. The middle term refunds the energy handed to a newborn, so that having a child is neutral rather than a loss: an animal that eats well and survives will breed anyway, so the reward does not need to pay extra for breeding. For PPO this reward is summed into the return; for GA, ES and NEAT a genome's fitness is the average reward per animal-step of the animals it controlled.</p>
+  <div class="callout warn">
+    <span class="label">Why there is no birth bonus</span>
+    <p>We first gave PPO +1 per birth, the way many papers do. Evolution could not use that bonus fairly (Chapter 6), so evolution ran without it. That difference alone made PPO's predators look worse than evolution's. With the bonus removed for everyone, PPO's prey became the best of all methods. Lesson: in a comparison, the reward must be identical.</p>
+  </div>
+
+  <h2>4.3 The budget is counted in world-steps</h2>
+  <p>We count compute as <b>world-steps</b>: one world advanced by one step. We first tried counting <b>agent-steps</b> (one animal living one step) and it failed: prey outnumber predators about five to one, so prey used up their budget far sooner, stopped learning, and the still-learning predators then over-ate the frozen prey until the world collapsed. Agent-steps also depend on how many animals are alive, which is itself an outcome of the method. World-steps are the same for everyone, and every species learns for the whole run.</p>
+
+  <h2>4.4 How we test</h2>
+  <p>After training, each method's prey and predator brains are loaded and run without any learning and without random exploration (each brain outputs its most likely action). The benchmark protocol is:</p>
+  <ul>
+    <li>5 training seeds per method (5 independent training runs with different random starts).</li>
+    <li>Each run tested on 5 fresh worlds (evaluation seed 20,000) for 10,000 steps, in each of the 5 scenarios.</li>
+    <li>That is 25 worlds per method per scenario, and 875 worlds in total including the baselines.</li>
+  </ul>
+
+  <h2>4.5 What we measure</h2>
+  <table>
+    <tr><th>Metric</th><th>Definition</th><th>Better is</th></tr>
+    <tr><td>Survived</td><td>both species still alive at step 10,000</td><td>higher</td></tr>
+    <tr><td>Extinction time</td><td>step at which the first species died out</td><td>later</td></tr>
+    <tr><td>Attack rate</td><td>catches per (prey × predator × step) × 10<sup>6</sup>, the Lotka–Volterra meeting term</td><td>lower for prey</td></tr>
+    <tr><td>Catches per 1k predator-steps</td><td>how often a predator eats, per 1,000 steps it lives</td><td>higher for predators</td></tr>
+    <tr><td>Lifespan</td><td>animal-steps lived divided by deaths</td><td>higher</td></tr>
+    <tr><td>Population CV</td><td>standard deviation / mean of a population over the second half of the run</td><td>lower = steadier</td></tr>
+    <tr><td>Reward per 1k agent-steps</td><td>the training objective itself</td><td>higher</td></tr>
+  </table>
+  <div class="callout idea">
+    <span class="label">Two metric traps we hit</span>
+    <p><b>Attack rate misleads for predators.</b> A predator that eats a lot spends more time digesting, which lowers catches per prey × predator × step when prey are plentiful. For predators we use catches per predator-step.</p>
+    <p><b>Attack rate also flatters random prey.</b> They are rarely caught because they rarely meet predators, but they starve. That is why we always report reward and survival next to it.</p>
+  </div>
+
+  <h2>4.6 Statistics</h2>
+  <p>The unit of analysis is a <b>training seed</b>. The 5 test worlds of one seed share the same trained brains, so they are not independent; we average them first and get 5 numbers per method. The fixed baselines have no training seeds, so each of their worlds counts as one sample.</p>
+  <ul>
+    <li><b>95% bootstrap confidence interval</b>: resample the 5 seed values with replacement 5,000 times and take the middle 95% of the means.</li>
+    <li><b>Permutation test</b> (method A against B): pool the 10 values, try all 252 ways of splitting them into two groups of 5, and count how often a split differs as much as the real one. With 5 seeds the smallest possible p-value is 2/252 ≈ 0.008.</li>
+    <li><b>Kaplan–Meier survival curves</b> show the share of worlds still balanced over time. Worlds that survive to the end are "censored", meaning we know they lasted at least 10,000 steps. The <b>log-rank test</b> compares two survival curves.</li>
+  </ul>
+</section>
+
+<!-- ============================================================== 5 -->
+<section class="chapter">
+  <div class="kicker">Chapter 5</div>
+  <h1>How each method is built here</h1>
+  <p class="lead">Textbook RL and evolution assume episodes: start a game, play it to the end, score it, reset. EcoArena never resets and animals appear and vanish mid-run. Each method needed a few specific ideas to work in that setting.</p>
+
+  <h2>5.1 PPO in a world with births and deaths (M1)</h2>
+  <p>One network per species is shared by every animal of that species (<b>parameter sharing</b>). A rollout collects 64 steps × 4 worlds × every living animal, which is hundreds of thousands of samples per update. Two masks keep it correct:</p>
+  <ul>
+    <li><code>valid</code> marks slots that held a living animal when it acted. Only those samples are trained on.</li>
+    <li><code>done</code> marks an animal that died during the step. Its return stops there. If a newborn later fills the same slot, it starts a new trajectory, because the <code>done</code> flag cuts the advantage calculation.</li>
+  </ul>
+  <p>If a species dies out during training, the trainer starts a fresh world and carries on. (Chapter 7 shows why this mattered more than we thought.)</p>
+  <table>
+    <tr><th>PPO setting</th><th>Value</th><th>Note</th></tr>
+    <tr><td>Learning rate, epochs, clip</td><td>3×10<sup>−4</sup>, 4, 0.2</td><td>standard</td></tr>
+    <tr><td>γ, GAE λ</td><td>0.99, 0.95</td><td>looks ~100 steps ahead</td></tr>
+    <tr><td>Rollout</td><td>64 steps × 4 worlds</td><td>about 590 updates in 150k world-steps</td></tr>
+    <tr><td>Entropy bonus, min action std</td><td>0.003, e<sup>−2</sup> ≈ 0.14</td><td>added after prey stopped exploring (Chapter 6)</td></tr>
+  </table>
+
+  <h2>5.2 Evolution in a shared world (M2–M4)</h2>
+  <p>The obvious way to score 50 genomes is 50 separate worlds. That is slow, and worse, each genome would face a different ecosystem, so lucky worlds would decide the ranking. Instead all 50 genomes live in the <b>same worlds at the same time</b>:</p>
+  <figure>
+  <svg viewBox="0 0 760 170" font-family="Inter, sans-serif" font-size="11">
+    <text x="16" y="20" font-weight="700" font-size="13">Every slot is assigned a genome; the assignment is reshuffled each generation</text>
+    <g font-size="10">
+      <text x="16" y="56" fill="#5b635e">slots</text>
+      <g stroke="#5b635e" stroke-width="0.8">
+        <rect x="70" y="40" width="34" height="26" rx="4" fill="#fbf6ea"/><rect x="108" y="40" width="34" height="26" rx="4" fill="#eef4f9"/><rect x="146" y="40" width="34" height="26" rx="4" fill="#fbefe9"/><rect x="184" y="40" width="34" height="26" rx="4" fill="#f2eef8"/><rect x="222" y="40" width="34" height="26" rx="4" fill="#fbf6ea"/><rect x="260" y="40" width="34" height="26" rx="4" fill="#eef4f9"/><rect x="298" y="40" width="34" height="26" rx="4" fill="#fbefe9"/><rect x="336" y="40" width="34" height="26" rx="4" fill="#f2eef8"/>
+      </g>
+      <text x="87" y="57" text-anchor="middle">0</text><text x="125" y="57" text-anchor="middle">1</text><text x="163" y="57" text-anchor="middle">2</text><text x="201" y="57" text-anchor="middle">3</text><text x="239" y="57" text-anchor="middle">50</text><text x="277" y="57" text-anchor="middle">51</text><text x="315" y="57" text-anchor="middle">52</text><text x="353" y="57" text-anchor="middle">53</text>
+      <text x="16" y="104" fill="#5b635e">genome</text>
+      <text x="87" y="104" text-anchor="middle">g17</text><text x="125" y="104" text-anchor="middle">g3</text><text x="163" y="104" text-anchor="middle">g41</text><text x="201" y="104" text-anchor="middle">g8</text><text x="239" y="104" text-anchor="middle">g17</text><text x="277" y="104" text-anchor="middle">g3</text><text x="315" y="104" text-anchor="middle">g41</text><text x="353" y="104" text-anchor="middle">g8</text>
+      <g stroke="#9aa0a6" stroke-width="0.8"><path d="M87 68V92"/><path d="M125 68V92"/><path d="M163 68V92"/><path d="M201 68V92"/><path d="M239 68V92"/><path d="M277 68V92"/><path d="M315 68V92"/><path d="M353 68V92"/></g>
+      <text x="400" y="50">slot s uses genome perm[s mod 50]</text>
+      <text x="400" y="68">so each genome controls 1 in 50 animals,</text>
+      <text x="400" y="86">spread evenly through every world.</text>
+      <text x="400" y="110">All 50 networks run as ONE batched matrix</text>
+      <text x="400" y="128">multiply on the GPU: no per-genome episodes.</text>
+      <text x="16" y="150" fill="#5b635e">fitness of a genome = mean reward per animal-step of its animals over the 128-step generation</text>
+    </g>
+  </svg>
+  <figcaption><b>Figure 5.1.</b> Shared-world evaluation. Every genome faces the same ecosystem at the same moment, which makes the comparison between genomes fair.</figcaption>
+  </figure>
+  <p>A generation lasts 128 steps; 150k world-steps across 4 worlds give 293 generations. A newborn in a slot keeps that slot's genome until the generation ends.</p>
+  <table>
+    <tr><th>Method</th><th>Main settings</th></tr>
+    <tr><td>GA</td><td>population 50, 5 elites, mutation σ 0.02, generation 128 steps, a genome needs 50 animal-steps to count</td></tr>
+    <tr><td>ES</td><td>25 antithetic pairs (50 evaluations), σ 0.02, Adam learning rate 0.01, weight decay 0.005; the champion is θ itself</td></tr>
+    <tr><td>NEAT</td><td>population 50, up to 48 hidden neurons, aim for 5 species (the distance threshold adapts), remove a species after 20 generations without progress, top 20% of each species breed</td></tr>
+  </table>
+  <h3>Making NEAT fast</h3>
+  <p>NEAT networks all have different shapes, which normally means evaluating them one at a time in plain Python. We <b>compile</b> every genome into the same fixed layout instead: [102 inputs | 48 hidden slots | 2 outputs], with dense weight matrices that are zero where a connection does not exist. Signals are propagated as many rounds as the deepest network needs. Then all 50 networks run as one batched GPU operation, just like GA and ES.</p>
+
+  <h2>5.3 The hybrid handover (M5)</h2>
+  <p>GA runs for the first 75k world-steps; its champion's weights are copied into PPO's actor for the last 75k. Two adjustments stop PPO from wrecking the inherited brain in the first updates:</p>
+  <ul>
+    <li><b>Critic warm-up.</b> PPO's critic starts from scratch and its first advantage estimates are noise. For the first 20 iterations only the critic is trained; the policy is left untouched.</li>
+    <li><b>Smaller exploration noise.</b> The policy's action noise starts at std 0.37 instead of 0.6, so the inherited behaviour is not drowned out.</li>
+  </ul>
+
+  <h2>5.4 The baselines</h2>
+  <p><b>Random</b> picks uniformly random actions. <b>Hand-coded</b> uses the same observation as the learned brains. Its prey graze, steer to visible grass, and on seeing a predator run into a visible refuge (or stand still if already inside), otherwise flee. Its predators chase the nearest visible prey at full speed, wander when they see none, and coast while digesting, since chasing then only burns energy.</p>
+</section>
+
+<!-- ============================================================== 6 -->
+<section class="chapter">
+  <div class="kicker">Chapter 6</div>
+  <h1>The journey: what we tried and why we changed it</h1>
+  <p class="lead">The benchmark looks simple now, but almost every rule in it exists because something went wrong first. Knowing these stories will save you from repeating them, and several of them belong in the paper's discussion.</p>
+
+  <h2>6.1 Timeline</h2>
+  <table>
+    <tr><th>Date (2026)</th><th>Milestone</th></tr>
+    <tr><td>26 Oct</td><td>World engine, baselines and tests. Survival gate failed, rules tuned, gate passed on the 200 × 200 world. PPO trainer written.</td></tr>
+    <tr><td>27 Oct</td><td>PPO fixes (entropy bonus, world-step budget). Genetic algorithm.</td></tr>
+    <tr><td>28 Oct</td><td>GA fitness without the birth bonus; GA signal check; ES.</td></tr>
+    <tr><td>28–29 Oct</td><td>NEAT, then the hybrid. Benchmark runner.</td></tr>
+    <tr><td>29 Oct</td><td>Birth bonus removed for every method. Web demo: TypeScript world, 3D view, landing page, loaders. Docker deploy.</td></tr>
+    <tr><td>30 Oct</td><td>Benchmark training: 25 runs on the GPU. Analysis script.</td></tr>
+    <tr><td>1 Nov</td><td>Benchmark evaluation and analysis. Landing page and demo brains updated. Study 2 code.</td></tr>
+  </table>
+
+  <h2>6.2 The decisions that shaped the benchmark</h2>
+  <h3>1. The world had to pass a survival gate</h3>
+  <p>Before any learning, a benchmark world must be able to keep both species alive with simple behaviour; otherwise every method fails and nothing is learned. Our rule was that hand-coded animals must keep both species for 10,000 steps in at least 4 of 5 worlds. The first version failed (2 of 5): hand-coded predators over-hunted early and starved. Three rounds of rule sweeps added the 50% catch chance, the 40-step stun after a miss and the 60-step digestion. The final rules passed in 10 of 10 worlds with hand-coded animals and with random ones.</p>
+  <h3>2. The small world was too small</h3>
+  <p>On 100 × 100 the predator population fell to 1–3 animals at the bottom of each cycle and died out by bad luck, whatever the brains did. Moving to 200 × 200 (four times the area and animals) fixed this, at the cost of slower simulation.</p>
+  <h3>3. PPO prey stopped exploring</h3>
+  <p>In the first PPO runs the prey's action randomness collapsed to zero: the policy became deterministic early and stopped finding better behaviour. A small entropy bonus (0.003) and a floor on the action noise fixed it.</p>
+  <h3>4. Budget in world-steps, not agent-steps</h3>
+  <p>Covered in section 4.3: freezing each species at its own agent-step budget let predators over-exploit frozen prey (1 of 4 worlds survived). That is already a small version of the arms-race idea from Chapter 2.</p>
+  <h3>5. Evolution cannot use a birth bonus</h3>
+  <p>A genome controls a slot for only 128 steps, but an animal lives 500–1,500 steps and breeds on energy it mostly gathered under earlier genomes. A birth bonus therefore rewarded genomes for work they did not do, and GA champions with it were worse than random. We removed it from evolution's fitness.</p>
+  <h3>6. Is GA's fitness signal even usable?</h3>
+  <p>GA prey looked worse than random by attack rate, so we checked whether GA could tell good brains from bad at all. We put known policies (PPO, hand-coded, random, untrained networks) into one shared world and scored them exactly as GA does. GA's champions clearly beat random and untrained networks, and in a single 128-step window the top 10% of genomes were PPO copies 42–70% of the time (chance: 20%). So the signal works, but for prey it is noisy: prey deaths are rare, discrete events, so one window ranks them only weakly. This is our explanation for why evolution learns predators well and prey poorly.</p>
+  <h3>7. The birth bonus confound</h3>
+  <p>At this point evolution's predators (GA 8.18 catches per 1k steps, ES 8.03) beat PPO's (5.30). But PPO still had the +1 birth bonus that evolution had dropped. Retraining PPO without it changed everything: PPO predators reached 7.45 and PPO prey became the best prey of any method (attack rate 8.2, against 14.2 for hand-coded). The "evolution makes better predators" story had been mostly a reward difference. Since then every method uses exactly the same reward.</p>
+  <h3>8. Both species must learn</h3>
+  <p>All the results so far came from training one species against hand-coded opponents. A real ecosystem has both sides adapting, so the benchmark trains each method on both species at once. That change produced the main finding of the project (Chapter 7).</p>
+
+  <div class="callout idea">
+    <span class="label">Earlier one-species results, for reference</span>
+    <p>Trained against hand-coded opponents, one run each: PPO made the best prey (attack rate 8.2) and every learned predator beat the hand-coded hunter by 25–40% in catches per predator-step (GA 8.18, ES 8.03, hybrid 7.64, NEAT 7.59, PPO 7.45, hand-coded 5.92). The hybrid gave no gain over its parts. NEAT was the weakest evolutionary method: it spends much of its budget growing structure (about 17 hidden neurons by the end).</p>
+  </div>
+</section>
+
+<!-- ============================================================== 7 -->
+<section class="chapter">
+  <div class="kicker">Chapter 7</div>
+  <h1>Results</h1>
+  <p class="lead">Every method trained both species together: 5 methods × 5 seeds = 25 runs, about 15 minutes each on an RTX 5060 Ti. Each run was then tested in all 5 scenarios on 5 fresh worlds for 10,000 steps. The full tables are in <code>results/bench/STATS.md</code>.</p>
+
+  <h2>7.1 Learned ecosystems collapse</h2>
+  <table>
+    <tr><th>Method</th><th class="n">Balanced after 10k steps (all scenarios)</th><th class="n">S1</th><th class="n">S2</th><th class="n">S3</th><th class="n">S4</th><th class="n">S5</th></tr>
+    <tr><td>Random</td><td class="n"><b>92%</b></td><td class="n">100%</td><td class="n">60%</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td></tr>
+    <tr class="hl"><td>ES</td><td class="n"><b>77%</b></td><td class="n">80%</td><td class="n">60%</td><td class="n">84%</td><td class="n">80%</td><td class="n">80%</td></tr>
+    <tr><td>Hybrid</td><td class="n">64%</td><td class="n">88%</td><td class="n">40%</td><td class="n">20%</td><td class="n">76%</td><td class="n">96%</td></tr>
+    <tr><td>Hand-coded</td><td class="n">64%</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td><td class="n">0%</td><td class="n">20%</td></tr>
+    <tr><td>PPO</td><td class="n">22%</td><td class="n">80%</td><td class="n">0%</td><td class="n">0%</td><td class="n">4%</td><td class="n">24%</td></tr>
+    <tr><td>GA</td><td class="n">10%</td><td class="n">4%</td><td class="n">0%</td><td class="n">8%</td><td class="n">8%</td><td class="n">28%</td></tr>
+    <tr><td>NEAT</td><td class="n">0%</td><td class="n">0%</td><td class="n">0%</td><td class="n">0%</td><td class="n">0%</td><td class="n">0%</td></tr>
+  </table>
+  <p>In <b>every</b> collapse, in every scenario and every method, the predators died out. Prey never went extinct. Random animals keep the steadiest world because their predators are bad hunters but their prey are equally bad at escaping, so neither side gets ahead.</p>
+  <figure>
+    <img src="../../results/bench/figures/survival.png" alt="Survival curves per scenario">
+    <figcaption><b>Figure 7.1.</b> Kaplan–Meier survival curves: the share of the 25 test worlds per method that still had both species at each step. NEAT (purple) collapses first, by about step 3,000; GA (orange) follows. ES (red-orange) and the hybrid (blue) hold best among learned methods. Log-rank tests against PPO give p &lt; 0.001 for most comparisons in S2–S5.</figcaption>
+  </figure>
+
+  <h2>7.2 Two ways to collapse</h2>
+  <figure>
+    <img src="../../results/bench/figures/predators_S1.png" alt="Predator populations over time" style="width:78%;margin:0 auto">
+    <figcaption><b>Figure 7.2.</b> Predator numbers over time in S1 (median of 25 worlds, shaded: middle 50%). GA and NEAT predators dwindle steadily from the start. PPO predators grow to about 250 per world and stay high, until in some worlds they crash.</figcaption>
+  </figure>
+  <div class="two">
+  <div>
+  <h3>Slow starvation: GA and NEAT</h3>
+  <p>GA and NEAT predators catch the <i>most</i> prey per step (6.4 per 1,000 steps, the same as random) but live the shortest lives (633–782 steps, against about 1,060 for the others). Their population falls by a factor of e every 0.6–1.3 thousand steps. They spend more energy chasing than their catches return. Meanwhile their prey live 1,190–1,260 steps, more than twice as long as PPO's prey.</p>
+  </div>
+  <div>
+  <h3>Boom and crash: PPO</h3>
+  <p>PPO predators live longest (1,196 steps) and their population is the largest of any method (about 240 per world). They push the prey down to about 490, the lowest of any learned method. In most S1 worlds this holds, but in the harder scenarios the predators overshoot their food and crash: PPO survives 80% of S1 worlds but almost none in S2–S4.</p>
+  </div>
+  </div>
+  <figure>
+    <img src="../../results/bench/figures/phase_S1.png" alt="Phase portraits">
+    <figcaption><b>Figure 7.3.</b> Phase portraits: prey (x) against predators (y) in one world per method, coloured by time from purple (start) to yellow (end). The hand-coded world loops like a textbook Lotka–Volterra cycle; GA and NEAT slide down to zero predators; ES settles into a small steady cloud.</figcaption>
+  </figure>
+
+  <h2>7.3 The numbers behind it (S1)</h2>
+  <table>
+    <tr><th>Method</th><th class="n">Attack rate</th><th class="n">Catches / 1k predator-steps</th><th class="n">Prey lifespan</th><th class="n">Predator lifespan</th><th class="n">Predator trend (log / 1k steps)</th><th class="n">Training resets</th></tr>
+    <tr><td>Random</td><td class="n">8.3</td><td class="n">6.46</td><td class="n">683</td><td class="n">1,072</td><td class="n">−0.04</td><td class="n">–</td></tr>
+    <tr><td>Hand-coded</td><td class="n">14.7</td><td class="n">6.14</td><td class="n">440</td><td class="n">1,056</td><td class="n">+0.01</td><td class="n">–</td></tr>
+    <tr><td>PPO</td><td class="n">10.7</td><td class="n">5.44</td><td class="n">501</td><td class="n">1,196</td><td class="n">0.00</td><td class="n">9–15</td></tr>
+    <tr><td>GA</td><td class="n">10.6</td><td class="n">6.44</td><td class="n">1,190</td><td class="n">782</td><td class="n">−0.77</td><td class="n">1–3</td></tr>
+    <tr><td>ES</td><td class="n">9.9</td><td class="n">5.56</td><td class="n">734</td><td class="n">1,059</td><td class="n">−0.02</td><td class="n">0</td></tr>
+    <tr><td>NEAT</td><td class="n">9.8</td><td class="n">6.41</td><td class="n">1,260</td><td class="n">633</td><td class="n">−1.75</td><td class="n">7–12</td></tr>
+    <tr><td>Hybrid</td><td class="n">10.4</td><td class="n">5.74</td><td class="n">728</td><td class="n">1,055</td><td class="n">−0.08</td><td class="n">0–5</td></tr>
+  </table>
+  <p class="small dim">Means of 5 training seeds (baselines: 5 worlds). "Training resets" = how often a species died out during each training run and the trainer silently started a fresh world.</p>
+  <figure>
+    <img src="../../results/bench/figures/metrics_S1.png" alt="Metric bars">
+    <figcaption><b>Figure 7.4.</b> Six metrics in S1 with 95% bootstrap confidence intervals; each dot is one training seed. Note how far apart the dots of one method can be: training seed matters a lot.</figcaption>
+  </figure>
+
+  <h2>7.4 Three more things the data shows</h2>
+  <ul>
+    <li><b>Training hid the problem.</b> When a species died out during training, the trainer reset the world, so no learner was ever penalised for wrecking its ecosystem. PPO's worlds collapsed 9–15 times per training run and NEAT's 7–12 times; ES's never did. The methods that collapsed most in training also collapse most in testing.</li>
+    <li><b>Seeds matter enormously.</b> ES kept all 25 of its worlds balanced (5 scenarios × 5 worlds) on two seeds, 22–23 on two more, and only 1 on seed 3. One training run per method, as in our earlier experiments, would have produced an unreliable ranking.</li>
+    <li><b>Learned ecosystems do not cycle like Lotka–Volterra.</b> Fitting the Lotka–Volterra equations to 100-step population changes gives R² of 0.29 (prey) and 0.55 (predators) for the hand-coded world but under 0.08 for every learned one. Learned worlds settle, drift or crash instead of looping.</li>
+  </ul>
+  <div class="callout">
+    <span class="label">What this means for the paper</span>
+    <p>The interesting result is not "which method wins". It is that methods which train each animal to do well for itself tend to destroy the ecosystem, and they do it in two recognisable ways that ecology predicts: an arms race won by the prey (GA, NEAT) and over-exploitation by the predators (PPO). Study 2 (Chapter 10) tests these explanations directly.</p>
+  </div>
+</section>
+
+<!-- ============================================================== 8 -->
+<section class="chapter">
+  <div class="kicker">Chapter 8</div>
+  <h1>Running it yourself</h1>
+  <p class="lead">Everything is in one repository. The Python side trains and evaluates; the <code>web/</code> folder is the browser demo. You can run the tests and small experiments on any laptop; full training needs an NVIDIA GPU (we use an RTX 5060 Ti with 16 GB).</p>
+
+  <h2>8.1 Repository map</h2>
+<pre class="tree">EcoArena/
+├── configs/          world rules as JSON: s1_large (benchmark), s1_balanced (small), scenarios
+├── ecoarena/
+│   ├── env/          the world: world.py (rules), config.py, rng.py (reproducible randomness)
+│   ├── policies/     random and hand-coded baselines
+│   ├── trainers/     ppo.py, ga.py, es.py, neat.py; common.py = the shared reward
+│   └── eval/         quick.py, benchmark.py (per-world tests), behaviour.py (tactics)
+├── scripts/          command-line entry points (below)
+├── tests/            automated tests (pytest)
+├── results/          checkpoints, histories, evaluations, summaries, figures
+│   ├── bench/        the benchmark: train/, eval/, figures/, STATS.md, SUMMARY.md
+│   └── ppo/ ga/ ...  earlier one-species experiments, each with a SUMMARY.md
+├── web/              the browser demo (Vite + React + three.js + TypeScript)
+└── paper/            the paper's LaTeX source goes here (empty for now)</pre>
+
+  <h2>8.2 Setup</h2>
+<pre><span class="c"># Python 3.12 with uv (pip works too)</span>
+uv venv --python 3.12 &amp;&amp; source .venv/bin/activate
+uv pip install torch                  <span class="c"># RTX 50xx cards need the CUDA 12.8+ build</span>
+uv pip install -e ".[dev]"
+pytest -q                             <span class="c"># all tests, CPU, under a minute</span>
+ruff check ecoarena scripts tests     <span class="c"># style check; CI runs both</span></pre>
+
+  <h2>8.3 Look at the world</h2>
+<pre>python scripts/run_baseline.py --policy heuristic --worlds 5 \
+    --steps 10000 --base s1_large.json
+python scripts/timing.py --device cuda   <span class="c"># simulation speed</span></pre>
+  <p><code>run_baseline.py</code> writes a population plot, the raw population series and a JSON summary to <code>results/baselines/</code>. Start here: it shows what a healthy world looks like.</p>
+
+  <h2>8.4 Train one method</h2>
+  <p>Every training script takes <code>--learn prey</code>, <code>--learn predator</code> or <code>--learn prey predator</code>. Untrained species use <code>--opponent</code> (hand-coded by default).</p>
+<pre>python scripts/train_ppo.py    --learn prey predator --name my-ppo    <span class="c"># M1</span>
+python scripts/train_ga.py     --learn prey predator --name my-ga     <span class="c"># M2</span>
+python scripts/train_es.py     --learn prey predator --name my-es     <span class="c"># M3</span>
+python scripts/train_neat.py   --learn prey predator --name my-neat   <span class="c"># M4</span>
+python scripts/train_hybrid.py --learn prey predator --name my-hybrid <span class="c"># M5 (GA then PPO)</span></pre>
+  <p>Useful options: <code>--seed</code>, <code>--world-steps</code> (budget, default 150,000), <code>--worlds</code> (parallel worlds, default 4), <code>--device cpu</code>, <code>--base s1_balanced.json</code> (small world for quick tries). Each run writes <code>prey.pt</code> / <code>predator.pt</code> (the brains), <code>history.json</code>, <code>curves.png</code> and <code>eval.json</code> (a quick test against the baselines) to <code>results/&lt;method&gt;/&lt;name&gt;/</code>.</p>
+  <div class="callout idea"><span class="label">Tip</span><p>For a first try, use <code>--base s1_balanced.json --world-steps 20000 --device cpu</code>. It finishes in minutes on a laptop and exercises the same code.</p></div>
+
+  <h2>8.5 The benchmark</h2>
+<pre>python scripts/benchmark.py train   <span class="c"># 25 runs, 5 methods x 5 seeds (~6.5 h)</span>
+python scripts/benchmark.py eval    <span class="c"># 5 scenarios x 5 worlds x 10k steps (~2 h)</span>
+python scripts/benchmark.py table   <span class="c"># TABLES.md and per_world.csv</span>
+python scripts/analyze.py           <span class="c"># figures and STATS.md</span>
+python scripts/dynamics.py          <span class="c"># cycles, phase portraits (CPU)</span></pre>
+  <p>All benchmark commands are <b>resumable</b>: stop with Ctrl+C at any time and run the same command again; finished runs are skipped. Filters such as <code>--methods ppo es</code>, <code>--seeds 0 1</code> and <code>--scenarios S1</code> run a subset.</p>
+
+  <h2>8.6 Our routine</h2>
+  <p>The GPU machine is at Miraz's home, so long jobs follow a simple loop: pull the latest code, run the next command, commit the <code>results/</code> folder and push, then analyse the pushed results from anywhere.</p>
+<pre>git pull
+python scripts/&lt;whatever is next&gt;
+git add results &amp;&amp; git commit -m "..." &amp;&amp; git push</pre>
+
+  <h2>8.7 Where to look first</h2>
+  <ul>
+    <li><code>results/bench/SUMMARY.md</code>: the benchmark in one page.</li>
+    <li><code>ecoarena/env/world.py</code>: the top comment lists every rule and the step order.</li>
+    <li><code>ecoarena/trainers/common.py</code>: the shared reward, under 50 lines.</li>
+    <li><code>ecoarena/trainers/ga.py</code>: the shared-world evaluation; ES and NEAT build on it.</li>
+    <li><code>results/ppo/SUMMARY.md</code>: the birth-bonus story with numbers.</li>
+  </ul>
+</section>
+
+<!-- ============================================================== 9 -->
+<section class="chapter">
+  <div class="kicker">Chapter 9</div>
+  <h1>The web demo</h1>
+  <p class="lead">The demo runs the real EcoArena world in the browser, with the trained brains, in a 3D low-poly diorama. A scroll-through landing page explains the project first, then visitors enter the live simulation and can swap brains, change scenarios and follow single animals.</p>
+
+  <figure>
+  <svg viewBox="0 0 760 230" font-family="Inter, sans-serif" font-size="11">
+    <defs><marker id="a9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5b635e"/></marker></defs>
+    <text x="16" y="20" font-weight="700" font-size="13">One set of rules, two runtimes</text>
+    <rect x="6" y="40" width="210" height="170" rx="8" fill="#eef4ea" stroke="#2e6b3b" stroke-width="1.3"/>
+    <text x="111" y="62" text-anchor="middle" font-weight="600">Python (training)</text>
+    <text x="22" y="86">configs/*.json (shared)</text><text x="22" y="104">ecoarena/env/world.py</text><text x="22" y="122">trained .pt brains</text>
+    <text x="22" y="150" fill="#5b635e">export_web.py brains →</text><text x="22" y="166" fill="#5b635e">  JSON weights (base64)</text>
+    <text x="22" y="188" fill="#5b635e">export_web.py parity →</text><text x="22" y="204" fill="#5b635e">  recorded test runs</text>
+    <rect x="276" y="40" width="210" height="170" rx="8" fill="#eef4f9" stroke="#2b6ca3" stroke-width="1.3"/>
+    <text x="381" y="62" text-anchor="middle" font-weight="600">Web Worker (simulation)</text>
+    <text x="292" y="86">src/sim/world.ts</text><text x="292" y="104">same step order, same RNG</text><text x="292" y="122">brains run in TypeScript</text>
+    <text x="292" y="150" fill="#5b635e">posts compact frames:</text><text x="292" y="166" fill="#5b635e">positions, events, counts</text>
+    <text x="292" y="188" fill="#5b635e">parity test: identical</text><text x="292" y="204" fill="#5b635e">for 150 steps</text>
+    <rect x="546" y="40" width="210" height="170" rx="8" fill="#fbf6ea" stroke="#b07a12" stroke-width="1.3"/>
+    <text x="651" y="62" text-anchor="middle" font-weight="600">Main thread (view)</text>
+    <text x="562" y="86">React UI, glass panels</text><text x="562" y="104">three.js diorama</text><text x="562" y="122">instanced low-poly animals</text>
+    <text x="562" y="150" fill="#5b635e">interpolates between</text><text x="562" y="166" fill="#5b635e">frames for smooth motion</text>
+    <text x="562" y="188" fill="#5b635e">landing page, loaders,</text><text x="562" y="204" fill="#5b635e">camera tour, heat maps</text>
+    <g fill="none" stroke="#5b635e" stroke-width="1.2" marker-end="url(#a9)"><path d="M216 125H276"/><path d="M486 125H546"/></g>
+  </svg>
+  <figcaption><b>Figure 9.1.</b> The world is written twice, in Python and TypeScript, and an automated test proves the two behave identically.</figcaption>
+  </figure>
+
+  <h2>9.1 Keeping two worlds identical</h2>
+  <p>The browser cannot run PyTorch, so <code>web/src/sim/world.ts</code> is a line-by-line TypeScript port of <code>world.py</code>. The two must never drift apart, so a <b>parity test</b> records Python runs (random and hand-coded animals, 150 steps) and replays them in TypeScript. Every birth, death, capture, age and timer must match exactly; positions and energy must match to float32 rounding; the 102-number observations to 10<sup>−4</sup>; and exported brains must produce the same actions as PyTorch. This works because the randomness is a pure hash (section 3.5), not a hidden generator state. Over thousands of steps the two runs slowly drift apart because sin and cos round differently in the two languages; that is expected, and the test proves the rules are the same.</p>
+
+  <h2>9.2 What visitors see</h2>
+  <ul>
+    <li><b>Loading screen:</b> a small low-poly island assembles while the real setup steps tick off, then the camera flies straight into the real island.</li>
+    <li><b>Landing page:</b> 11 full-screen chapters (one scroll each) told over a live 3D island: the world, prey, predators, refuges, vision, the five methods, three findings with charts, and an entrance to the simulation.</li>
+    <li><b>Simulation:</b> pick a brain for each species (the benchmark brains; ES by default because it keeps the world alive), change scenario and speed, watch populations live, follow one animal, let the camera tour the hunts, or switch on trails and a catch heat map.</li>
+  </ul>
+
+  <h2>9.3 Commands</h2>
+<pre>cd web
+pnpm install
+pnpm dev          <span class="c"># http://localhost:5173</span>
+pnpm test         <span class="c"># the Python-to-TypeScript parity test</span>
+pnpm build        <span class="c"># dist/ (static site) and dist/ecoarena.html (everything in one file)</span>
+
+python scripts/export_web.py brains   <span class="c"># after changing web/brains.manifest.json</span>
+python scripts/export_web.py parity   <span class="c"># after changing the world rules</span>
+
+docker build -f web/Dockerfile -t ecoarena-web .   <span class="c"># Nginx image; deployed on Dokploy</span></pre>
+  <p>Which checkpoint each method uses is set in <code>web/brains.manifest.json</code>; for each method we picked the benchmark seed whose worlds stayed balanced most often.</p>
+</section>
+
+<!-- ============================================================== 10 -->
+<section class="chapter">
+  <div class="kicker">Chapter 10</div>
+  <h1>Where we are now</h1>
+  <p class="lead">The benchmark is finished and analysed. Because its main result is the collapse itself, we are extending the project into a second study that asks why it happens and what prevents it, aiming at both the course paper (January 2027) and an external conference.</p>
+  <h2>10.1 Study 2 in brief</h2>
+  <table>
+    <tr><th>Experiment</th><th>Question</th><th>What we change</th></tr>
+    <tr><td>E1 Horizon</td><td>Do learners collapse because they only look ~128 steps ahead?</td><td>longer generations; PPO discount 0.995 and 0.999</td></tr>
+    <tr><td>E2 Level of selection</td><td>Is it what animals optimise, or the level at which selection acts?</td><td>one genome per world (group selection), with and without a reward for ecosystem health</td></tr>
+    <tr><td>E3 Learning speed</td><td>Is it an arms race the prey win?</td><td>prey learn 4× slower, or not at all; reverse control for predators</td></tr>
+    <tr><td>Cross-play</td><td>Are learned prey simply too good?</td><td>prey of one method against predators of another</td></tr>
+    <tr><td>Tactics</td><td>What do the animals actually do?</td><td>measure refuge use, ambushes at refuge edges, pursuit, fleeing, herding</td></tr>
+  </table>
+  <p>The code is written and tested. The GPU is working through it night by night with the same commands (<code>python scripts/study.py ...</code>); the full plan is in the team's Study 2 doc.</p>
+  <h2>10.2 How you can help</h2>
+  <ul>
+    <li><b>Read and question.</b> Run the tests, read <code>world.py</code> and the summaries, and point out anything unclear or suspicious. Fresh eyes catch bugs.</li>
+    <li><b>Related work.</b> The paper needs a solid related-work section on multi-agent RL ecosystems, neuroevolution versus RL comparisons, and the ecology of prudent predation and arms races.</li>
+    <li><b>Writing.</b> Introduction, environment and methods sections can be drafted now; this handbook is a good starting point for all three.</li>
+    <li><b>Figures and the demo.</b> Paper figures, a short demo video, and the team section of the landing page.</li>
+  </ul>
+</section>
+
+<!-- ============================================================== 11 -->
+<section class="chapter">
+  <div class="kicker">Chapter 11</div>
+  <h1>Glossary</h1>
+  <dl class="glossary">
+    <div><dt>Action</dt><dd>What an animal does each step: two numbers in [−1, 1], turn and thrust.</dd></div>
+    <div><dt>Advantage</dt><dd>How much better an action turned out than the critic expected. PPO makes high-advantage actions more likely.</dd></div>
+    <div><dt>Agent-step</dt><dd>One animal living for one step. A world with 700 animals produces 700 agent-steps per world-step.</dd></div>
+    <div><dt>Antithetic sampling</dt><dd>In ES, testing each random change both added and subtracted (θ + σε and θ − σε) to cancel noise.</dd></div>
+    <div><dt>Attack rate</dt><dd>Catches per (prey × predator × step) × 10<sup>6</sup>; lower means prey are harder to catch. Misleading for predators (handling time).</dd></div>
+    <div><dt>Baseline</dt><dd>A non-learning reference policy: Random (B0) or Hand-coded (B1).</dd></div>
+    <div><dt>Birth bonus</dt><dd>An extra reward per offspring. Removed for every method because it confounded the comparison.</dd></div>
+    <div><dt>Bootstrap CI</dt><dd>A confidence interval from resampling the data with replacement many times.</dd></div>
+    <div><dt>Censored</dt><dd>In survival analysis, a world that was still alive when the run ended: we only know it lasted at least that long.</dd></div>
+    <div><dt>Champion</dt><dd>The best brain an evolutionary run produces; what gets saved and tested.</dd></div>
+    <div><dt>Clip (PPO)</dt><dd>The limit on how far one update may move the policy; keeps PPO stable.</dd></div>
+    <div><dt>Credit assignment</dt><dd>Working out which action caused a later reward. Hard when rewards are rare or delayed.</dd></div>
+    <div><dt>Critic / value function</dt><dd>PPO's second network, which predicts the future return from a situation.</dd></div>
+    <div><dt>CV (coefficient of variation)</dt><dd>Standard deviation divided by mean; lower = steadier population.</dd></div>
+    <div><dt>Digest / handling time</dt><dd>The 60 steps after a catch when a predator cannot catch again.</dd></div>
+    <div><dt>Discount γ</dt><dd>How much less a future reward counts per step. γ = 0.99 means the agent effectively plans about 100 steps ahead.</dd></div>
+    <div><dt>Elite</dt><dd>In GA, a top genome copied unchanged into the next generation.</dd></div>
+    <div><dt>Entropy bonus</dt><dd>A small reward for keeping actions random, so PPO keeps exploring.</dd></div>
+    <div><dt>Episode</dt><dd>A run that starts fresh and ends; EcoArena has none (non-episodic).</dd></div>
+    <div><dt>Fitness</dt><dd>The score evolution selects on: here, mean reward per animal-step of a genome's animals.</dd></div>
+    <div><dt>GAE</dt><dd>Generalised advantage estimation: blends short and long-range advantage estimates (λ = 0.95).</dd></div>
+    <div><dt>Generation</dt><dd>One round of evolution: evaluate every genome (128 steps here), then select and mutate.</dd></div>
+    <div><dt>Genome</dt><dd>The list of a network's weights (and, in NEAT, its wiring) that evolution works on.</dd></div>
+    <div><dt>Innovation number</dt><dd>In NEAT, a global id for each new connection so different networks can be aligned.</dd></div>
+    <div><dt>Kaplan–Meier curve</dt><dd>The share of worlds still balanced at each moment, handling censored worlds correctly.</dd></div>
+    <div><dt>Life–dinner principle</dt><dd>Prey that fail die, predators that fail only miss a meal, so selection pushes prey harder.</dd></div>
+    <div><dt>Log-rank test</dt><dd>A statistical test of whether two survival curves differ.</dd></div>
+    <div><dt>Lotka–Volterra</dt><dd>The classic equations for cycling predator and prey populations.</dd></div>
+    <div><dt>MLP</dt><dd>Multilayer perceptron: our 102 → 64 → 64 → 2 network.</dd></div>
+    <div><dt>Observation</dt><dd>The 102 numbers an animal sees: 16 vision sectors × 6 plus 6 about itself.</dd></div>
+    <div><dt>Parameter sharing</dt><dd>All animals of a species use one network.</dd></div>
+    <div><dt>Parity test</dt><dd>The automated check that the browser world and the Python world behave identically.</dd></div>
+    <div><dt>Permutation test</dt><dd>A test that compares two groups by trying every way of relabelling them; exact for small samples.</dd></div>
+    <div><dt>Policy</dt><dd>A brain: the function from observation to action.</dd></div>
+    <div><dt>Prudent predator</dt><dd>A predator that restrains its hunting so its prey, and so its own species, survive.</dd></div>
+    <div><dt>Refuge</dt><dd>A patch where prey cannot be caught and grass stays short.</dd></div>
+    <div><dt>Return</dt><dd>The discounted sum of future rewards that RL maximises.</dd></div>
+    <div><dt>Reward</dt><dd>Per-step feedback: energy change / 100, child-energy refund, −1 on death. The same for all methods.</dd></div>
+    <div><dt>Rollout</dt><dd>A batch of experience PPO collects before each update (64 steps × 4 worlds).</dd></div>
+    <div><dt>Scenario</dt><dd>A variant of the world for testing (S1–S5).</dd></div>
+    <div><dt>Seed</dt><dd>The number that fixes all randomness of a run. Training seeds and evaluation seeds are separate.</dd></div>
+    <div><dt>Slot</dt><dd>A fixed place in the animal tensors; alive or free. Births fill free slots.</dd></div>
+    <div><dt>Speciation</dt><dd>In NEAT, grouping similar genomes so new structures compete mainly within their group.</dd></div>
+    <div><dt>Survival gate</dt><dd>Our rule that hand-coded animals must keep both species alive before a world counts as a benchmark world.</dd></div>
+    <div><dt>Tragedy of the commons</dt><dd>When every individual's best move, taken by all, ruins the shared resource.</dd></div>
+    <div><dt>World-step</dt><dd>One world advanced by one step: our unit of compute budget (150,000 per run).</dd></div>
+  </dl>
+</section>
+</body>
+</html>
