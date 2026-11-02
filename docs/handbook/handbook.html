@@ -147,7 +147,7 @@ figcaption b { color: var(--ink); }
     <span class="label">Main finding</span>
     <p><b>When animals learn, the ecosystem usually breaks.</b> Random animals kept both species alive in 92% of test worlds; ES managed 77%, the Hybrid 64%, PPO 22%, GA 10% and NEAT 0%. Every single collapse was the predators dying out: prey never went extinct.</p>
   </div>
-  <p>And the methods fail in two different ways. GA and NEAT predators slowly starve: they catch the most prey per step but spend more energy chasing than they gain. PPO predators do the opposite: they multiply, over-eat the prey, then crash. This is now the centre of the paper.</p>
+  <p>And the predators do not die because they ate all the prey. When the last predator died, a median of 500–570 prey were still alive, close to the 660 the worlds start with. The learned prey simply became too hard to catch. Only the hand-coded world collapsed the textbook way, with the prey eaten down to a few dozen first. This is now the centre of the paper.</p>
 
   <h2>What exists today</h2>
   <figure>
@@ -258,7 +258,7 @@ figcaption b { color: var(--ink); }
     <li><b>The prudent predator:</b> a population of restrained hunters outlives a greedy one, but individual selection rarely favours restraint (Slobodkin 1961). Whether group-level selection can produce it is a long-running debate.</li>
     <li><b>The life–dinner principle</b> (Dawkins and Krebs 1979): a prey that fails dies, a predator that fails only misses a meal. Prey are therefore under stronger pressure to improve, and arms races tend to favour them.</li>
   </ul>
-  <p>Chapter 7 shows that both failure modes appear in EcoArena, and Chapter 10 describes how we are testing them.</p>
+  <p>Chapter 7 shows which of these fits EcoArena (so far the life–dinner principle), and Chapter 10 describes how we are testing them.</p>
 </section>
 
 <!-- ============================================================== 3 -->
@@ -564,21 +564,31 @@ figcaption b { color: var(--ink); }
     <figcaption><b>Figure 7.1.</b> Kaplan–Meier survival curves: the share of the 25 test worlds per method that still had both species at each step. NEAT (purple) collapses first, by about step 3,000; GA (orange) follows. ES (red-orange) and the hybrid (blue) hold best among learned methods. Log-rank tests against PPO give p &lt; 0.001 for most comparisons in S2–S5.</figcaption>
   </figure>
 
-  <h2>7.2 Two ways to collapse</h2>
+  <h2>7.2 Predators starve with food all around them</h2>
   <figure>
     <img src="../../results/bench/figures/predators_S1.png" alt="Predator populations over time" style="width:78%;margin:0 auto">
-    <figcaption><b>Figure 7.2.</b> Predator numbers over time in S1 (median of 25 worlds, shaded: middle 50%). GA and NEAT predators dwindle steadily from the start. PPO predators grow to about 250 per world and stay high, until in some worlds they crash.</figcaption>
+    <figcaption><b>Figure 7.2.</b> Predator numbers over time in S1 (median of 25 worlds, shaded: middle 50%). GA and NEAT predators dwindle steadily from the start. PPO predators grow to about 250 per world and mostly stay high in S1; in the harder scenarios they fade too.</figcaption>
   </figure>
   <div class="two">
   <div>
-  <h3>Slow starvation: GA and NEAT</h3>
+  <h3>GA and NEAT: decline from the start</h3>
   <p>GA and NEAT predators catch the <i>most</i> prey per step (6.4 per 1,000 steps, the same as random) but live the shortest lives (633–782 steps, against about 1,060 for the others). Their population falls by a factor of e every 0.6–1.3 thousand steps. They spend more energy chasing than their catches return. Meanwhile their prey live 1,190–1,260 steps, more than twice as long as PPO's prey.</p>
   </div>
   <div>
-  <h3>Boom and crash: PPO</h3>
-  <p>PPO predators live longest (1,196 steps) and their population is the largest of any method (about 240 per world). They push the prey down to about 490, the lowest of any learned method. In most S1 worlds this holds, but in the harder scenarios the predators overshoot their food and crash: PPO survives 80% of S1 worlds but almost none in S2–S4.</p>
+  <h3>PPO: boom, then fade in harder worlds</h3>
+  <p>PPO predators live longest (1,196 steps) and their population is the largest of any method (about 240 per world). In S1 they usually hold. In S2–S4 they boom early, pushing the prey down to about 260–400, but then dwindle over the next few thousand steps while the prey recover to about 500. PPO survives 80% of S1 worlds but almost none in S2–S4.</p>
   </div>
   </div>
+  <table>
+    <tr><th>Method</th><th class="n">Collapsed worlds</th><th class="n">Prey alive when the last predator died (median)</th><th class="n">Lowest prey count before that (median)</th></tr>
+    <tr><td>ES</td><td class="n">29</td><td class="n">571</td><td class="n">425</td></tr>
+    <tr><td>PPO</td><td class="n">98</td><td class="n">565</td><td class="n">270</td></tr>
+    <tr><td>GA</td><td class="n">113</td><td class="n">539</td><td class="n">301</td></tr>
+    <tr><td>Hybrid</td><td class="n">45</td><td class="n">539</td><td class="n">331</td></tr>
+    <tr><td>NEAT</td><td class="n">125</td><td class="n">504</td><td class="n">326</td></tr>
+    <tr class="hl"><td>Hand-coded</td><td class="n">9</td><td class="n">48</td><td class="n">8</td></tr>
+  </table>
+  <p>This is the key table. In every learned method the predators died with plenty of food around, so the collapse is not over-hunting: the prey won the arms race. Only the hand-coded predators over-hunted (prey down to 8 before the predators starved).</p>
   <figure>
     <img src="../../results/bench/figures/phase_S1.png" alt="Phase portraits">
     <figcaption><b>Figure 7.3.</b> Phase portraits: prey (x) against predators (y) in one world per method, coloured by time from purple (start) to yellow (end). The hand-coded world loops like a textbook Lotka–Volterra cycle; GA and NEAT slide down to zero predators; ES settles into a small steady cloud.</figcaption>
@@ -609,7 +619,7 @@ figcaption b { color: var(--ink); }
   </ul>
   <div class="callout">
     <span class="label">What this means for the paper</span>
-    <p>The interesting result is not "which method wins". It is that methods which train each animal to do well for itself tend to destroy the ecosystem, and they do it in two recognisable ways that ecology predicts: an arms race won by the prey (GA, NEAT) and over-exploitation by the predators (PPO). Study 2 (Chapter 10) tests these explanations directly.</p>
+    <p>The interesting result is not "which method wins". It is that methods which train each animal to do well for itself tend to destroy the ecosystem, and the way they do it matches what ecology calls the life–dinner principle: the prey win the arms race and the predators starve with food all around them. Study 2 (Chapter 10) tests this and the alternatives directly.</p>
   </div>
 </section>
 
