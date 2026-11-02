@@ -27,7 +27,7 @@ export function drawChart(cv: HTMLCanvasElement, prey: number[], pred: number[],
   const g = cv.getContext("2d")!;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.clearRect(0, 0, W, H);
-  g.font = "11px 'IBM Plex Mono', ui-monospace, monospace";
+  g.font = "11px 'JetBrains Mono', ui-monospace, monospace";
   g.textBaseline = "middle";
   const n = prey.length;
   if (n < 2) return;

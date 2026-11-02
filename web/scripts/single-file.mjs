@@ -10,9 +10,6 @@ const safe = (s) => s.replace(/<\/(script|style)/gi, "<\\/$1");
 const html = `<meta charset="utf-8">
 <title>EcoArena</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 ${safe(css)}
 </style>

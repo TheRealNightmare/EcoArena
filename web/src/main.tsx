@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import Landing from "./landing/Landing";
+import "./fonts";
 import "./styles.css";
 
 // Routes: the landing page by default, the simulation at #sim.

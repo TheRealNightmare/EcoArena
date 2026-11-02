@@ -6,7 +6,7 @@ import "./landing.css";
 // ------------------------------------------------------------------------------------------ findings data
 // Benchmark results: every method controls both species, 5 training seeds x 150k world-steps each, evaluated on
 // 5 fresh worlds x 10,000 steps in each of 5 scenarios. Source: results/bench/STATS.md in the repo.
-type Bar = { label: string; v: number; tone?: "rl" | "evo" | "base" };
+type Bar = { label: string; v: number; tone?: "rl" | "evo" | "base" | "ppo" | "es" | "ga" | "neat" | "hybrid" };
 // share of worlds where both species were still alive after 10,000 steps (S1-S5 pooled; 125 worlds per method)
 const SURVIVAL: Bar[] = [
   { label: "Random", v: 92, tone: "base" },
@@ -56,6 +56,81 @@ function BarChart({ id, bars, max, unit, decimals = 1 }: { id: string; bars: Bar
     </svg>
   );
 }
+
+// Survival (% of 25 test worlds with both species alive after 10,000 steps) per scenario, from results/bench/STATS.md
+const SCEN = ["S1", "S2", "S3", "S4", "S5"] as const;
+const SCEN_NAME = ["Baseline", "Slow grass", "Fast prey", "Crowded start", "Many predators"];
+const BY_SCENARIO: { label: string; tone: Bar["tone"]; all: number; s: number[] }[] = [
+  { label: "Random", tone: "base", all: 92, s: [100, 60, 100, 100, 100] },
+  { label: "ES", tone: "evo", all: 77, s: [80, 60, 84, 80, 80] },
+  { label: "Hybrid", tone: "evo", all: 64, s: [88, 40, 20, 76, 96] },
+  { label: "Hand-coded", tone: "base", all: 64, s: [100, 100, 100, 0, 20] },
+  { label: "PPO", tone: "rl", all: 22, s: [80, 0, 0, 4, 24] },
+  { label: "GA", tone: "evo", all: 10, s: [4, 0, 8, 8, 28] },
+  { label: "NEAT", tone: "evo", all: 0, s: [0, 0, 0, 0, 0] },
+];
+
+function Heatmap() {
+  return (
+    <div className="heat" role="table" aria-label="Survival by scenario, percent of worlds">
+      <div className="heat-row head" role="row">
+        <span role="columnheader">Method</span>
+        {SCEN.map((c, i) => <span key={c} role="columnheader" title={SCEN_NAME[i]}><b>{c}</b><small>{SCEN_NAME[i]}</small></span>)}
+        <span role="columnheader"><b>All</b><small>125 worlds</small></span>
+      </div>
+      {BY_SCENARIO.map((r) => (
+        <div key={r.label} className={`heat-row ${r.tone}`} role="row">
+          <span role="rowheader" className="name">{r.label}</span>
+          {[...r.s, r.all].map((v, i) => (
+            <span key={i} role="cell" className={`cell mono ${i === 5 ? "total" : ""}`} style={{ ["--v" as string]: v / 100 }}>{v}%</span>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Median predators per world over time, S1 (25 worlds per method), sampled every 250 steps.
+// Source: results/bench/eval/S1/*.pops.npy
+const PRED_SERIES: { label: string; key: string; d: number[] }[] = [
+  { label: "PPO", key: "ppo", d: [121, 161, 199, 241, 244, 245, 255, 260, 263, 269, 269, 266, 277, 268, 269, 262, 264, 263, 263, 251, 241, 236, 205, 212, 228, 225, 234, 251, 252, 250, 263, 264, 268, 268, 269, 269, 264, 269, 271, 267] },
+  { label: "ES", key: "es", d: [121, 161, 194, 214, 188, 169, 159, 148, 139, 134, 134, 124, 123, 114, 121, 120, 111, 114, 115, 112, 118, 122, 125, 116, 121, 123, 114, 114, 111, 113, 118, 113, 116, 121, 121, 120, 122, 120, 109, 118] },
+  { label: "Hybrid", key: "hybrid", d: [121, 161, 192, 211, 187, 166, 153, 143, 130, 128, 128, 118, 114, 117, 101, 101, 99, 104, 99, 94, 93, 93, 84, 87, 79, 87, 85, 88, 88, 80, 79, 82, 77, 71, 80, 68, 73, 69, 67, 60] },
+  { label: "GA", key: "ga", d: [121, 142, 146, 132, 95, 68, 55, 43, 34, 28, 23, 21, 16, 13, 10, 7, 6, 5, 5, 4, 3, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { label: "NEAT", key: "neat", d: [121, 127, 110, 82, 46, 27, 18, 11, 7, 4, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+];
+
+function PredatorLines() {
+  const W = 380, H = 200, L = 34, R = 56, T = 10, B = 26;
+  const X = (i: number) => L + ((W - L - R) * i) / 39, Y = (v: number) => T + (H - T - B) * (1 - v / 300);
+  return (
+    <svg className="lines" viewBox={`0 0 ${W} ${H}`} role="img"
+      aria-label="Median predators per world over 10,000 steps: PPO about 265, ES about 118, Hybrid falls to 60, GA reaches 0 by step 6,500, NEAT by step 3,250">
+      {[0, 100, 200, 300].map((v) => (
+        <g key={v}><line x1={L} x2={W - R} y1={Y(v)} y2={Y(v)} className="grid" /><text x={L - 6} y={Y(v) + 4} textAnchor="end" className="tick">{v}</text></g>
+      ))}
+      {[0, 2, 4, 6, 8, 10].map((k) => <text key={k} x={X((k * 1000) / 250)} y={H - 8} textAnchor="middle" className="tick">{k}k</text>)}
+      {PRED_SERIES.map((s) => (
+        <g key={s.key} className={`ln ${s.key}`}>
+          <polyline points={s.d.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")} />
+          {s.key === "ga" ? <text x={X(10) + 6} y={Y(s.d[10]) - 6}>GA</text>
+            : s.key === "neat" ? <text x={X(4) - 7} y={Y(s.d[4]) + 4} textAnchor="end">NEAT</text>
+            : <text x={W - R + 6} y={Y(s.d[39]) + 4}>{s.label}</text>}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+// Median prey still alive at the moment the last predator died, over every collapsed test world (all scenarios)
+const PREY_AT_END: Bar[] = [
+  { label: "ES", v: 571, tone: "es" },
+  { label: "PPO", v: 565, tone: "ppo" },
+  { label: "GA", v: 539, tone: "ga" },
+  { label: "Hybrid", v: 539, tone: "hybrid" },
+  { label: "NEAT", v: 504, tone: "neat" },
+  { label: "Hand-coded", v: 48, tone: "base" },
+];
 
 function Dumbbell() {
   // PPO with the old +1 birth bonus vs the same run without it
@@ -126,18 +201,62 @@ const STORY = [
 ] as const;
 
 const METHODS = [
-  { name: "PPO", family: "Reinforcement learning", body: "Learns from every step. A critic estimates how good each moment is, and the policy is nudged toward actions that did better than expected.", tag: "Best prey so far" },
-  { name: "GA", family: "Genetic algorithm", body: "Fifty networks share the world at once. The five that gather the most reward survive each generation; the rest are mutated copies of them.", tag: "Most catches per predator" },
-  { name: "ES", family: "Evolution strategies", body: "Tries 25 pairs of opposite random nudges to the weights, then moves the network in the direction the whole population's scores point.", tag: "Longest-lived predators" },
-  { name: "NEAT", family: "Evolving topologies", body: "Starts with every input wired straight to the outputs and grows new neurons and connections as it evolves. Our networks grew to about 17 hidden neurons.", tag: "Grows its own network" },
-  { name: "Hybrid", family: "Evolution, then RL", body: "Spends half the budget evolving with GA, then hands the best network to PPO to fine-tune for the other half.", tag: "Kept GA's hunting skill" },
+  { name: "PPO", family: "Reinforcement learning", body: "Learns from every step. A critic estimates how good each moment is, and the policy is nudged toward actions that did better than expected.", tag: "22% of worlds survive · largest predator packs" },
+  { name: "GA", family: "Genetic algorithm", body: "Fifty networks share the world at once. The five that gather the most reward survive each generation; the rest are mutated copies of them.", tag: "10% survive · most catches, shortest lives" },
+  { name: "ES", family: "Evolution strategies", body: "Tries 25 pairs of opposite random nudges to the weights, then moves the network in the direction the whole population's scores point.", tag: "77% survive · the steadiest learner" },
+  { name: "NEAT", family: "Evolving topologies", body: "Starts with every input wired straight to the outputs and grows new neurons and connections as it evolves. Our networks grew to about 17 hidden neurons.", tag: "0% survive · predators gone by step 3,000" },
+  { name: "Hybrid", family: "Evolution, then RL", body: "Spends half the budget evolving with GA, then hands the best network to PPO to fine-tune for the other half.", tag: "64% survive · second steadiest" },
 ] as const;
+
+const RULES = [
+  { k: "Same reward", v: "energy gained − energy spent, −1 for dying", icon: "reward" },
+  { k: "Same brain", v: "102 inputs → 64 → 64 → 2 outputs", icon: "brain" },
+  { k: "Same budget", v: "150,000 world-steps of training", icon: "clock" },
+  { k: "Same test", v: "5 seeds × 5 worlds × 10,000 steps × 5 scenarios", icon: "flask" },
+] as const;
+
+const DEPTH = [
+  { name: "PPO", learns: "Every step's reward, through a critic that predicts the future", round: "Collect 64 steps in 4 worlds, then 4 passes of small, clipped updates", knobs: "discount 0.99 · ~590 updates" },
+  { name: "GA", learns: "One score per network per generation", round: "50 networks share the world for 128 steps; the top 5 survive, the rest are mutated copies", knobs: "noise 0.02 · 293 generations" },
+  { name: "ES", learns: "The scores of 50 nudged copies of one network", round: "25 mirrored pairs of random nudges; step toward the ones that scored higher", knobs: "noise 0.02 · Adam 0.01" },
+  { name: "NEAT", learns: "Scores, while also growing the wiring", round: "Species compete among themselves; mutations add neurons and links", knobs: "up to 48 neurons · 5 species" },
+  { name: "Hybrid", learns: "GA first, then PPO", round: "75k world-steps of GA, then PPO starts from the best network", knobs: "critic warm-up 20 updates" },
+] as const;
+
+// ------------------------------------------------------------------------------------------ chapter icons
+function Icon({ name }: { name: string }) {
+  const p = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const g = (() => {
+    switch (name) {
+      case "hero": return <><path d="M3 18h18" /><path d="M5.5 18c1.6-4.4 4-7 6.5-7s4.9 2.6 6.5 7" /><path d="M15 11V6.5m0 0-2.2 2.2M15 6.5l2.2 2.2" /></>;
+      case "world": return <><rect x="3.5" y="3.5" width="17" height="17" rx="2.5" /><path d="M3.5 9.2h17M3.5 14.8h17M9.2 3.5v17M14.8 3.5v17" opacity=".55" /></>;
+      case "prey": return <><ellipse cx="9.6" cy="6.2" rx="1.5" ry="3.6" /><ellipse cx="14.4" cy="6.2" rx="1.5" ry="3.6" /><circle cx="12" cy="12.6" r="3" /><path d="M6.6 20.5c.4-3 2.6-4.9 5.4-4.9s5 1.9 5.4 4.9" /></>;
+      case "predators": return <><path d="M4.5 4 8 9.5h8L19.5 4l-.8 8.6L12 20l-6.7-7.4Z" /><path d="M9.6 12.6h.01M14.4 12.6h.01" strokeWidth={2.4} /></>;
+      case "refuges": return <><path d="M2.5 18.5 6 11l4-3.2 5 1 3.5 4.2 3 5.5Z" /><path d="M10 7.8 11.5 13l3.5-4" opacity=".55" /></>;
+      case "vision": return <><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.6" /></>;
+      case "methods": return <><circle cx="5.5" cy="7" r="1.8" /><circle cx="5.5" cy="17" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="18.5" cy="7" r="1.8" /><circle cx="18.5" cy="17" r="1.8" /><path d="M7.1 7.9 10.4 11M7.1 16.1l3.3-3.1M13.6 11l3.3-3.1M13.6 13l3.3 3.1" /></>;
+      case "fair": return <><path d="M12 4v16M8 20h8M4.5 7.5h15" /><path d="M6.5 7.5 3.8 13.5h5.4ZM17.5 7.5l-2.7 6h5.4Z" /></>;
+      case "findings-prey": return <><path d="M3.5 20.5h17" /><path d="M6.5 20.5V13M12 20.5V5.5M17.5 20.5v-10" /></>;
+      case "findings-scenarios": return <><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" opacity=".55" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" opacity=".55" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></>;
+      case "findings-collapse": return <><path d="M3.5 6.5 9 12l4-3.5 7.5 9" /><path d="M15.5 17.5h5v-5" /></>;
+      case "findings-predators": return <><path d="M6.5 3.5h11M6.5 20.5h11" /><path d="M7.5 3.5c0 5 9 5.6 9 8.5s-9 3.5-9 8.5M16.5 3.5c0 5-9 5.6-9 8.5s9 3.5 9 8.5" /></>;
+      case "findings-reward": return <><path d="M6 8.5h12.5m0 0-3-3m3 3-3 3M18 15.5H5.5m0 0 3-3m-3 3 3 3" /></>;
+      case "enter": return <path d="M8 5.2v13.6L19 12Z" />;
+      case "reward": return <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5v9M8.5 12h7" /></>;
+      case "brain": return <><circle cx="6" cy="8" r="1.7" /><circle cx="6" cy="16" r="1.7" /><circle cx="18" cy="12" r="1.7" /><path d="M7.6 8.6 16.4 11.4M7.6 15.4l8.8-2.8" /></>;
+      case "clock": return <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>;
+      case "flask": return <><path d="M9.5 3.5h5M10.5 3.5v5.2L5 18.4c-.6 1.1.2 2.1 1.4 2.1h11.2c1.2 0 2-1 1.4-2.1l-5.5-9.7V3.5" /><path d="M7.4 15h9.2" opacity=".55" /></>;
+      default: return <circle cx="12" cy="12" r="3" />;
+    }
+  })();
+  return <svg className="ico" viewBox="0 0 24 24" aria-hidden="true" {...p}>{g}</svg>;
+}
 
 // ------------------------------------------------------------------------------------------ page
 const LABELS: Record<(typeof CHAPTERS)[number], string> = {
   hero: "Start", world: "The world", prey: "Prey", predators: "Predators", refuges: "Refuges", vision: "Senses",
-  methods: "Methods", "findings-prey": "Findings: prey", "findings-predators": "Findings: predators",
-  "findings-reward": "Findings: reward", enter: "Simulation",
+  methods: "Methods", fair: "A fair fight", "findings-prey": "Survival", "findings-scenarios": "By scenario",
+  "findings-collapse": "How it collapses", "findings-predators": "Predator lifespans", "findings-reward": "The reward", enter: "Simulation",
 };
 const N = CHAPTERS.length;
 const at = (name: (typeof CHAPTERS)[number]) => CHAPTERS.indexOf(name);
@@ -277,6 +396,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
   const caveat = <p className="caveat">Benchmark: every method controls both species; 5 training seeds per method, each tested on 5 fresh worlds for 10,000 steps in 5 scenarios.</p>;
   const worldOn = index >= at("world") && index <= at("vision");
   const findOn = index >= at("findings-prey") && index <= at("findings-reward");
+  const methodsOn = index === at("methods") || index === at("fair");
 
   return (
     <div className={`landing ${leaving ? "leaving" : ""} ${loading ? "" : "revealed"}`}>
@@ -293,18 +413,19 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
         <button type="button" className="wordmark" onClick={() => go(0)}>EcoArena</button>
         <nav aria-label="Sections">
           <button type="button" onClick={() => go(at("world"))} className={worldOn ? "on" : ""}>The world</button>
-          <button type="button" onClick={() => go(at("methods"))} className={index === at("methods") ? "on" : ""}>Methods</button>
+          <button type="button" onClick={() => go(at("methods"))} className={methodsOn ? "on" : ""}>Methods</button>
           <button type="button" onClick={() => go(at("findings-prey"))} className={findOn ? "on" : ""}>Findings</button>
         </nav>
         <button type="button" className="cta small" onClick={enter}>Open the simulation</button>
       </header>
 
-      <ol className="dots" aria-label="Chapters">
+      <ol className="chapters-nav" aria-label="Chapters">
         {CHAPTERS.map((c, i) => (
-          <li key={c}>
-            <button type="button" className={index === i ? "on" : ""} aria-current={index === i ? "step" : undefined} onClick={() => go(i)}>
-              <span className="dot" aria-hidden="true" />
-              <span className="lbl">{LABELS[c]}</span>
+          <li key={c} className={c === "methods" || c === "findings-prey" || c === "enter" ? "group-start" : ""}>
+            <button type="button" className={index === i ? "on" : i < index ? "seen" : ""} aria-current={index === i ? "step" : undefined}
+              aria-label={LABELS[c]} onClick={() => go(i)}>
+              <span className="lbl" aria-hidden="true">{LABELS[c]}</span>
+              <Icon name={c} />
             </button>
           </li>
         ))}
@@ -358,9 +479,37 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
           </div>
         ))}
 
+        {slide(at("fair"), "fair", (
+          <div className="slide-body">
+            <div className="section-head glass">
+              <p className="kicker">Methods in depth</p>
+              <h2>A fair fight</h2>
+              <p>Comparing reinforcement learning with evolution is easy to get wrong: give one a better reward, a bigger brain or more compute and it wins for the wrong reason. Here everything except the learning rule is identical.</p>
+              <ul className="rules">
+                {RULES.map((r) => (
+                  <li key={r.k}><Icon name={r.icon} /><span><b>{r.k}</b>{r.v}</span></li>
+                ))}
+              </ul>
+            </div>
+            <div className="depth glass" role="table" aria-label="How each method learns">
+              <div className="depth-row head" role="row">
+                <span role="columnheader">Method</span><span role="columnheader">Learns from</span><span role="columnheader">One round</span><span role="columnheader">Settings</span>
+              </div>
+              {DEPTH.map((d) => (
+                <div key={d.name} className="depth-row" role="row">
+                  <span role="rowheader" className="name">{d.name}</span>
+                  <span role="cell">{d.learns}</span>
+                  <span role="cell">{d.round}</span>
+                  <span role="cell" className="mono knobs">{d.knobs}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
         {slide(at("findings-prey"), "finding-slide", (
           <div className="slide-body narrow">
-            <p className="kicker on-scene">Findings · 1 of 3</p>
+            <p className="kicker on-scene">Findings · 1 of 5</p>
             <h2 className="scene-title">Trained animals break the ecosystem</h2>
             <figure className="finding glass">
               <figcaption>
@@ -368,20 +517,59 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
                 <p>Percent of test worlds with prey and predators still alive after 10,000 steps, across all five scenarios. Random animals keep the balance best. Of the trained methods only ES and the hybrid usually do, and every collapse is the same: the predators starve. Prey never died out.</p>
               </figcaption>
               <BarChart id="surv" bars={SURVIVAL} max={100} unit="percent of worlds" decimals={0} />
-              <p className="foot">Training rewards each animal for its own energy over a short window, so nothing rewards keeping the other species alive. Even ES ranges from a perfect record on four seeds to collapse on the fifth.</p>
+              <p className="foot">Training rewards each animal for its own energy over a short window, so nothing in it rewards keeping the other species alive. Seeds matter too: ES kept every world alive on two of its five training seeds and lost almost all of them on another.</p>
             </figure>
             {caveat}
           </div>
         ))}
 
-        {slide(at("findings-predators"), "finding-slide right", (
+        {slide(at("findings-scenarios"), "finding-slide wide", (
+          <div className="slide-body">
+            <p className="kicker on-scene">Findings · 2 of 5</p>
+            <h2 className="scene-title">Harder worlds expose every method</h2>
+            <figure className="finding glass">
+              <figcaption>
+                <h3>Survival in each scenario</h3>
+                <p>Share of test worlds with both species alive after 10,000 steps. Every brain was trained only on the baseline world, then tested on four variations it never saw. The hand-coded rules survive poor grass and fast prey but fail when the world starts crowded; ES is the only learner that holds up everywhere.</p>
+              </figcaption>
+              <Heatmap />
+            </figure>
+            {caveat}
+          </div>
+        ))}
+
+        {slide(at("findings-collapse"), "finding-slide right wide", (
+          <div className="slide-body">
+            <p className="kicker on-scene">Findings · 3 of 5</p>
+            <h2 className="scene-title">Predators starve with food all around them</h2>
+            <figure className="finding glass">
+              <figcaption>
+                <h3>How the predators disappear</h3>
+                <p>GA and NEAT predators dwindle from the first thousand steps. PPO keeps the biggest packs in the baseline world but fades in harsher ones. Yet when the last predator died, about 500 to 570 prey were still alive: the learned prey simply got too hard to catch. Only the hand-coded world collapses the textbook way, with prey eaten down to a few dozen first.</p>
+              </figcaption>
+              <div className="pair">
+                <div>
+                  <p className="chart-title">Predators per world over time <span className="dim">(baseline world, median of 25)</span></p>
+                  <PredatorLines />
+                </div>
+                <div>
+                  <p className="chart-title">Prey alive when the last predator died <span className="dim">(median)</span></p>
+                  <BarChart id="preyend" bars={PREY_AT_END} max={600} unit="prey" decimals={0} />
+                </div>
+              </div>
+            </figure>
+            {caveat}
+          </div>
+        ))}
+
+        {slide(at("findings-predators"), "finding-slide", (
           <div className="slide-body narrow">
-            <p className="kicker on-scene">Findings · 2 of 3</p>
+            <p className="kicker on-scene">Findings · 4 of 5</p>
             <h2 className="scene-title">The keenest hunters die youngest</h2>
             <figure className="finding glass">
               <figcaption>
                 <h3>How long a predator lives</h3>
-                <p>Mean predator lifespan in steps, baseline world. GA and NEAT predators catch the most prey per step, yet live the shortest lives: they spend more energy chasing than they win back, and their populations dwindle within a few thousand steps. Their prey, meanwhile, live about twice as long as PPO prey.</p>
+                <p>Mean predator lifespan in steps, baseline world. GA and NEAT predators catch the most prey per step, yet live the shortest lives: they burn energy faster than their catches replace it, and their populations dwindle within a few thousand steps. Their prey, meanwhile, live about twice as long as PPO prey.</p>
               </figcaption>
               <BarChart id="pred" bars={PRED_LIFE} max={1400} unit="steps" decimals={0} />
             </figure>
@@ -391,7 +579,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
 
         {slide(at("findings-reward"), "finding-slide", (
           <div className="slide-body narrow">
-            <p className="kicker on-scene">Findings · 3 of 3</p>
+            <p className="kicker on-scene">Findings · 5 of 5</p>
             <h2 className="scene-title">One reward term flipped the result</h2>
             <figure className="finding glass">
               <figcaption>
@@ -407,7 +595,7 @@ export default function Landing({ onEnter }: { onEnter: () => void }) {
         {slide(at("enter"), "enter", (
           <>
             <h2>See it for yourself</h2>
-            <p>Pick a brain for each species, change the scenario, follow a single animal, or let the camera tour the hunts. Turn on the Catches map to watch the refuge-edge ambushes form.</p>
+            <p>Pick a brain for each species, change the scenario, follow a single animal, or let the camera tour the hunts. Turn on the Catches map to see where hunts succeed.</p>
             <button type="button" className="cta big" onClick={enter}>Enter the arena</button>
             <p className="fine">Runs entirely in your browser. The same rules as the Python benchmark, checked against it step by step.</p>
           </>

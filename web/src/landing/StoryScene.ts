@@ -11,8 +11,8 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { animateMaterial, predatorGeometry, preyGeometry } from "../view/creatures";
 import { makeHeight, mulberry, Particles, skyAt } from "../view/Diorama";
 
-export const CHAPTERS = ["hero", "world", "prey", "predators", "refuges", "vision", "methods",
-  "findings-prey", "findings-predators", "findings-reward", "enter"] as const;
+export const CHAPTERS = ["hero", "world", "prey", "predators", "refuges", "vision", "methods", "fair",
+  "findings-prey", "findings-scenarios", "findings-collapse", "findings-predators", "findings-reward", "enter"] as const;
 const CH = (name: (typeof CHAPTERS)[number]) => CHAPTERS.indexOf(name);
 
 const S = 80; // island size (world units)
@@ -33,9 +33,12 @@ const SHOTS: { pos: V3; target: V3; elev: number }[] = [
   { pos: [36, 13, 4], target: [18, 0.5, -12], elev: 0.35 }, // refuges: the rocks the hare runs to
   { pos: [-2, 22, 16], target: [-11, 0.5, 4], elev: 0.5 }, // vision: from above one hare
   { pos: [0, 118, 34], target: [0, 0, 0], elev: 0.7 }, // methods: map view
-  { pos: [-78, 34, -52], target: [0, -4, 0], elev: 0.07 }, // findings 1: golden dusk from the far side
-  { pos: [-6, 15, 46], target: [17, 0, 12], elev: 0.03 }, // findings 2: the wolves' side of the island
-  { pos: [72, 42, -58], target: [0, -4, 0], elev: -0.01 }, // findings 3: sunset from the other corner
+  { pos: [-64, 92, 40], target: [0, 0, 0], elev: 0.45 }, // fair comparison: map view, turned
+  { pos: [-78, 34, -52], target: [0, -4, 0], elev: 0.09 }, // findings 1: golden dusk from the far side
+  { pos: [-20, 70, -96], target: [0, -4, 0], elev: 0.06 }, // findings 2: high and wide, the whole island at dusk
+  { pos: [-6, 15, 46], target: [17, 0, 12], elev: 0.04 }, // findings 3: the wolves' side of the island
+  { pos: [44, 12, 30], target: [14, 0, 2], elev: 0.02 }, // findings 4: low beside the hunt lane
+  { pos: [72, 42, -58], target: [0, -4, 0], elev: -0.01 }, // findings 5: sunset from the other corner
   { pos: [40, 22, 52], target: [0, 0, 0], elev: -0.05 }, // enter: twilight, fireflies
 ];
 
@@ -848,7 +851,7 @@ export class StoryScene {
     const pos = new THREE.Vector3(...a.pos).lerp(new THREE.Vector3(...b.pos), f);
     const target = new THREE.Vector3(...a.target).lerp(new THREE.Vector3(...b.target), f);
     // slow drift in the hero and at the end so the island always feels alive
-    const drift = Math.max(this.weight(CH("hero")), this.weight(CH("enter")), this.weight(CH("methods")) * 0.4);
+    const drift = Math.max(this.weight(CH("hero")), this.weight(CH("enter")), Math.max(this.weight(CH("methods")), this.weight(CH("fair"))) * 0.4);
     if (drift > 0) {
       const ang = Math.sin(t * 0.07) * 0.35 * drift;
       const rel = pos.clone().sub(target);
