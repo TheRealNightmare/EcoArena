@@ -1,0 +1,19 @@
+{
+ "policy": "ppo-seed3",
+ "method": "ppo",
+ "prey_in_refuge": 0.19272408465544383,
+ "prey_refuge_dist": 8.165985345840454,
+ "pred_refuge_dist": 10.657265164057414,
+ "prey_speed": 0.9457280735733609,
+ "pred_speed": 0.979675598363533,
+ "pursuit_share": 0.3082482241094112,
+ "flee_alignment": 0.3186074315011501,
+ "prey_clustering": 1.3382821341355642,
+ "pred_sit_and_wait": 0.005578272862231913,
+ "ambush_index": 0.8759676625416748,
+ "prey_refuge_index": 1.1432079852557435,
+ "catches": 12331,
+ "catch_refuge_dist": 11.349733778550846,
+ "edge_catch_share": 0.08985483740167059,
+ "chance_refuge_dist": 9.335419654846191
+}

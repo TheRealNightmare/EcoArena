@@ -1,0 +1,19 @@
+{
+ "policy": "hybrid-seed4",
+ "method": "hybrid",
+ "prey_in_refuge": 0.1914917799582084,
+ "prey_refuge_dist": 8.40752460161845,
+ "pred_refuge_dist": 10.554044977823894,
+ "prey_speed": 0.96842993936191,
+ "pred_speed": 0.9746522402673053,
+ "pursuit_share": 0.2892433355251948,
+ "flee_alignment": 0.23305266053726276,
+ "prey_clustering": 1.286249121427536,
+ "pred_sit_and_wait": 0.0012118930309793375,
+ "ambush_index": 0.8845347612656311,
+ "prey_refuge_index": 1.1103648335503082,
+ "catches": 11328,
+ "catch_refuge_dist": 11.054971752951374,
+ "edge_catch_share": 0.10328389830508475,
+ "chance_refuge_dist": 9.335419654846191
+}

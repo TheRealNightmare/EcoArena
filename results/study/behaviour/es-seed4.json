@@ -1,0 +1,19 @@
+{
+ "policy": "es-seed4",
+ "method": "es",
+ "prey_in_refuge": 0.23270672760903835,
+ "prey_refuge_dist": 7.516298624674479,
+ "pred_refuge_dist": 9.971823161443075,
+ "prey_speed": 0.9131877462565899,
+ "pred_speed": 0.8483844349217233,
+ "pursuit_share": 0.2267649671435356,
+ "flee_alignment": 0.05054169793254308,
+ "prey_clustering": 1.203909121354421,
+ "pred_sit_and_wait": 0.07571724333268191,
+ "ambush_index": 0.9361798242614657,
+ "prey_refuge_index": 1.24202351729346,
+ "catches": 13293,
+ "catch_refuge_dist": 9.67414192155083,
+ "edge_catch_share": 0.2028135108703829,
+ "chance_refuge_dist": 9.335419654846191
+}

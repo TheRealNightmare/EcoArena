@@ -1,0 +1,19 @@
+{
+ "policy": "ga-seed3",
+ "method": "ga",
+ "prey_in_refuge": 0.11013440559307734,
+ "prey_refuge_dist": 9.443250033060709,
+ "pred_refuge_dist": 6.841701850891114,
+ "prey_speed": 0.9548287426680326,
+ "pred_speed": 0.7010945726524699,
+ "pursuit_share": 0.21883900885780652,
+ "flee_alignment": 0.011751759017242876,
+ "prey_clustering": 1.0224023113648097,
+ "pred_sit_and_wait": 0.21109163775466955,
+ "ambush_index": 1.3644879385719326,
+ "prey_refuge_index": 0.988581221736478,
+ "catches": 3695,
+ "catch_refuge_dist": 8.0215479350703,
+ "edge_catch_share": 0.1742895805142084,
+ "chance_refuge_dist": 9.335419654846191
+}

@@ -1,0 +1,19 @@
+{
+ "policy": "random",
+ "method": "random",
+ "prey_in_refuge": 0.12789157542089621,
+ "prey_refuge_dist": 9.323564507166545,
+ "pred_refuge_dist": 9.41404349644979,
+ "prey_speed": 0.4451673373579979,
+ "pred_speed": 0.48106566000391127,
+ "pursuit_share": 0.2082625350356102,
+ "flee_alignment": -0.007600855036434951,
+ "prey_clustering": 1.0819073152542114,
+ "pred_sit_and_wait": 0.11627906976744186,
+ "ambush_index": 0.9916482389705074,
+ "prey_refuge_index": 1.0012715252487967,
+ "catches": 9130,
+ "catch_refuge_dist": 10.24510075573331,
+ "edge_catch_share": 0.15728368017524644,
+ "chance_refuge_dist": 9.335419654846191
+}
