@@ -14,6 +14,12 @@ Runs fixed policies on fresh worlds (like `benchmark.evaluate_worlds`) and every
   flee_alignment        prey with a predator within 12 units: mean cos between heading and "away from it"
   prey_clustering       (nearest-neighbour distance expected for uniform prey) / (observed): > 1 = herding
   pred_sit_and_wait     predators with no prey within 12 units that move at under 10% of top speed
+  *_thrust_sq           mean thrust² of living animals (movement energy cost = move_cost × thrust²); speed carries
+                        over between steps, so an animal can cruise at full speed with almost no thrust
+  *_thrust_flips        share of animals whose thrust changed sign since the previous step (jitter)
+  pred_energy_cost      base drain + move_cost × thrust², per predator-step
+  pred_energy_income    catches per predator-step × energy_per_catch
+  pred_energy_net       income − cost: below zero, the average predator starves whatever it does
 """
 
 from __future__ import annotations
@@ -67,13 +73,27 @@ def measure_tactics(cfg, policies: dict, worlds: int, steps: int, seed: int, dev
         "prey_in_refuge", "prey_refuge_dist", "pred_refuge_dist", "prey_speed", "pred_speed", "pursuit_share",
         "flee_alignment", "prey_clustering", "pred_sit_and_wait")}
     catch_d: list[float] = []
+    th2 = {PREY: [], PREDATOR: []}
+    flips = {PREY: [], PREDATOR: []}
+    prev = {PREY: None, PREDATOR: None}
+    pred_steps = 0.0
     qc, pc = cfg.predator, cfg.prey
     area = cfg.world_size**2
     for t in range(steps):
         prey, pred = w.species[PREY], w.species[PREDATOR]
         prey_pos0 = prey.pos.clone()
         o = w.observe()
-        info = w.step(pol[PREY](o[PREY]), pol[PREDATOR](o[PREDATOR]))
+        acts = {sp: pol[sp](o[sp]) for sp in (PREY, PREDATOR)}
+        for sp in (PREY, PREDATOR):
+            al = w.species[sp].alive
+            thr = acts[sp][..., 1].clamp(-1.0, 1.0)
+            if bool(al.any()):
+                th2[sp].append(float((thr[al] ** 2).mean()))
+                if prev[sp] is not None:
+                    flips[sp].append(float(((thr * prev[sp]) < 0)[al].float().mean()))
+            prev[sp] = thr.clone()
+        pred_steps += float(w.species[PREDATOR].alive.sum())
+        info = w.step(acts[PREY], acts[PREDATOR])
         if info["eaten"].any():  # where catches happen, from the prey's position before the step
             cells = w.cell_index(prey_pos0[info["eaten"]])
             catch_d += dmap[cells].tolist()
@@ -120,4 +140,10 @@ def measure_tactics(cfg, policies: dict, worlds: int, steps: int, seed: int, dev
     out["catch_refuge_dist"] = float(np.mean(catch_d)) if catch_d else math.nan
     out["edge_catch_share"] = float(np.mean(np.array(catch_d) <= 3.0)) if catch_d else math.nan
     out["chance_refuge_dist"] = chance_dist
+    for sp, name in ((PREY, "prey"), (PREDATOR, "pred")):
+        out[f"{name}_thrust_sq"] = float(np.mean(th2[sp])) if th2[sp] else math.nan
+        out[f"{name}_thrust_flips"] = float(np.mean(flips[sp])) if flips[sp] else math.nan
+    out["pred_energy_cost"] = qc.base_drain + qc.move_cost * out["pred_thrust_sq"]
+    out["pred_energy_income"] = qc.energy_per_catch * len(catch_d) / max(pred_steps, 1.0)
+    out["pred_energy_net"] = out["pred_energy_income"] - out["pred_energy_cost"]
     return out
