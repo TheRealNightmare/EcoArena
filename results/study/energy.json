@@ -194,5 +194,19 @@
   "pred_income": 0.19371099999999997,
   "pred_net": 0.019589306034952375,
   "pred_extinct_share": 0.0
+ },
+ "es-seed2": {
+  "method": "es",
+  "seed": 2,
+  "pred_th2": 0.17289761314789454,
+  "pred_flip": 0.3173528587818146,
+  "pred_mean": 0.18116174720227718,
+  "prey_th2": 0.3551441968480746,
+  "prey_flip": 0.23856023783485095,
+  "pred_cost": 0.17593464197218417,
+  "catches_per_1k": 5.7036,
+  "pred_income": 0.199626,
+  "pred_net": 0.02369135802781583,
+  "pred_extinct_share": 0.0
  }
 }
