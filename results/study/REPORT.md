@@ -64,6 +64,22 @@ Low in the first column = robust predators; high in the second = prey that starv
 | NEAT | 932 | 889 | 1066 | 810 | 1154 | 633 | 1062 |
 | Hybrid | 689 | 1019 | 1194 | 577 | 928 | 530 | 1055 |
 
+## Predator energy budget
+
+Movement costs 0.15 × thrust² per step on top of a 0.15 base drain; speed carries over, so cruising is nearly free. Income = catches per predator-step (benchmark, S1) × 35. Thrust measured over 300 steps after a 100-step warm-up, one world, S1. Mean over seeds (range).
+
+| predators | thrust² | thrust sign flips / step | cost / step | income / step | net / step | worlds where predators died out |
+|---|---|---|---|---|---|---|
+| Random | 0.33 | 0.50 | 0.200 | 0.226 | +0.026 | 0% |
+| Hand-coded | 0.20 | 0.00 | 0.180 | 0.215 | +0.035 | 0% |
+| PPO | 0.04 (0.02–0.06) | 0.01 (0.00–0.02) | 0.156 (0.153–0.158) | 0.190 (0.174–0.199) | +0.034 (+0.016–+0.041) | 20% |
+| GA | 0.56 (0.43–0.64) | 0.38 (0.31–0.41) | 0.234 (0.215–0.246) | 0.225 (0.206–0.237) | -0.009 (-0.014–-0.006) | 96% |
+| ES | 0.18 (0.16–0.23) | 0.32 (0.23–0.37) | 0.177 (0.174–0.185) | 0.195 (0.160–0.212) | +0.018 (-0.014–+0.032) | 20% |
+| NEAT | 0.73 (0.57–1.00) | 0.23 (0.00–0.37) | 0.260 (0.235–0.299) | 0.224 (0.196–0.255) | -0.036 (-0.044–-0.028) | 100% |
+| Hybrid | 0.23 (0.16–0.29) | 0.27 (0.24–0.30) | 0.184 (0.173–0.193) | 0.201 (0.187–0.207) | +0.017 (+0.007–+0.030) | 12% |
+
+Across all 27 brains, the rank correlation between net energy and the share of worlds where predators died out is -0.89.
+
 ## Tactics (S1, 3 worlds × 3,000 steps, mean over seeds)
 
 | measure | Random | Hand-coded | PPO | GA | ES | NEAT | Hybrid |
