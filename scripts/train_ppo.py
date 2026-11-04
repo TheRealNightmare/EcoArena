@@ -78,6 +78,9 @@ def main() -> None:
     p.add_argument("--eco-lambda", type=float, default=0.0, help="study 2: shared ecosystem-health reward")
     p.add_argument("--prey-every", type=int, default=1, help="study 2: update prey every k-th step; 0 = frozen")
     p.add_argument("--pred-every", type=int, default=1, help="study 2: update predators every k-th step; 0 = frozen")
+    p.add_argument("--cost-weight", type=float, default=1.0, help="E4: weight of the movement cost in the reward")
+    p.add_argument("--homeostat", type=float, default=0.0, help="E5: learn only while the other species >= this share")
+    p.add_argument("--extinction-penalty", type=float, default=0.0, help="E5 ablation: penalty when a species dies out")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--eval-worlds", type=int, default=4)
@@ -93,7 +96,8 @@ def main() -> None:
     pcfg = PPOConfig(learn=tuple(learn), opponent=a.opponent, n_worlds=a.worlds, rollout_steps=a.rollout,
                      iterations=a.iters, agent_step_budget=int(a.agent_steps), world_step_budget=int(a.world_steps), minibatch=a.minibatch, lr=a.lr, birth_bonus=a.birth_bonus, seed=a.seed, device=a.device,
                      gamma=a.gamma, gae_lambda=a.gae_lambda, eco_lambda=a.eco_lambda,
-                     prey_every=a.prey_every, pred_every=a.pred_every)
+                     prey_every=a.prey_every, pred_every=a.pred_every, cost_weight=a.cost_weight,
+                     homeostat=a.homeostat, extinction_penalty=a.extinction_penalty)
     print(f"training {name} on {a.device}: {a.world_steps:,.0f} world-steps, "
           f"{a.rollout} steps x {a.worlds} worlds per iteration", flush=True)
     trainer = PPOTrainer(wcfg, pcfg, out)

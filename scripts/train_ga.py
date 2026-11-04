@@ -78,6 +78,8 @@ def main(method: str = "ga") -> None:
     p.add_argument("--eco-lambda", type=float, default=0.0, help="study 2: shared ecosystem-health reward")
     p.add_argument("--prey-every", type=int, default=1, help="study 2: update prey every k-th step; 0 = frozen")
     p.add_argument("--pred-every", type=int, default=1, help="study 2: update predators every k-th step; 0 = frozen")
+    p.add_argument("--cost-weight", type=float, default=1.0, help="E4: weight of the movement cost in the reward")
+    p.add_argument("--homeostat", type=float, default=0.0, help="E5: learn only while the other species >= this share")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--eval-worlds", type=int, default=4)
@@ -94,7 +96,8 @@ def main(method: str = "ga") -> None:
               "sigma": a.sigma, "gen_steps": a.gen_steps, "birth_bonus": a.birth_bonus,
               "world_step_budget": int(a.world_steps), "seed": a.seed, "device": a.device,
               "episodic": a.episodic, "assign": a.assign, "eco_lambda": a.eco_lambda,
-              "prey_every": a.prey_every, "pred_every": a.pred_every}
+              "prey_every": a.prey_every, "pred_every": a.pred_every, "cost_weight": a.cost_weight,
+              "homeostat": a.homeostat}
     if a.method == "ga":
         cfg, Trainer = GAConfig(**common, elite_frac=a.elite_frac, elite_score=a.elite_score), GATrainer
     elif a.method == "es":

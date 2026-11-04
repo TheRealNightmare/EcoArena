@@ -50,6 +50,7 @@ EVAL_SEED = 20_000  # same as the benchmark, so baseline evaluations are reused 
 GA = ["train_ga.py", "--method", "ga"]
 ES = ["train_ga.py", "--method", "es"]
 PPO = ["train_ppo.py"]
+NEAT = ["train_ga.py", "--method", "neat"]
 # E2 runs in episodic worlds: 24 fresh worlds per generation, one per genome under group selection
 EPI = ["--episodic", "--worlds", "24", "--population", "24", "--gen-steps", "1000", "--world-steps", "1200000"]
 GA_EPI = ["--elite-frac", "0.125"]  # 3 elites of 24
@@ -59,6 +60,7 @@ CONDITIONS: dict[str, tuple[str, str, list[str]]] = {
     "ppo": ("base", "ppo", []),
     "ga": ("base", "ga", []),
     "es": ("base", "es", []),
+    "neat": ("base", "neat", []),
     # E1: horizon. GA/ES keep the benchmark's 293 generations, so a longer window costs more world-steps; the
     # budget control gives ES the h512 compute at the old window. PPO: longer discount at the same budget.
     "es-h512": ("E1", "es", [*ES, "--gen-steps", "512", "--world-steps", "600000"]),
@@ -86,6 +88,20 @@ CONDITIONS: dict[str, tuple[str, str, list[str]]] = {
     "ppo-prey4": ("E3", "ppo", [*PPO, "--prey-every", "4"]),
     "ppo-preyfrozen": ("E3", "ppo", [*PPO, "--prey-every", "0"]),
     "ppo-pred4": ("E3", "ppo", [*PPO, "--pred-every", "4"]),
+    # E4: the energy leak. GA/NEAT predators jitter (thrust sign flips ~40% of steps) and burn more energy than they
+    # catch; the movement cost is tiny next to the noise of catches in a 128-step fitness window. Fix: count the
+    # movement cost 5x in the training reward (the world itself is unchanged). E1's longer windows are the other fix.
+    "ga-cost5": ("E4", "ga", [*GA, "--cost-weight", "5"]),
+    "neat-cost5": ("E4", "neat", [*NEAT, "--cost-weight", "5"]),
+    "es-cost5": ("E4", "es", [*ES, "--cost-weight", "5"]),
+    # E5: Homeostatic Co-Training (our method): a species learns only while the other species holds at least half
+    # its starting population; for PPO also the extinction penalty instead of a silent reset.
+    "ppo-hct": ("E5", "ppo", [*PPO, "--homeostat", "0.5"]),
+    "ppo-hct-ext": ("E5", "ppo", [*PPO, "--homeostat", "0.5", "--extinction-penalty", "5"]),
+    "ppo-ext": ("E5", "ppo", [*PPO, "--extinction-penalty", "5"]),
+    "es-hct": ("E5", "es", [*ES, "--homeostat", "0.5"]),
+    "ga-hct": ("E5", "ga", [*GA, "--homeostat", "0.5"]),
+    "neat-hct": ("E5", "neat", [*NEAT, "--homeostat", "0.5"]),
 }
 # rough cost in benchmark-run units (one benchmark run = 150k world-steps on 4 worlds, ~15 min on the RTX 5060 Ti)
 COST = {"es-h512": 4, "es-h1024": 8, "es-budget4x": 4, "ga-h512": 4, "ga-h1024": 8}
@@ -150,7 +166,7 @@ def _eval_one(f: Path, cfg, pols, method: str, policy: str, sc: str, a, device) 
 
 def cmd_eval(a) -> None:
     device = a.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    conds = select(a) + (["ppo", "ga", "es"] if not a.cond else [c for c in a.cond if CONDITIONS[c][0] == "base"])
+    conds = select(a) + (["ppo", "ga", "es", "neat"] if not a.cond else [c for c in a.cond if CONDITIONS[c][0] == "base"])
     for sc in a.scenarios:
         cfg = load_config(sc, base="s1_large.json")
         for c in conds:
@@ -282,7 +298,7 @@ def cmd_list(a) -> None:
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("command", choices=["train", "eval", "crossplay", "behaviour", "probe", "list"])
-    p.add_argument("--exp", nargs="+", choices=["E1", "E2", "E3"])
+    p.add_argument("--exp", nargs="+", choices=["E1", "E2", "E3", "E4", "E5"])
     p.add_argument("--cond", nargs="+", choices=list(CONDITIONS))
     p.add_argument("--seeds", nargs="+", type=int, default=SEEDS)
     p.add_argument("--scenarios", nargs="+", default=["S1", "S2", "S4"])

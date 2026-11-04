@@ -177,6 +177,7 @@ class EcoWorld:
             st.pos = torch.remainder(st.pos + vel, L)
             thrusts.append(thrust * alive_f)
 
+        self.last_thrust = thrusts  # per species [W, N], 0 for dead slots; read by training rewards only
         prey = self.species[PREY]
         pc = cfg.prey
 

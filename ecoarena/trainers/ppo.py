@@ -32,7 +32,7 @@ from torch import nn
 
 from ..env import PREDATOR, PREY, EcoWorld, WorldConfig
 from ..policies import make_policy
-from .common import step_rewards
+from .common import homeostat_gate, step_rewards
 
 SPECIES_NAME = {PREY: "prey", PREDATOR: "predator"}
 
@@ -133,6 +133,11 @@ class PPOConfig:
     eco_lambda: float = 0.0  # shared ecosystem-health reward, see common.step_rewards
     prey_every: int = 1  # learning-speed asymmetry: update this species every k-th iteration; 0 = never
     pred_every: int = 1
+    cost_weight: float = 1.0  # energy-leak fix (E4), see common.step_rewards
+    homeostat: float = 0.0  # Homeostatic Co-Training (E5), see common.homeostat_gate
+    # E5 ablation: when a species dies out in a training world, every learner alive in that world gets this extra
+    # penalty before the world is reset, so collapse is no longer free (the benchmark resets silently)
+    extinction_penalty: float = 0.0
     seed: int = 0
     device: str = "cpu"
     log_every: int = 5
@@ -227,8 +232,15 @@ class PPOTrainer:
                 stats["deaths"][sp] += int(info["deaths"][sp].sum())
             for sp in cfg.learn:
                 buf[sp]["rew"][t] = step_rewards(w, info, sp, e0[sp], alive0[sp], cfg.birth_bonus, cfg.death_penalty,
-                                                 cfg.eco_lambda)
+                                                 cfg.eco_lambda, cfg.cost_weight)
                 buf[sp]["done"][t] = info["died"][sp].float()
+            if cfg.extinction_penalty:
+                gone = (w.populations() == 0).any(1)  # [W] worlds where a species just died out
+                if bool(gone.any()):
+                    for sp in cfg.learn:
+                        hit = buf[sp]["valid"][t] & gone.unsqueeze(1)
+                        buf[sp]["rew"][t] = buf[sp]["rew"][t] - cfg.extinction_penalty * hit.float()
+                    stats["extinctions"] = stats.get("extinctions", 0) + int(gone.sum())
             if self._maybe_reset():
                 stats["resets"] += 1
                 t_cut = t + 1
@@ -340,6 +352,8 @@ class PPOTrainer:
                     agent_steps[SPECIES_NAME[sp]] += int(buf[sp]["valid"].sum())
             every = {PREY: cfg.prey_every, PREDATOR: cfg.pred_every}
             resting = {sp for sp in cfg.learn if every[sp] <= 0 or it % every[sp]}
+            gated = {sp for sp in cfg.learn if homeostat_gate(self.world, sp, cfg.homeostat)}
+            resting |= gated
             upd = self.update(buf, skip=self.frozen | resting)
             if cfg.agent_step_budget:
                 for sp in cfg.learn:
@@ -361,6 +375,7 @@ class PPOTrainer:
                 "world_steps": world_steps,
                 "agent_steps": dict(agent_steps),
                 "frozen": sorted(SPECIES_NAME[sp] for sp in self.frozen),
+                "gated": sorted(SPECIES_NAME[sp] for sp in gated),
                 **{f"{k}/{kk}": round(vv, 5) if isinstance(vv, float) else vv
                    for k, v in upd.items() for kk, vv in v.items()},
             }

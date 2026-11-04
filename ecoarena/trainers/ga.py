@@ -28,7 +28,7 @@ from torch import nn
 
 from ..env import PREDATOR, PREY, EcoWorld, WorldConfig
 from ..policies import make_policy
-from .common import step_rewards
+from .common import homeostat_gate, step_rewards
 from .ppo import ActorCritic
 
 SPECIES_NAME = {PREY: "prey", PREDATOR: "predator"}
@@ -71,6 +71,12 @@ class GAConfig:
     # learning-speed asymmetry: species k is updated every k-th generation; 0 = never (frozen at initialisation)
     prey_every: int = 1
     pred_every: int = 1
+    # energy-leak fix (E4): weight of the movement cost in the fitness (1 = as it is in the world)
+    cost_weight: float = 1.0
+    # Homeostatic Co-Training (E5): a species learns only while the OTHER species is at or above this share of its
+    # starting population (mean over the training worlds); 0 = off. Stops the winning side from out-learning a
+    # side that is already collapsing.
+    homeostat: float = 0.0
     seed: int = 0
     device: str = "cpu"
     log_every: int = 5
@@ -198,7 +204,11 @@ class GATrainer:
 
     def _updates(self, sp: int, g: int) -> bool:
         k = self.cfg.prey_every if sp == PREY else self.cfg.pred_every
-        return k > 0 and g % k == 0
+        return k > 0 and g % k == 0 and not self._gated(sp)
+
+    def _gated(self, sp: int) -> bool:
+        """Homeostatic gate: True when the other species is below `homeostat` of its starting population."""
+        return homeostat_gate(self.world, sp, self.cfg.homeostat)
 
     # ------------------------------------------------------------------ one generation
     @torch.no_grad()
@@ -228,7 +238,8 @@ class GATrainer:
             steps_done += 1
             stats["captures"] += int(info["captures"].sum())
             for sp in cfg.learn:
-                r = step_rewards(w, info, sp, e0[sp], a0[sp], cfg.birth_bonus, cfg.death_penalty, cfg.eco_lambda)
+                r = step_rewards(w, info, sp, e0[sp], a0[sp], cfg.birth_bonus, cfg.death_penalty, cfg.eco_lambda,
+                                 cfg.cost_weight)
                 Wn, N = r.shape
                 if group:  # world w -> genome perm[w]
                     rsum[sp].index_add_(0, perm[sp], r.sum(1))
@@ -312,8 +323,10 @@ class GATrainer:
             row["pop_prey"], row["pop_pred"] = round(pops[0], 1), round(pops[1], 1)
             row["extinct_worlds"] = stats["extinct_worlds"]
             for sp in cfg.learn:
+                if cfg.homeostat:
+                    row[f"{SPECIES_NAME[sp]}/gated"] = int(self._gated(sp))
                 if not self._updates(sp, g):
-                    continue  # this species sits out this generation (learning-speed asymmetry)
+                    continue  # this species sits out this generation (learning-speed asymmetry or homeostat)
                 samples = torch.tensor(stats["samples"][SPECIES_NAME[sp]], device=self.device)
                 summ = self.next_population(sp, fitness[sp], samples)
                 for k, v in summ.items():

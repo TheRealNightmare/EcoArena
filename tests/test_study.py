@@ -111,3 +111,51 @@ def test_tactics_random_baseline_is_near_chance():
         assert r[k] == r[k], k  # not NaN
     assert 0.5 < r["ambush_index"] < 1.6  # random predators sit about as far from refuges as random points
     assert abs(r["flee_alignment"]) < 0.3
+
+
+def test_cost_weight_adds_exactly_the_extra_movement_cost():
+    from ecoarena.trainers.common import step_rewards
+
+    w = EcoWorld(wcfg(), n_worlds=1, seed=2)
+    Np, Nq = w.species[PREY].alive.shape[1], w.species[PREDATOR].alive.shape[1]
+    e0, a0 = w.species[PREDATOR].energy.clone(), w.species[PREDATOR].alive.clone()
+    act_q = torch.zeros(1, Nq, 2)
+    act_q[..., 1] = 0.8
+    info = w.step(torch.zeros(1, Np, 2), act_q)
+    r1 = step_rewards(w, info, PREDATOR, e0, a0)
+    r4 = step_rewards(w, info, PREDATOR, e0, a0, cost_weight=4.0)
+    live = a0 & ~info["died"][PREDATOR]
+    qc = w.cfg.predator
+    expect = -3.0 * qc.move_cost * 0.8**2 / qc.energy_cap
+    assert torch.allclose((r4 - r1)[live], torch.full_like((r4 - r1)[live], expect), atol=1e-6)
+
+
+def test_homeostat_gate():
+    from ecoarena.trainers.common import homeostat_gate
+
+    w = EcoWorld(wcfg(), n_worlds=2, seed=0)
+    assert not homeostat_gate(w, PREY, 0.5) and not homeostat_gate(w, PREY, 0.0)
+    alive = w.species[PREDATOR].alive.nonzero()
+    w.species[PREDATOR].alive[alive[: len(alive) * 3 // 4, 0], alive[: len(alive) * 3 // 4, 1]] = False
+    assert homeostat_gate(w, PREY, 0.5)  # predators below half: prey stop learning
+    assert not homeostat_gate(w, PREDATOR, 0.5)  # prey are fine: predators keep learning
+
+
+def test_ga_homeostat_pauses_the_winning_side(tmp_path):
+    cfg = GAConfig(learn=(PREY, PREDATOR), n_worlds=1, population=50, gen_steps=4, world_step_budget=8,
+                   min_samples=1, homeostat=0.5)
+    tr = GATrainer(wcfg(), cfg, tmp_path)
+    alive = tr.world.species[PREDATOR].alive.nonzero()
+    tr.world.species[PREDATOR].alive[alive[:, 0], alive[:, 1]] = False
+    tr.world.species[PREDATOR].alive[0, alive[0, 1]] = True  # one predator left: prey must pause
+    prey0 = tr.pop[PREY].clone()
+    hist = tr.train()
+    assert hist[0]["prey/gated"] == 1 and torch.equal(tr.pop[PREY], prey0)
+
+
+def test_ppo_extinction_penalty_and_cost_weight_run(tmp_path):
+    cfg = PPOConfig(learn=(PREY, PREDATOR), n_worlds=1, rollout_steps=4, iterations=2, minibatch=512,
+                    cost_weight=3.0, homeostat=0.5, extinction_penalty=5.0)
+    tr = PPOTrainer(wcfg(), cfg, tmp_path)
+    hist = tr.train()
+    assert len(hist) == 2 and "gated" in hist[0]
