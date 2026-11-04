@@ -67,7 +67,6 @@ def main() -> None:
             print(f"window {k + 1}/{a.windows}  predators {w.populations()[:, 1].tolist()}", flush=True)
 
     out = {"brain": a.brain, "saving_per_agent_step": saving, "windows": {}}
-    rng = np.random.default_rng(0)
     for L in (1, 4, 8):  # 128, 512, 1024 steps
         n = a.windows // L
         R = rsum[: n * L].reshape(n, L, P).sum(1)
@@ -78,11 +77,8 @@ def main() -> None:
         credited[:, :25] += saving
         top = np.argsort(-credited, axis=1)[:, :5]
         share = float((top < 25).mean())
-        # the same test with random halves, to show 50% is what luck alone gives
-        perm_share = float(np.mean([(np.argsort(-(fit + saving * (rng.permutation(P) < 25)), axis=1)[:, :5] < 25).mean()
-                                    for _ in range(1)]))
         out["windows"][str(128 * L)] = {"generations": n, "noise_sd": noise_sd, "signal_to_noise": saving / noise_sd,
-                                        "elites_from_credited_half": share, "check_random_half": perm_share,
+                                        "elites_from_credited_half": share,
                                         "samples_per_genome": float(Nn.mean())}
         print(f"window {128 * L:5d} steps: luck spread {noise_sd:.5f}, saving {saving:.5f} "
               f"(signal/noise {saving / noise_sd:.2f}); elites from the credited half {100 * share:.0f}% (chance 50%)")

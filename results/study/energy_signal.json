@@ -1,0 +1,27 @@
+{
+ "brain": "ga-seed0",
+ "saving_per_agent_step": 0.00078,
+ "windows": {
+  "128": {
+   "generations": 32,
+   "noise_sd": 0.0032695040599122955,
+   "signal_to_noise": 0.2385682922262294,
+   "elites_from_credited_half": 0.70625,
+   "samples_per_genome": 517.23125
+  },
+  "512": {
+   "generations": 8,
+   "noise_sd": 0.0013290815032404226,
+   "signal_to_noise": 0.5868714582952878,
+   "elites_from_credited_half": 0.925,
+   "samples_per_genome": 2068.925
+  },
+  "1024": {
+   "generations": 4,
+   "noise_sd": 0.0008357777638278833,
+   "signal_to_noise": 0.9332624457817353,
+   "elites_from_credited_half": 0.9,
+   "samples_per_genome": 4137.85
+  }
+ }
+}
