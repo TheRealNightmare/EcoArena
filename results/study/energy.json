@@ -138,5 +138,61 @@
   "pred_income": 0.23277099999999998,
   "pred_net": -0.013566426632642764,
   "pred_extinct_share": 1.0
+ },
+ "ga-seed3": {
+  "method": "ga",
+  "seed": 3,
+  "pred_th2": 0.4312784414490064,
+  "pred_flip": 0.3974663323163986,
+  "pred_mean": 0.04480222504847916,
+  "prey_th2": 0.6318927977482478,
+  "prey_flip": 0.24823466499646504,
+  "pred_cost": 0.21469176621735095,
+  "catches_per_1k": 5.8812,
+  "pred_income": 0.205842,
+  "pred_net": -0.008849766217350952,
+  "pred_extinct_share": 1.0
+ },
+ "ga-seed4": {
+  "method": "ga",
+  "seed": 4,
+  "pred_th2": 0.5486258285244306,
+  "pred_flip": 0.4084856575727463,
+  "pred_mean": -0.09858851665204081,
+  "prey_th2": 0.6410848399003347,
+  "prey_flip": 0.3807443383336067,
+  "pred_cost": 0.2322938742786646,
+  "catches_per_1k": 6.3802,
+  "pred_income": 0.223307,
+  "pred_net": -0.008986874278664597,
+  "pred_extinct_share": 1.0
+ },
+ "es-seed0": {
+  "method": "es",
+  "seed": 0,
+  "pred_th2": 0.23424752881129582,
+  "pred_flip": 0.3398548684517543,
+  "pred_mean": 0.2525330450634162,
+  "prey_th2": 0.5386429226398468,
+  "prey_flip": 0.23489676763614017,
+  "pred_cost": 0.18513712932169435,
+  "catches_per_1k": 6.0608,
+  "pred_income": 0.21212800000000004,
+  "pred_net": 0.02699087067830569,
+  "pred_extinct_share": 0.0
+ },
+ "es-seed1": {
+  "method": "es",
+  "seed": 1,
+  "pred_th2": 0.16081129310031733,
+  "pred_flip": 0.363204107383887,
+  "pred_mean": -0.02168116517107895,
+  "prey_th2": 0.37495721578598024,
+  "prey_flip": 0.231169026941061,
+  "pred_cost": 0.1741216939650476,
+  "catches_per_1k": 5.534599999999999,
+  "pred_income": 0.19371099999999997,
+  "pred_net": 0.019589306034952375,
+  "pred_extinct_share": 0.0
  }
 }
