@@ -1,0 +1,38 @@
+
+ 4 worlds: 185 world-steps/s (forward passes only, no learning)
+24 worlds: 208 world-steps/s (forward passes only, no learning)
+
+one benchmark run took 15.1 min on average; 24 worlds run 1.1x faster per world-step
+
+E1  es-h512          ~   60 min/run  x5 seeds =   5.0 h
+E1  es-h1024         ~  121 min/run  x5 seeds =  10.1 h
+E1  es-budget4x      ~   60 min/run  x5 seeds =   5.0 h
+E1  ga-h512          ~   60 min/run  x5 seeds =   5.0 h
+E1  ga-h1024         ~  121 min/run  x5 seeds =  10.1 h
+E1  ppo-g995         ~   15 min/run  x5 seeds =   1.3 h
+E1  ppo-g999         ~   15 min/run  x5 seeds =   1.3 h
+E2  es-mix           ~  107 min/run  x5 seeds =   8.9 h
+E2  es-grp           ~  107 min/run  x5 seeds =   8.9 h
+E2  es-mix-eco       ~  107 min/run  x5 seeds =   8.9 h
+E2  es-grp-eco       ~  107 min/run  x5 seeds =   8.9 h
+E2  ga-mix           ~  107 min/run  x5 seeds =   8.9 h
+E2  ga-grp           ~  107 min/run  x5 seeds =   8.9 h
+E2  ga-mix-eco       ~  107 min/run  x5 seeds =   8.9 h
+E2  ga-grp-eco       ~  107 min/run  x5 seeds =   8.9 h
+E2  ppo-eco1         ~   15 min/run  x5 seeds =   1.3 h
+E2  ppo-eco5         ~   15 min/run  x5 seeds =   1.3 h
+E3  es-prey4         ~   15 min/run  x5 seeds =   1.3 h
+E3  es-preyfrozen    ~   15 min/run  x5 seeds =   1.3 h
+E3  es-pred4         ~   15 min/run  x5 seeds =   1.3 h
+E3  ppo-prey4        ~   15 min/run  x5 seeds =   1.3 h
+E3  ppo-preyfrozen   ~   15 min/run  x5 seeds =   1.3 h
+E3  ppo-pred4        ~   15 min/run  x5 seeds =   1.3 h
+E4  ga-cost5         ~   15 min/run  x5 seeds =   1.3 h
+E4  neat-cost5       ~   15 min/run  x5 seeds =   1.3 h
+E4  es-cost5         ~   15 min/run  x5 seeds =   1.3 h
+E5  ppo-hct          ~   15 min/run  x5 seeds =   1.3 h
+E5  ppo-hct-ext      ~   15 min/run  x5 seeds =   1.3 h
+E5  ppo-ext          ~   15 min/run  x5 seeds =   1.3 h
+E5  es-hct           ~   15 min/run  x5 seeds =   1.3 h
+E5  ga-hct           ~   15 min/run  x5 seeds =   1.3 h
+E5  neat-hct         ~   15 min/run  x5 seeds =   1.3 h
