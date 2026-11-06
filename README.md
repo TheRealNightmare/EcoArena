@@ -187,7 +187,7 @@ New to the project? Start with the [team handbook](docs/handbook/EcoArena-Handbo
 ```bibtex
 @misc{ecoarena2026,
   title        = {EcoArena: Learned Predators and Prey in a World That Never Resets},
-  author       = {Nahid, Mirazul Islam and others},
+  author       = {Islam, Mirazul and Alam, Fairoze Fatema and Prova, Mehejabin and Sajid, Afnan Zaman Mohammad and Shishir, Julkar Naim},
   year         = {2026},
   howpublished = {\url{https://github.com/TheRealNightmare/EcoArena}},
   note         = {Machine Learning course project, United International University}
