@@ -25,7 +25,7 @@ Corresponding author: nnahid929@gmail.com}}
 \maketitle
 
 \begin{abstract}
-When predators and prey both learn, does their ecosystem survive? We introduce EcoArena, a non-episodic predator--prey world in which grass grows, animals are born, age and die, and nothing ever resets, and we compare five learning methods, from reinforcement learning (PPO) to neuroevolution (GA, ES, NEAT) and a GA-to-PPO hybrid, under an identical reward, network and compute budget. Across 875 test worlds, learning breaks the ecosystem: random animals keep both species alive in 92\% of worlds, ES in 77\%, PPO in 22\% and NEAT in none. Every collapse is the predators dying out, and they die surrounded by prey: a median of 500--570 prey are still alive when the last predator dies. We trace this to two mechanisms. First, an \emph{energy leak}: the net energy a predator gains per step predicts extinction (rank correlation $-0.89$ over 27 trained brains), and evolutionary methods leak because the energy saved by efficient movement is only a quarter of the selection noise in their fitness window. Second, an \emph{arms race the prey win}: slowing prey learning stabilises the ecosystem (ES survives in 100\% of worlds), while slowing predator learning destroys it. Cross-play shows that learned prey of one method starve every other method's predators, and the training objective forms an intransitive game. \todo{Fixes: energy-cost weighting, longer horizons, group selection, and our Homeostatic Co-Training (E4, E1, E2, E5).}
+When predators and prey both learn, does their ecosystem survive? We introduce EcoArena, a non-episodic predator--prey world in which grass grows, animals are born, age and die, and nothing ever resets, and we compare five learning methods, from reinforcement learning (PPO) to neuroevolution (GA, ES, NEAT) and a GA-to-PPO hybrid, under an identical reward, network and compute budget. Across 875 test worlds, learning breaks the ecosystem: random animals keep both species alive in 92\% of worlds, ES in 77\%, PPO in 22\% and NEAT in none. Every collapse is the predators dying out, and they die surrounded by prey: a median of 500--570 prey are still alive when the last predator dies. We trace this to two mechanisms. First, an \emph{energy leak}: the net energy a predator gains per step predicts extinction (rank correlation $-0.89$ over 27 trained brains), and evolutionary methods leak because the energy saved by efficient movement is only a quarter of the selection noise in their fitness window. Second, an \emph{arms race the prey win}: slowing prey learning stabilises the ecosystem (ES survives in 100\% of worlds), while slowing predator learning destroys it. Cross-play shows that learned prey of one method starve every other method's predators, and the training objective forms an intransitive game. Both mechanisms are repairable: weighting the movement cost in training turns GA's predators energy-positive and raises its survival from 4\% to 80\%, and a longer discount raises PPO's survival in harsh worlds from 0--4\% to 52--64\%, whereas a shared ecosystem-health reward does not help. \todo{E1 GA window and Homeostatic Co-Training (E5).}
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -47,7 +47,7 @@ The headline result is negative and robust: learning breaks the ecosystem. The r
   \item \textbf{A benchmark} of RL and neuroevolution trained on both species at once, showing that every collapse is predator extinction amid abundant prey, and that training silently hides these collapses.
   \item \textbf{The energy-leak law}: a predator's net energy per step predicts extinction, and evolutionary methods leak energy because a small per-step cost is buried in their fitness noise.
   \item \textbf{Causal evidence for an arms race} won by the prey, from learning-speed interventions and a cross-play tournament analysed with Nash equilibria and $\alpha$-Rank~\cite{omidshafiei2019}.
-  \item \textbf{Homeostatic Co-Training}, a simple rule that couples each species' learning to the other's population. \todo{result}
+  \item \textbf{Fixes that work and one that does not}: energy-cost weighting rescues GA (4\% to 80\% survival), a longer PPO horizon rescues PPO in harsh worlds, a shared ecosystem reward fails; and \textbf{Homeostatic Co-Training}, a rule that couples each species' learning to the other's population. \todo{result}
 \end{enumerate}
 
 % ===================================================================================================
@@ -217,9 +217,34 @@ The energy that coasting saves is small per step: $0.15\times(0.56-0.04)/100\app
 \section{Preventing Collapse}
 \label{sec:fixes}
 
-\textbf{Fixing the energy leak (E4).} We retrain GA, NEAT and ES with the movement cost weighted five times in the training reward (the world is unchanged), and with 512 and 1,024-step fitness windows (E1). \todo{E4 and E1 results: survival, thrust$^2$, net energy.}
+\textbf{Fixing the energy leak (E4).} If the leak is a signal problem, amplifying the signal should repair it. We retrained GA, NEAT and ES with the movement cost counted five times in the training reward; the world itself is unchanged and evaluation uses the true costs (Table~\ref{tab:fixes}). GA predators cut their thrust$^2$ from 0.56 to 0.35, their net energy turned from $-0.009$ to $+0.014$ per step, and GA's survival rose from 4\% to 80\% in S1 (0\% to 60\% in S2, 8\% to 76\% in S4). The one GA seed whose net energy stayed negative ($-0.022$) is the one seed that still collapsed. ES predators became more economical too (thrust$^2$ 0.07, net $+0.039$, survival 100\% in S1 and 92\% in S2). NEAT is the instructive exception: its predators also cut thrust (0.73 to 0.45) but lost catches (income 0.224 to 0.187), so their net energy stayed negative and they still died out. The energy-leak law held in every case. \todo{E1: GA with a 512-step fitness window and its equal-compute control.}
 
-\textbf{Longer horizons and ecosystem reward.} \todo{PPO with $\gamma=0.995, 0.999$; shared ecosystem-health reward $\lambda\in\{1,5\}$; E2 group versus individual selection with and without the ecosystem reward.}
+\begin{table}[t]
+\centering
+\caption{Fixes: worlds surviving 10,000 steps (\%) and predator net energy per step (S1). 25 worlds per cell.}
+\label{tab:fixes}
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{lrrrr}
+\toprule
+Condition & S1 & S2 & S4 & net energy \\
+\midrule
+GA                         &  4 &  0 &  8 & $-$0.009 \\
+GA, cost $\times$5         & \textbf{80} & \textbf{60} & \textbf{76} & $+$0.014 \\
+ES                         & 80 & 60 & 80 & $+$0.018 \\
+ES, cost $\times$5         & \textbf{100} & \textbf{92} & 72 & $+$0.039 \\
+NEAT                       &  0 &  0 &  0 & $-$0.036 \\
+NEAT, cost $\times$5       &  4 &  0 &  8 & $-$0.030 \\
+\midrule
+PPO ($\gamma=0.99$)        & 80 &  0 &  4 & $+$0.034 \\
+PPO, $\gamma=0.995$        & 88 & 56 & 20 & \\
+PPO, $\gamma=0.999$        & \textbf{100} & \textbf{64} & \textbf{52} & \\
+PPO, eco reward $\lambda=1$ & 100 & 8 & 0 & \\
+PPO, eco reward $\lambda=5$ & 88 & 0 & 16 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Longer horizons help; a shared ecosystem reward does not.} PPO's discount $\gamma=0.99$ looks about 100 steps ahead, while collapse unfolds over thousands. Raising it to $\gamma=0.999$ kept every S1 world alive and raised survival from 0\% to 64\% in S2 and from 4\% to 52\% in S4 (Table~\ref{tab:fixes}). By contrast, adding a shared reward for ecosystem health, $\frac{\lambda}{1000}\sqrt{h_\text{prey}h_\text{pred}}$ per animal-step with $h$ the population relative to its start, did not help in the harsh scenarios at either strength. A reward that every animal in a world receives equally gives no individual a reason to act differently, which is the classic obstacle to prudent predation under individual selection~\cite{slobodkin1968,traulsen2006}. Testing group-level selection directly is left to future work.
 
 \textbf{Homeostatic Co-Training.} The arms race suggests coupling each species' learning to the other's state. Our rule (Algorithm~\ref{alg:hct}) pauses a species' updates whenever the other species falls below a fraction $\tau$ of its starting population, so a winning side cannot keep out-learning a collapsing one. For PPO we also replace the silent reset with an extinction penalty $P$ to every learner in a world where a species dies out. \todo{E5 results and ablations: ppo-hct, ppo-ext, ppo-hct-ext, es/ga/neat-hct.}
 
@@ -243,11 +268,11 @@ The energy that coasting saves is small per step: $0.15\times(0.56-0.04)/100\app
 
 Our results point to two separable failure modes. Evolutionary methods with short fitness windows produce energetically wasteful predators that starve whatever their prey do; gradient-based RL produces efficient predators but even more effective prey, and the ecosystem survives only while neither side out-learns the other. Neither failure is visible in the training objective, and both are hidden in standard practice by resetting worlds after extinction. This matches ecological intuition, the life--dinner principle~\cite{dawkins1979} and the difficulty of evolving prudence under individual selection~\cite{slobodkin1968}, but here it is measured, manipulated and quantified.
 
-\textbf{Limitations.} We use one world family, small networks and a fixed budget of 150,000 world-steps; larger budgets may change rankings. Five training seeds limit the power of individual comparisons, and outcomes depend strongly on the seed. The energy budget combines thrust measured over a short window with catch rates from the full evaluation. \todo{update after E1/E2/E4/E5.}
+\textbf{Limitations.} We use one world family, small networks and a fixed budget of 150,000 world-steps; larger budgets may change rankings. Five training seeds limit the power of individual comparisons, and outcomes depend strongly on the seed. The energy budget combines thrust measured over a short window with catch rates from the full evaluation. We did not test group-level selection, which our GPU budget could not cover. \todo{update after E1/E5.}
 
 \section{Conclusion}
 
-Learning agents that each optimise their own energy tend to destroy the ecosystem they live in. In EcoArena this happens through energy leaks in evolved predators and an arms race won by learned prey, and it is hidden by the common practice of resetting after extinction. \todo{one sentence on the fixes and Homeostatic Co-Training.} The environment, all runs and the browser demo are open source.\todo{repository URL}
+Learning agents that each optimise their own energy tend to destroy the ecosystem they live in. In EcoArena this happens through energy leaks in evolved predators and an arms race won by learned prey, and it is hidden by the common practice of resetting after extinction. Making the cost of movement visible to evolution, or lengthening PPO's horizon, keeps far more ecosystems alive; rewarding ecosystem health directly does not. \todo{Homeostatic Co-Training.} The environment, all runs and the browser demo are open source.\todo{repository URL}
 
 \bibliographystyle{ieeetr}
 \bibliography{refs}
