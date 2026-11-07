@@ -37,13 +37,13 @@ LEARNED = ["ppo", "ga", "es", "neat", "hybrid"]
 
 # ------------------------------------------------------------------------------------------------ energy
 @torch.no_grad()
-def thrust_stats(m: str, s: int | None, steps: int, warm: int, device: str) -> dict:
+def thrust_stats(m: str, s: int | None, steps: int, warm: int, device: str, study: bool = False) -> dict:
     cfg = load_config("S1", base="s1_large.json")
     w = EcoWorld(cfg, n_worlds=1, seed=20_000, device=device)
     if s is None:
         pol = {sp: make_policy(m, w, sp) for sp in (PREY, PREDATOR)}
     else:
-        d = BENCH / "train" / m / f"{m}-seed{s}"
+        d = (OUT if study else BENCH) / "train" / m / f"{m}-seed{s}"
         pol = {PREY: load_policy(d / "prey.pt", device), PREDATOR: load_policy(d / "predator.pt", device)}
     acc = {k: [] for k in ("pred_th2", "pred_flip", "pred_mean", "prey_th2", "prey_flip")}
     prev = {PREY: None, PREDATOR: None}
@@ -64,7 +64,7 @@ def thrust_stats(m: str, s: int | None, steps: int, warm: int, device: str) -> d
     out = {k: float(np.mean(v)) if v else float("nan") for k, v in acc.items()}
     qc = cfg.predator
     out["pred_cost"] = qc.base_drain + qc.move_cost * out["pred_th2"]
-    f = BENCH / "eval" / "S1" / (f"{m}.json" if s is None else f"{m}-seed{s}.json")
+    f = (OUT if study else BENCH) / "eval" / "S1" / (f"{m}.json" if s is None else f"{m}-seed{s}.json")
     pw = json.loads(f.read_text())["per_world"]
     out["catches_per_1k"] = float(np.mean([x["pred_catches_per_1k_agent_steps"] for x in pw]))
     out["pred_income"] = out["catches_per_1k"] / 1000 * qc.energy_per_catch
@@ -77,12 +77,13 @@ def cmd_energy(a) -> None:
     device = a.device or ("cuda" if torch.cuda.is_available() else "cpu")
     f = OUT / "energy.json"
     res = json.loads(f.read_text()) if f.exists() else {}
-    jobs = [(m, None) for m in ("random", "heuristic")] + [(m, s) for m in LEARNED for s in range(5)]
-    for m, s in jobs:
+    jobs = [(m, None, False) for m in ("random", "heuristic")] + [(m, s, False) for m in LEARNED for s in range(5)]
+    jobs += [(c, s, True) for c in a.conds for s in range(5)]  # study conditions (results/study)
+    for m, s, study in jobs:
         key = m if s is None else f"{m}-seed{s}"
         if key in res:
             continue
-        res[key] = {"method": m, "seed": s, **thrust_stats(m, s, a.steps, a.warm, device)}
+        res[key] = {"method": m, "seed": s, "study": study, **thrust_stats(m, s, a.steps, a.warm, device, study)}
         r = res[key]
         print(f"{key:14s} thrust² {r['pred_th2']:.2f}  flips {r['pred_flip']:.2f}  cost {r['pred_cost']:.3f}  "
               f"income {r['pred_income']:.3f}  net {r['pred_net']:+.3f}", flush=True)
@@ -170,6 +171,7 @@ def cmd_report(a) -> None:
     if ef.exists():
         E = json.loads(ef.read_text())
         by = collections.defaultdict(list)
+        E = {k: r for k, r in E.items() if not r.get("study")}
         for r in E.values():
             by[r["method"]].append(r)
         lines += ["## Predator energy budget", "",
@@ -231,6 +233,7 @@ def main() -> None:
     p.add_argument("--steps", type=int, default=300)
     p.add_argument("--warm", type=int, default=100)
     p.add_argument("--device", default=None)
+    p.add_argument("--conds", nargs="*", default=[], help="study conditions to add to the energy table")
     a = p.parse_args()
     {"energy": cmd_energy, "report": cmd_report}[a.command](a)
 

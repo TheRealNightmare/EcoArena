@@ -63,22 +63,24 @@ CONDITIONS: dict[str, tuple[str, str, list[str]]] = {
     "neat": ("base", "neat", []),
     # E1: horizon. GA/ES keep the benchmark's 293 generations, so a longer window costs more world-steps; the
     # budget control gives ES the h512 compute at the old window. PPO: longer discount at the same budget.
-    "es-h512": ("E1", "es", [*ES, "--gen-steps", "512", "--world-steps", "600000"]),
-    "es-h1024": ("E1", "es", [*ES, "--gen-steps", "1024", "--world-steps", "1200000"]),
-    "es-budget4x": ("E1", "es", [*ES, "--world-steps", "600000"]),
+    "es-h512": ("E1x", "es", [*ES, "--gen-steps", "512", "--world-steps", "600000"]),
+    "es-h1024": ("E1x", "es", [*ES, "--gen-steps", "1024", "--world-steps", "1200000"]),
+    "es-budget4x": ("E1x", "es", [*ES, "--world-steps", "600000"]),
     "ga-h512": ("E1", "ga", [*GA, "--gen-steps", "512", "--world-steps", "600000"]),
-    "ga-h1024": ("E1", "ga", [*GA, "--gen-steps", "1024", "--world-steps", "1200000"]),
+    # control for ga-h512: the same 4x compute at the old 128-step window (is it just more training?)
+    "ga-budget4x": ("E1", "ga", [*GA, "--world-steps", "600000"]),
+    "ga-h1024": ("E1x", "ga", [*GA, "--gen-steps", "1024", "--world-steps", "1200000"]),
     "ppo-g995": ("E1", "ppo", [*PPO, "--gamma", "0.995"]),
     "ppo-g999": ("E1", "ppo", [*PPO, "--gamma", "0.999"]),
     # E2: level of selection x objective (2 x 2), GA and ES, identical episodic setting
-    "es-mix": ("E2", "es", [*ES, *EPI]),
-    "es-grp": ("E2", "es", [*ES, *EPI, "--assign", "group"]),
-    "es-mix-eco": ("E2", "es", [*ES, *EPI, "--eco-lambda", "5"]),
-    "es-grp-eco": ("E2", "es", [*ES, *EPI, "--assign", "group", "--eco-lambda", "5"]),
-    "ga-mix": ("E2", "ga", [*GA, *EPI, *GA_EPI]),
-    "ga-grp": ("E2", "ga", [*GA, *EPI, *GA_EPI, "--assign", "group"]),
-    "ga-mix-eco": ("E2", "ga", [*GA, *EPI, *GA_EPI, "--eco-lambda", "5"]),
-    "ga-grp-eco": ("E2", "ga", [*GA, *EPI, *GA_EPI, "--assign", "group", "--eco-lambda", "5"]),
+    "es-mix": ("E2x", "es", [*ES, *EPI]),
+    "es-grp": ("E2x", "es", [*ES, *EPI, "--assign", "group"]),
+    "es-mix-eco": ("E2x", "es", [*ES, *EPI, "--eco-lambda", "5"]),
+    "es-grp-eco": ("E2x", "es", [*ES, *EPI, "--assign", "group", "--eco-lambda", "5"]),
+    "ga-mix": ("E2x", "ga", [*GA, *EPI, *GA_EPI]),
+    "ga-grp": ("E2x", "ga", [*GA, *EPI, *GA_EPI, "--assign", "group"]),
+    "ga-mix-eco": ("E2x", "ga", [*GA, *EPI, *GA_EPI, "--eco-lambda", "5"]),
+    "ga-grp-eco": ("E2x", "ga", [*GA, *EPI, *GA_EPI, "--assign", "group", "--eco-lambda", "5"]),
     "ppo-eco1": ("E2", "ppo", [*PPO, "--eco-lambda", "1"]),
     "ppo-eco5": ("E2", "ppo", [*PPO, "--eco-lambda", "5"]),
     # E3: learning-speed asymmetry (benchmark settings otherwise)
@@ -104,9 +106,9 @@ CONDITIONS: dict[str, tuple[str, str, list[str]]] = {
     "neat-hct": ("E5", "neat", [*NEAT, "--homeostat", "0.5"]),
 }
 # rough cost in benchmark-run units (one benchmark run = 150k world-steps on 4 worlds, ~15 min on the RTX 5060 Ti)
-COST = {"es-h512": 4, "es-h1024": 8, "es-budget4x": 4, "ga-h512": 4, "ga-h1024": 8}
+COST = {"es-h512": 4, "es-h1024": 8, "es-budget4x": 4, "ga-h512": 4, "ga-h1024": 8, "ga-budget4x": 4}
 for _n, (_e, _m, _a) in CONDITIONS.items():
-    if _e == "E2" and _m != "ppo":
+    if _e == "E2x":
         COST[_n] = 8  # 1.2M world-steps, but on 24 worlds at once (the probe measures the real speed-up)
 
 
@@ -281,7 +283,7 @@ def cmd_probe(a) -> None:
         if e == "base":
             continue
         c = COST.get(n, 1)
-        if e == "E2" and m != "ppo":
+        if e == "E2x":
             c = c / max(ratio, 1.0)
         mins = c * unit * len(SEEDS)
         total += mins
@@ -298,7 +300,9 @@ def cmd_list(a) -> None:
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("command", choices=["train", "eval", "crossplay", "behaviour", "probe", "list"])
-    p.add_argument("--exp", nargs="+", choices=["E1", "E2", "E3", "E4", "E5"])
+    # E1x / E2x: optional extras (ES/GA long windows, group selection), too costly for the main schedule because
+    # parallel worlds give no speed-up on our GPU (probe, 7 Nov: 195 vs 206 world-steps/s)
+    p.add_argument("--exp", nargs="+", choices=["E1", "E1x", "E2", "E2x", "E3", "E4", "E5"])
     p.add_argument("--cond", nargs="+", choices=list(CONDITIONS))
     p.add_argument("--seeds", nargs="+", type=int, default=SEEDS)
     p.add_argument("--scenarios", nargs="+", default=["S1", "S2", "S4"])
