@@ -172,9 +172,23 @@ NEAT       & 0.73 & 0.260 & 0.224 & $-$0.036 & 100\% \\
 \label{fig:energy}
 \end{figure}
 
+\textbf{A replacement model.} The law follows from the world rules with no fitted parameter. A predator lives at most $L=1{,}500$ steps, pays $0.15+0.15\,u^2$ per step and gains 35 per catch; each child costs 45 of banked energy, and the 300-step cooldown allows at most five. Treating a brain's catches over a lifetime as Poisson at its measured rate gives the expected number of children per predator,
+\begin{equation}
+R_0=\mathbb{E}_{k\sim\mathrm{Pois}(cL)}\!\left[\min\!\left(\left\lfloor\tfrac{35k-(0.15+0.15u^2)L}{45}\right\rfloor^{+},\,5\right)\right],
+\label{eq:r0}
+\end{equation}
+and the predators persist only if $R_0\ge1$. The curve $R_0=1$ splits the plane of thrust$^2$ and catch rate into a viable and a doomed region (Fig.~\ref{fig:leakmodel}A): coasting predators need about 4.9 catches per 1,000 steps, predators that push like GA need 7.3, more than any learned predator achieves. Across all 42 brains (benchmark and E4), $R_0$ separates the predator populations that died out from those that survived perfectly (AUC 1.00, Spearman $\rho=-0.88$); the parameter-free threshold $R_0<1$ classifies 83\% correctly, and the errors are all survivors with $0.86\le R_0<1$, because averaging the catch rate ignores that the best hunters father most children.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{leak_model.png}
+\caption{Analytic model of the energy leak. (A) Each point is one trained brain's predators (open: died out). The line is $R_0=1$ from Eq.~\ref{eq:r0}, using only the world rules; below it a lineage cannot replace itself. (B) How clearly selection sees the energy that coasting saves, against the fitness window. Luck shrinks as $T^{-0.66}$, so the saving only exceeds the luck of catches beyond $T\approx1{,}100$ steps; GA, ES and NEAT rank genomes over 128.}
+\label{fig:leakmodel}
+\end{figure*}
+
 \subsection{Why evolution leaks}
 
-The energy that coasting saves is small per step: $0.15\times(0.56-0.04)/100\approx0.0008$ reward per predator-step. To test whether selection can see it, we filled all 50 genome slots of GA's shared-world evaluation with the \emph{same} trained predator, so that any fitness difference is pure luck of catches and deaths, and credited half of the slots with exactly the coasting saving. With GA's 128-step window the saving is 0.24 of the luck spread, and the credited half supplies 71\% of the elites (50\% is chance). With 512 and 1,024-step windows the ratio rises to 0.59 and 0.93 and the credited half wins 90--93\% of elite places. Evolution's short fitness window therefore barely sees the cost of wasteful movement, whereas PPO receives it as a per-step reward signal. This predicts that longer windows or a stronger cost signal should repair evolved predators, which we test in Sec.~\ref{sec:fixes}.
+The energy that coasting saves is small per step: $0.15\times(0.56-0.04)/100\approx0.0008$ reward per predator-step. To test whether selection can see it, we filled all 50 genome slots of GA's shared-world evaluation with the \emph{same} trained predator, so that any fitness difference is pure luck of catches and deaths, and credited half of the slots with exactly the coasting saving. With GA's 128-step window the saving is 0.24 of the luck spread, and the credited half supplies 71\% of the elites (50\% is chance). With 512 and 1,024-step windows the ratio rises to 0.59 and 0.93 and the credited half wins 90--93\% of elite places. The luck spread shrinks as $T^{-0.66}$ (Fig.~\ref{fig:leakmodel}B; independent steps would give $T^{-0.5}$), so the saving outweighs luck only for windows beyond about 1,100 steps, nine times GA's. In a Gaussian selection model the energy trait then receives $d^2/(1+d^2)$ of the selection pressure, where $d$ is the signal-to-luck ratio: 5\% at 128 steps, 26\% at 512 and 47\% at 1,024. Evolution's short fitness window therefore barely sees the cost of wasteful movement, whereas PPO receives it as a per-step reward signal. This predicts that longer windows or a stronger cost signal should repair evolved predators, which we test in Sec.~\ref{sec:fixes}.
 
 \subsection{An arms race the prey win}
 
