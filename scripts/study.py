@@ -116,6 +116,18 @@ CONDITIONS: dict[str, tuple[str, str, list[str]]] = {
     "neat-sig0.5x": ("E6", "neat", [*NEAT, "--neat-weight-sigma", "0.025"]),
     "neat-sig2x": ("E6", "neat", [*NEAT, "--neat-weight-sigma", "0.1"]),
 }
+# E7: the optimised recipe. Stack the fixes that each worked alone, then remove one at a time (ablation).
+#   evolution (GA, ES): movement cost x5 (E4) + prey learn 4x slower (E3) + Homeostatic Co-Training (E5)
+#   PPO:                gamma 0.999 (E1)     + prey learn 4x slower (E3) + Homeostatic Co-Training (E5)
+# Only the family chosen after the E5 results is run. Names: <method>-opt, <method>-opt-no<ingredient>.
+_FIX = {"cost": ["--cost-weight", "5"], "g999": ["--gamma", "0.999"], "prey4": ["--prey-every", "4"],
+        "hct": ["--homeostat", "0.5"]}
+_RECIPE = {"ga": (GA, ["cost", "prey4", "hct"]), "es": (ES, ["cost", "prey4", "hct"]),
+           "ppo": (PPO, ["g999", "prey4", "hct"])}
+for _m, (_base, _ing) in _RECIPE.items():
+    CONDITIONS[f"{_m}-opt"] = ("E7", _m, [*_base, *[x for i in _ing for x in _FIX[i]]])
+    for _drop in _ing:
+        CONDITIONS[f"{_m}-opt-no{_drop}"] = ("E7", _m, [*_base, *[x for i in _ing if i != _drop for x in _FIX[i]]])
 # rough cost in benchmark-run units (one benchmark run = 150k world-steps on 4 worlds, ~15 min on the RTX 5060 Ti)
 COST = {"es-h512": 4, "es-h1024": 8, "es-budget4x": 4, "ga-h512": 4, "ga-h1024": 8, "ga-budget4x": 4}
 for _n, (_e, _m, _a) in CONDITIONS.items():
@@ -226,6 +238,37 @@ def cmd_crossplay(a) -> None:
                 _eval_one(f, cfg, pols, f"{mp}|{mq}", name, "S1", a, device)
 
 
+# ------------------------------------------------------------------------------------------------ skill
+def cmd_skill(a) -> None:
+    """Agent skill, so a 'safe' recipe can't win by being useless: each brain's predators hunt the prey of the five
+    benchmark methods, and its prey are hunted by their predators (S1, opponents of seed s mod 5). Short games,
+    since the attack rate (catches per prey-predator encounter) is a rate. Benchmark methods get the same test."""
+    device = a.device or ("cuda" if torch.cuda.is_available() else "cpu")
+    cfg = load_config("S1", base=BASE)
+    learned = ["ppo", "ga", "es", "neat", "hybrid"]
+    bench = lambda m, sp, s: load_policy(BENCH / "train" / m / f"{m}-seed{s % 5}" / f"{sp}.pt", device)
+    own = lambda c, sp, s: load_policy(run_dir(c, s) / f"{sp}.pt", device)
+    # default: the five benchmark methods (the reference); --exp/--cond: study conditions (base names allowed)
+    conds = list(a.cond) if a.cond else (select(a) if a.exp else learned)
+    sub = argparse.Namespace(worlds=a.skill_worlds, steps=a.skill_steps)
+    for c in conds:
+        for s in a.seeds:
+            if c in learned:
+                if not (BENCH / "train" / c / f"{c}-seed{s}" / "predator.pt").exists():
+                    continue
+                mine = lambda sp, c=c, s=s: load_policy(BENCH / "train" / c / f"{c}-seed{s}" / f"{sp}.pt", device)
+            elif done(c, s):
+                mine = lambda sp, c=c, s=s: own(c, sp, s)
+            else:
+                continue
+            for m in learned:
+                for role, pols in (("pred", {PREY: bench(m, "prey", s), PREDATOR: mine("predator")}),
+                                   ("prey", {PREY: mine("prey"), PREDATOR: bench(m, "predator", s)})):
+                    f = OUT / "skill" / f"{c}-seed{s}-{role}_vs_{m}.json"
+                    if not f.exists():
+                        _eval_one(f, cfg, pols, c, f"{c}-seed{s} {role} vs {m}", "S1", sub, device)
+
+
 # ------------------------------------------------------------------------------------------------ behaviour
 def cmd_behaviour(a) -> None:
     """Tactic measurements (ecoarena.eval.behaviour) for every benchmark brain and every study condition on S1."""
@@ -310,15 +353,17 @@ def cmd_list(a) -> None:
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("command", choices=["train", "eval", "crossplay", "behaviour", "probe", "list"])
+    p.add_argument("command", choices=["train", "eval", "crossplay", "behaviour", "skill", "probe", "list"])
     # E1x / E2x: optional extras (ES/GA long windows, group selection), too costly for the main schedule because
     # parallel worlds give no speed-up on our GPU (probe, 7 Nov: 195 vs 206 world-steps/s)
-    p.add_argument("--exp", nargs="+", choices=["E1", "E1x", "E2", "E2x", "E3", "E4", "E5", "E6"])
+    p.add_argument("--exp", nargs="+", choices=["E1", "E1x", "E2", "E2x", "E3", "E4", "E5", "E6", "E7"])
     p.add_argument("--cond", nargs="+", choices=list(CONDITIONS))
     p.add_argument("--seeds", nargs="+", type=int, default=SEEDS)
     p.add_argument("--scenarios", nargs="+", default=["S1", "S2", "S4"])
     p.add_argument("--worlds", type=int, default=5)
     p.add_argument("--steps", type=int, default=10_000)
+    p.add_argument("--skill-worlds", type=int, default=3)
+    p.add_argument("--skill-steps", type=int, default=3000)
     p.add_argument("--probe-steps", type=int, default=200)
     p.add_argument("--tactic-worlds", type=int, default=3)
     p.add_argument("--tactic-steps", type=int, default=3000)
@@ -335,7 +380,7 @@ def main() -> None:
     BASE = a.base
     if BASE != "s1_large.json" and (not a.out or not a.bench):
         sys.exit("another world needs its own --out and --bench, so its runs never mix with the main world's")
-    {"train": cmd_train, "eval": cmd_eval, "crossplay": cmd_crossplay, "behaviour": cmd_behaviour,
+    {"train": cmd_train, "eval": cmd_eval, "crossplay": cmd_crossplay, "behaviour": cmd_behaviour, "skill": cmd_skill,
      "probe": cmd_probe, "list": cmd_list}[
         a.command](a)
 
