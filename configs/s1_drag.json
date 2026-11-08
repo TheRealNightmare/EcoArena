@@ -1,5 +1,5 @@
 {
- "_comment": "EcoArena S1 Drag (World B): s1_large plus drag. Each step an animal keeps (1 - drag) of its speed before thrust, so coasting is no longer free and speed must be paid for continuously. Terminal speed at full thrust is max_accel/drag (capped at max_speed).",
+ "_comment": "EcoArena S1 Drag (World B): s1_large plus drag. Each step an animal keeps (1 - drag) of its speed before thrust, so coasting is no longer free and speed must be paid for continuously. Terminal speed at full thrust is max_accel/drag (capped at max_speed). drag 0.1: speed halves in ~7 coasting steps; cruising at top speed needs full thrust for prey. Hand-coded gate (CPU, 1 world x 4k steps): both species alive, means 833 prey / 186 predators (drag 0.05: 595 / 232).",
  "world_size": 200.0,
  "grass_grid": 100,
  "grass_regrow_rate": 0.02,
@@ -36,7 +36,7 @@
   "vision_range": 20.0,
   "territory_radius": 0.0,
   "territory_max": 0,
-  "drag": 0.05
+  "drag": 0.1
  },
  "predator": {
   "init_count": 120,
@@ -62,6 +62,6 @@
   "territory_max": 2,
   "catch_prob": 0.5,
   "miss_stun_steps": 40,
-  "drag": 0.05
+  "drag": 0.1
  }
 }
