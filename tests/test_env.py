@@ -432,3 +432,28 @@ def test_heuristic_predator_coasts_while_digesting():
     _, o2 = w.observe()
     a = make_policy("heuristic", w, PREDATOR)(o2)
     assert (a[..., 1][pred.alive] == 0).all()
+
+
+# ---------------------------------------------------------------- drag world
+def test_drag_decays_speed_without_thrust():
+    cfg = load_config("S1", **{"prey.init_count": 1, "predator.init_count": 1, "refuge_count": 0,
+                               "prey.drag": 0.1, "predator.drag": 0.1})
+    w = EcoWorld(cfg, n_worlds=1, seed=0)
+    w.species[PREY].speed[0, 0] = 1.0
+    w.species[PREDATOR].speed[0, 0] = 1.0
+    w.step(*zeros(w))
+    assert abs(float(w.species[PREY].speed[0, 0]) - 0.9) < 1e-6
+    assert abs(float(w.species[PREDATOR].speed[0, 0]) - 0.9) < 1e-6
+
+
+def test_no_drag_means_free_coasting():
+    cfg = load_config("S1", **{"prey.init_count": 1, "predator.init_count": 1, "refuge_count": 0})
+    w = EcoWorld(cfg, n_worlds=1, seed=0)
+    w.species[PREY].speed[0, 0] = 0.7
+    w.step(*zeros(w))
+    assert abs(float(w.species[PREY].speed[0, 0]) - 0.7) < 1e-6
+
+
+def test_drag_world_config_loads():
+    cfg = load_config("S1", base="s1_drag.json")
+    assert cfg.prey.drag > 0 and cfg.predator.drag > 0

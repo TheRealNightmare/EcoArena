@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
-from dataclasses import dataclass, fields
+from dataclasses import MISSING, dataclass, fields
 from pathlib import Path
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
@@ -35,6 +35,7 @@ class SpeciesConfig:
     miss_stun_steps: int = 0  # steps a predator can't catch after a failed lunge
     territory_radius: float = 0.0  # 0 = off. Breeding blocked when crowded by own species
     territory_max: int = 0  # max other same-species agents within territory_radius to still breed
+    drag: float = 0.0  # 0 = off. Share of speed lost each step before thrust (coasting stops being free)
 
 
 @dataclass(frozen=True)
@@ -105,6 +106,10 @@ def load_config(scenario: str = "S1", base: str | Path = "s1_balanced.json", **o
     if scenario not in scenarios:
         raise KeyError(f"unknown scenario {scenario}; have {[k for k in scenarios if not k.startswith('_')]}")
     raw = copy.deepcopy(raw)
+    for sp in ("prey", "predator"):  # optional species fields with defaults may be overridden too
+        for f in fields(SpeciesConfig):
+            if f.name not in raw[sp] and f.default is not MISSING:
+                raw[sp][f.name] = f.default
     for k, v in {**scenarios[scenario], **overrides}.items():
         _set_dotted(raw, k, v)
     return _from_dict(raw)

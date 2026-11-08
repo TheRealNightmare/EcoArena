@@ -52,7 +52,7 @@ function compareState(w: World, snap: any, tol: number) {
 
 function runTrace(name: string, mk: (sp: number) => Policy) {
   const tr = fx(name);
-  const w = new World(loadConfig(tr.scenario, tr.base), tr.seed);
+  const w = new World(loadConfig(tr.scenario, tr.base, tr.overrides ?? {}), tr.seed);
   const pols = [mk(0), mk(1)];
   const acts = [new Float32Array(w.species[0].n * 2), new Float32Array(w.species[1].n * 2)];
   compareState(w, tr.snapshots[0], 1e-5);
@@ -80,6 +80,7 @@ function runTrace(name: string, mk: (sp: number) => Policy) {
 describe("world parity with PyTorch", () => {
   it("random agents, 150 steps (pure dynamics)", () => runTrace("trace_random.json", randomPolicy));
   it("heuristic agents, 150 steps (observations + policy + dynamics)", () => runTrace("trace_heuristic.json", heuristicPolicy));
+  it("drag world, random agents, 150 steps", () => runTrace("trace_drag.json", randomPolicy));
 });
 
 describe("brains", () => {

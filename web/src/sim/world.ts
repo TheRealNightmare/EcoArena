@@ -278,12 +278,14 @@ export class World {
       const th = new Float32Array(st.n);
       const maxTurn = f(sc.max_turn);
       const maxAccel = f(sc.max_accel);
+      const keep = sc.drag > 0 ? f(1 - sc.drag) : 1; // Python: speed * (1 - drag), scalar rounded to float32
       for (let i = 0; i < st.n; i++) {
         const turn = f(Math.min(1, Math.max(-1, a[2 * i])));
         const thrust = f(Math.min(1, Math.max(-1, a[2 * i + 1])));
         const al = st.alive[i];
         st.heading[i] = wrapAngle(f(st.heading[i] + f(f(turn * maxTurn) * al)));
-        st.speed[i] = f(Math.min(sc.max_speed, Math.max(0, f(st.speed[i] + f(thrust * maxAccel)))) * al);
+        const sp0 = keep < 1 ? f(st.speed[i] * keep) : st.speed[i];
+        st.speed[i] = f(Math.min(sc.max_speed, Math.max(0, f(sp0 + f(thrust * maxAccel)))) * al);
         const vx = f(f(Math.cos(st.heading[i])) * st.speed[i]);
         const vy = f(f(Math.sin(st.heading[i])) * st.speed[i]);
         st.x[i] = fmodPos(f(st.x[i] + vx), L);

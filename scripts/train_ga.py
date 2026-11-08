@@ -68,6 +68,7 @@ def main(method: str = "ga") -> None:
     p.add_argument("--population", type=int, default=50)
     p.add_argument("--sigma", type=float, default=0.02)
     p.add_argument("--lr", type=float, default=0.01, help="ES only")
+    p.add_argument("--neat-weight-sigma", type=float, default=0.05, help="NEAT only: weight (and bias) mutation size")
     p.add_argument("--gen-steps", type=int, default=128)
     p.add_argument("--world-steps", type=float, default=150_000)
     p.add_argument("--episodic", action="store_true", help="study 2: fresh worlds every generation, no resets")
@@ -103,7 +104,7 @@ def main(method: str = "ga") -> None:
     elif a.method == "es":
         cfg, Trainer = ESConfig(**common, lr=a.lr), ESTrainer
     else:
-        cfg, Trainer = NEATConfig(**common), NEATTrainer
+        cfg, Trainer = NEATConfig(**common, weight_sigma=a.neat_weight_sigma, bias_sigma=a.neat_weight_sigma), NEATTrainer
     print(f"{a.method}: evolving {name} on {a.device}: population {a.population}, {a.gen_steps} steps x {a.worlds} worlds "
           f"per generation, {a.world_steps:,.0f} world-steps", flush=True)
     trainer = Trainer(wcfg, cfg, out)

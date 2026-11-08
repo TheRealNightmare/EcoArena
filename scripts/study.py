@@ -44,6 +44,7 @@ from ecoarena.trainers.ppo import load_policy
 
 OUT = ROOT / "results" / "study"
 BENCH = ROOT / "results" / "bench"
+BASE = "s1_large.json"  # world B: --base s1_drag.json --bench results/bench_drag --out results/study_drag
 SEEDS = [0, 1, 2, 3, 4]
 EVAL_SEED = 20_000  # same as the benchmark, so baseline evaluations are reused as they are
 
@@ -104,6 +105,16 @@ CONDITIONS: dict[str, tuple[str, str, list[str]]] = {
     "es-hct": ("E5", "es", [*ES, "--homeostat", "0.5"]),
     "ga-hct": ("E5", "ga", [*GA, "--homeostat", "0.5"]),
     "neat-hct": ("E5", "neat", [*NEAT, "--homeostat", "0.5"]),
+    # E6: hyperparameter check. Each method's main step size at 0.5x and 2x the benchmark value (the 1x runs are the
+    # benchmark's own seeds 0-2). Is the collapse ranking an artefact of untuned settings?
+    "ppo-lr0.5x": ("E6", "ppo", [*PPO, "--lr", "1.5e-4"]),
+    "ppo-lr2x": ("E6", "ppo", [*PPO, "--lr", "6e-4"]),
+    "ga-sig0.5x": ("E6", "ga", [*GA, "--sigma", "0.01"]),
+    "ga-sig2x": ("E6", "ga", [*GA, "--sigma", "0.04"]),
+    "es-lr0.5x": ("E6", "es", [*ES, "--lr", "0.005"]),
+    "es-lr2x": ("E6", "es", [*ES, "--lr", "0.02"]),
+    "neat-sig0.5x": ("E6", "neat", [*NEAT, "--neat-weight-sigma", "0.025"]),
+    "neat-sig2x": ("E6", "neat", [*NEAT, "--neat-weight-sigma", "0.1"]),
 }
 # rough cost in benchmark-run units (one benchmark run = 150k world-steps on 4 worlds, ~15 min on the RTX 5060 Ti)
 COST = {"es-h512": 4, "es-h1024": 8, "es-budget4x": 4, "ga-h512": 4, "ga-h1024": 8, "ga-budget4x": 4}
@@ -141,7 +152,7 @@ def cmd_train(a) -> None:
         d = run_dir(c, s)
         _, _, args = CONDITIONS[c]
         cmd = [sys.executable, str(ROOT / "scripts" / args[0]), *args[1:], "--learn", "prey", "predator",
-               "--seed", str(s), "--name", d.name, "--out", str(d.parent), "--base", "s1_large.json",
+               "--seed", str(s), "--name", d.name, "--out", str(d.parent), "--base", BASE,
                "--eval-worlds", "0"]
         if a.device:
             cmd += ["--device", a.device]
@@ -170,7 +181,7 @@ def cmd_eval(a) -> None:
     device = a.device or ("cuda" if torch.cuda.is_available() else "cpu")
     conds = select(a) + (["ppo", "ga", "es", "neat"] if not a.cond else [c for c in a.cond if CONDITIONS[c][0] == "base"])
     for sc in a.scenarios:
-        cfg = load_config(sc, base="s1_large.json")
+        cfg = load_config(sc, base=BASE)
         for c in conds:
             for s in a.seeds:
                 f = OUT / "eval" / sc / f"{c}-seed{s}.json"
@@ -191,7 +202,7 @@ def cmd_eval(a) -> None:
 def cmd_crossplay(a) -> None:
     """Prey of one method against predators of another (S1). Learned x learned pairs use the same seed index."""
     device = a.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    cfg = load_config("S1", base="s1_large.json")
+    cfg = load_config("S1", base=BASE)
     learned = ["ppo", "ga", "es", "neat", "hybrid"]
     fixed = ["heuristic", "random"]
 
@@ -221,7 +232,7 @@ def cmd_behaviour(a) -> None:
     from ecoarena.eval.behaviour import measure_tactics
 
     device = a.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    cfg = load_config("S1", base="s1_large.json")
+    cfg = load_config("S1", base=BASE)
     jobs = [(b, None) for b in ("heuristic", "random")]
     jobs += [(m, s) for m in ("ppo", "ga", "es", "neat", "hybrid") for s in a.seeds]
     jobs += [(c, s) for c in select(a) for s in a.seeds if done(c, s)]
@@ -251,7 +262,7 @@ def cmd_probe(a) -> None:
     from ecoarena.env import EcoWorld
     from ecoarena.trainers.ga import init_population, world_actions
 
-    cfg = load_config("S1", base="s1_large.json")
+    cfg = load_config("S1", base=BASE)
     speed = {}
     for W in (4, 24):
         w = EcoWorld(cfg, n_worlds=W, seed=0, device=device)
@@ -302,7 +313,7 @@ def main() -> None:
     p.add_argument("command", choices=["train", "eval", "crossplay", "behaviour", "probe", "list"])
     # E1x / E2x: optional extras (ES/GA long windows, group selection), too costly for the main schedule because
     # parallel worlds give no speed-up on our GPU (probe, 7 Nov: 195 vs 206 world-steps/s)
-    p.add_argument("--exp", nargs="+", choices=["E1", "E1x", "E2", "E2x", "E3", "E4", "E5"])
+    p.add_argument("--exp", nargs="+", choices=["E1", "E1x", "E2", "E2x", "E3", "E4", "E5", "E6"])
     p.add_argument("--cond", nargs="+", choices=list(CONDITIONS))
     p.add_argument("--seeds", nargs="+", type=int, default=SEEDS)
     p.add_argument("--scenarios", nargs="+", default=["S1", "S2", "S4"])
@@ -313,10 +324,17 @@ def main() -> None:
     p.add_argument("--tactic-steps", type=int, default=3000)
     p.add_argument("--device", default=None)
     p.add_argument("--out", default=None, help="default results/study")
+    p.add_argument("--base", default="s1_large.json", help="world config; s1_drag.json = world B (drag)")
+    p.add_argument("--bench", default=None, help="benchmark dir whose runs are the baselines (default results/bench)")
     a = p.parse_args()
+    global OUT, BENCH, BASE
     if a.out:
-        global OUT
         OUT = Path(a.out)
+    if a.bench:
+        BENCH = Path(a.bench)
+    BASE = a.base
+    if BASE != "s1_large.json" and (not a.out or not a.bench):
+        sys.exit("another world needs its own --out and --bench, so its runs never mix with the main world's")
     {"train": cmd_train, "eval": cmd_eval, "crossplay": cmd_crossplay, "behaviour": cmd_behaviour,
      "probe": cmd_probe, "list": cmd_list}[
         a.command](a)

@@ -172,7 +172,8 @@ class EcoWorld:
             turn, thrust = a[..., 0], a[..., 1]
             alive_f = st.alive.float()
             st.heading = wrap_angle(st.heading + turn * sc.max_turn * alive_f)
-            st.speed = torch.clamp(st.speed + thrust * sc.max_accel, 0.0, sc.max_speed) * alive_f
+            speed = st.speed * (1.0 - sc.drag) if sc.drag > 0 else st.speed
+            st.speed = torch.clamp(speed + thrust * sc.max_accel, 0.0, sc.max_speed) * alive_f
             vel = torch.stack([torch.cos(st.heading), torch.sin(st.heading)], -1) * st.speed.unsqueeze(-1)
             st.pos = torch.remainder(st.pos + vel, L)
             thrusts.append(thrust * alive_f)

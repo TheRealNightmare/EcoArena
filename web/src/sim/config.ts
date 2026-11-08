@@ -27,6 +27,7 @@ export interface SpeciesConfig {
   miss_stun_steps: number;
   territory_radius: number;
   territory_max: number;
+  drag: number;
 }
 
 export interface WorldConfig {
@@ -53,7 +54,7 @@ export interface WorldConfig {
 
 const SPECIES_DEFAULTS = {
   catch_radius: 0, energy_per_catch: 0, digest_steps: 0, catch_prob: 1, miss_stun_steps: 0,
-  territory_radius: 0, territory_max: 0,
+  territory_radius: 0, territory_max: 0, drag: 0,
 };
 
 // JSON cannot tell 200.0 from 200, so integer fields are listed (they match the Python dataclass types).
@@ -89,10 +90,10 @@ export function loadConfig(scenario = "S1", base = "s1_large.json", overrides: R
   if (!raw) throw new Error(`unknown base ${base}`);
   const sc = (scenariosRaw as unknown as Record<string, Record<string, unknown>>)[scenario];
   if (!sc) throw new Error(`unknown scenario ${scenario}`);
+  raw.prey = { ...SPECIES_DEFAULTS, ...raw.prey }; // defaults first, so optional fields can be overridden
+  raw.predator = { ...SPECIES_DEFAULTS, ...raw.predator };
   for (const [k, v] of Object.entries({ ...sc, ...overrides })) setDotted(raw, k, v);
   for (const k of Object.keys(raw)) if (k.startsWith("_")) delete raw[k];
-  raw.prey = { ...SPECIES_DEFAULTS, ...raw.prey };
-  raw.predator = { ...SPECIES_DEFAULTS, ...raw.predator };
   return raw as WorldConfig;
 }
 

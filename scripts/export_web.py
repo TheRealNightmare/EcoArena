@@ -94,8 +94,8 @@ def obs_snapshot(w: EcoWorld) -> dict:
     return out
 
 
-def trace(policy: str, steps: int, every: int, obs_at: tuple[int, ...]) -> dict:
-    cfg = load_config("S1", base="s1_balanced.json")
+def trace(policy: str, steps: int, every: int, obs_at: tuple[int, ...], **overrides) -> dict:
+    cfg = load_config("S1", base="s1_balanced.json", **overrides)
     w = EcoWorld(cfg, n_worlds=1, seed=7)
     pol = [make_policy(policy, w, PREY), make_policy(policy, w, PREDATOR)]
     snaps, obs, events = [snapshot(w)], {}, []
@@ -110,7 +110,7 @@ def trace(policy: str, steps: int, every: int, obs_at: tuple[int, ...]) -> dict:
         if (t + 1) % every == 0:
             snaps.append(snapshot(w))
     return {"policy": policy, "base": "s1_balanced.json", "scenario": "S1", "seed": 7, "steps": steps,
-            "snapshots": snaps, "obs": obs, "events": events}
+            "overrides": overrides, "snapshots": snaps, "obs": obs, "events": events}
 
 
 def brain_cases() -> list[dict]:
@@ -138,6 +138,7 @@ def cmd_parity() -> None:
     out.mkdir(parents=True, exist_ok=True)
     (out / "trace_random.json").write_text(json.dumps(trace("random", 150, 10, (0,))))
     (out / "trace_heuristic.json").write_text(json.dumps(trace("heuristic", 150, 10, (0, 20, 60))))
+    (out / "trace_drag.json").write_text(json.dumps(trace("random", 150, 10, (0,), **{"prey.drag": 0.05, "predator.drag": 0.05})))
     (out / "brains.json").write_text(json.dumps(brain_cases()))
     for p in sorted(out.glob("*.json")):
         print(f"wrote {p.relative_to(ROOT)} ({p.stat().st_size / 1e3:.0f} kB)")
