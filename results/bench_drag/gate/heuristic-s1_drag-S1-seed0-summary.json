@@ -1,0 +1,56 @@
+{
+  "worlds_survived": 5,
+  "worlds": 5,
+  "extinct_at_step": [
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "mean_pop_second_half": [
+    837.9,
+    182.8
+  ],
+  "cv_second_half": [
+    0.049,
+    0.062
+  ],
+  "policy": "heuristic",
+  "scenario": "S1",
+  "steps": 10000,
+  "device": "cuda",
+  "wall_seconds": 271.4,
+  "world_steps_per_sec": 184.3,
+  "agent_steps_per_sec": 188474.3,
+  "captures_per_world": [
+    11734,
+    12246,
+    11797,
+    11535,
+    11642
+  ],
+  "migrants_per_world": [
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      0
+    ]
+  ],
+  "overrides": {}
+}
