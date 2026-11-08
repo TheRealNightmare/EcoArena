@@ -118,12 +118,13 @@ CONDITIONS: dict[str, tuple[str, str, list[str]]] = {
 }
 # E7: the optimised recipe. Stack the fixes that each worked alone, then remove one at a time (ablation).
 #   evolution (GA, ES): movement cost x5 (E4) + prey learn 4x slower (E3) + Homeostatic Co-Training (E5)
-#   PPO:                gamma 0.999 (E1)     + prey learn 4x slower (E3) + Homeostatic Co-Training (E5)
+#   PPO:                gamma 0.999 (E1)     + prey learn 4x slower (E3) + extinction penalty 5 (E5; HCT gave PPO
+#                       little and hurt it combined with the penalty)
 # Only the family chosen after the E5 results is run. Names: <method>-opt, <method>-opt-no<ingredient>.
 _FIX = {"cost": ["--cost-weight", "5"], "g999": ["--gamma", "0.999"], "prey4": ["--prey-every", "4"],
-        "hct": ["--homeostat", "0.5"]}
+        "hct": ["--homeostat", "0.5"], "ext": ["--extinction-penalty", "5"]}
 _RECIPE = {"ga": (GA, ["cost", "prey4", "hct"]), "es": (ES, ["cost", "prey4", "hct"]),
-           "ppo": (PPO, ["g999", "prey4", "hct"])}
+           "ppo": (PPO, ["g999", "prey4", "ext"])}
 for _m, (_base, _ing) in _RECIPE.items():
     CONDITIONS[f"{_m}-opt"] = ("E7", _m, [*_base, *[x for i in _ing for x in _FIX[i]]])
     for _drop in _ing:
