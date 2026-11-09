@@ -72,7 +72,38 @@ def elite_share(d: float, P: int = 50, half: int = 25, elites: int = 5, n: int =
     return float((np.argsort(-x, 1)[:, :elites] < half).mean())
 
 
+def holdout(energy: Path, base: str, cut: float) -> dict:
+    """Out-of-sample test: R0 for brains the model never saw (another world), judged with the main world's cut."""
+    q = load_config("S1", base=base).predator
+    rows = []
+    for name, v in json.loads(energy.read_text()).items():
+        rows.append({"brain": name, "th2": v["pred_th2"], "catches_per_1k": v["catches_per_1k"], "net": v["pred_net"],
+                     "r0": r0(v["catches_per_1k"] / 1000, v["pred_th2"], q), "extinct_share": v["pred_extinct_share"]})
+    R = np.array([r["r0"] for r in rows])
+    ext = np.array([r["extinct_share"] for r in rows]) >= 0.5
+    pos, neg = R[ext], R[~ext]
+    auc = float(np.mean([(a < b) + 0.5 * (a == b) for a in pos for b in neg])) if len(pos) and len(neg) else None
+    return {"base": base, "n": len(rows), "n_extinct": int(ext.sum()), "accuracy_r0_1": float(((R < 1) == ext).mean()),
+            "main_world_cut": cut, "accuracy_main_cut": float(((R < cut) == ext).mean()), "auc": auc, "brains": rows}
+
+
 def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--holdout", default=None, help="energy.json of another world, e.g. results/study_drag/energy.json")
+    ap.add_argument("--holdout-base", default="s1_drag.json")
+    args = ap.parse_args()
+    if args.holdout:
+        cut = json.loads((STUDY / "leak_model.json").read_text())["lineage"]["best_cut"]
+        h = holdout(Path(args.holdout), args.holdout_base, cut)
+        out = Path(args.holdout).with_name("leak_model_holdout.json")
+        out.write_text(json.dumps(h, indent=1))
+        print(f"{h['n']} unseen brains ({h['n_extinct']} with predators extinct): R0<1 rule {100 * h['accuracy_r0_1']:.0f}%, "
+              f"main-world cut R0<{cut:.2f} {100 * h['accuracy_main_cut']:.0f}%, AUC {h['auc']}")
+        for r in h["brains"]:
+            print(f"  {r['brain']:18s} th2 {r['th2']:.2f} catch {r['catches_per_1k']:.2f} R0 {r['r0']:.2f} ext {r['extinct_share']:.1f}")
+        return
     q = load_config("S1", base="s1_large.json").predator
     brains = json.loads((STUDY / "energy.json").read_text())
     sig = json.loads((STUDY / "energy_signal.json").read_text())

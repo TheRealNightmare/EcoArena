@@ -33,12 +33,13 @@ M = ["random", "heuristic", "ppo", "ga", "es", "neat", "hybrid"]
 NAMES = {"random": "Random", "heuristic": "Hand-coded", "ppo": "PPO", "ga": "GA", "es": "ES", "neat": "NEAT",
          "hybrid": "Hybrid"}
 LEARNED = ["ppo", "ga", "es", "neat", "hybrid"]
+BASE = "s1_large.json"
 
 
 # ------------------------------------------------------------------------------------------------ energy
 @torch.no_grad()
 def thrust_stats(m: str, s: int | None, steps: int, warm: int, device: str, study: bool = False) -> dict:
-    cfg = load_config("S1", base="s1_large.json")
+    cfg = load_config("S1", base=BASE)
     w = EcoWorld(cfg, n_worlds=1, seed=20_000, device=device)
     if s is None:
         pol = {sp: make_policy(m, w, sp) for sp in (PREY, PREDATOR)}
@@ -234,7 +235,16 @@ def main() -> None:
     p.add_argument("--warm", type=int, default=100)
     p.add_argument("--device", default=None)
     p.add_argument("--conds", nargs="*", default=[], help="study conditions to add to the energy table")
+    p.add_argument("--base", default="s1_large.json", help="world; drag world: s1_drag.json with --bench/--out")
+    p.add_argument("--bench", default=None)
+    p.add_argument("--out", default=None)
     a = p.parse_args()
+    global BASE, BENCH, OUT
+    BASE = a.base
+    if a.bench:
+        BENCH = Path(a.bench)
+    if a.out:
+        OUT = Path(a.out)
     {"energy": cmd_energy, "report": cmd_report}[a.command](a)
 
 
