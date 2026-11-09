@@ -22,7 +22,6 @@
   <a href="#the-finding">The finding</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#quick-start">Quick start</a> ·
-  <a href="docs/handbook/EcoArena-Handbook.pdf">Team handbook</a>
 </p>
 
 ---
