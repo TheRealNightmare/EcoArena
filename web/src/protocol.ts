@@ -1,10 +1,12 @@
 // Messages between the UI thread and the simulation worker.
 
-export type BrainName = "random" | "heuristic" | "ppo" | "ga" | "es" | "neat" | "hybrid";
+export type BrainName = "random" | "heuristic" | "ppo" | "ga" | "es" | "neat" | "hybrid"
+  | "ga-fix" | "ppo-fix" | "es-fix"; // Study 2 runs that repaired a collapse (see web/brains.manifest.json)
 
 export interface SimSettings {
   base: "s1_large.json" | "s1_balanced.json";
   scenario: string;
+  drag: boolean; // the drag world: every animal keeps 90% of its speed each step, so coasting is not free
   seed: number;
   prey: BrainName;
   predator: BrainName;
@@ -42,6 +44,16 @@ export interface Selected {
   action: [number, number];
 }
 
+/** Predator energy budget over the last steps (per predator per step), and the children it allows per lifetime. */
+export interface PredEnergy {
+  steps: number; // world-steps in the window
+  thrust2: number; // mean thrust squared
+  catchesPer1k: number; // catches per 1,000 predator-steps
+  income: number; // energy gained per step
+  cost: number; // energy spent per step (living + moving)
+  r0: number; // expected children per predator lifetime at these rates; below 1 the predators cannot replace themselves
+}
+
 /** Animals of one species, alive ones only, keyed by slot so the renderer can track each animal over time. */
 export interface Herd {
   slot: Int32Array;
@@ -77,4 +89,5 @@ export interface Frame {
   running: boolean;
   extinct: { species: "prey" | "predator"; t: number } | null;
   selected: Selected | null;
+  energy: PredEnergy | null; // null until enough steps have been seen
 }

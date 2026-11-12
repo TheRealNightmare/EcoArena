@@ -1,7 +1,7 @@
 // Simulation worker: steps the world off the UI thread and posts compact frames.
 /// <reference lib="webworker" />
 import { loadBrain } from "./brains";
-import type { BrainName, Frame, Herd, Selected, SimSettings, ToWorker } from "./protocol";
+import type { BrainName, Frame, Herd, PredEnergy, Selected, SimSettings, ToWorker } from "./protocol";
 import { loadConfig } from "./sim/config";
 import { brainPolicy, heuristicPolicy, randomPolicy, type Policy } from "./sim/policies";
 import { PREDATOR, PREY, World } from "./sim/world";
@@ -29,6 +29,42 @@ let extinct: Frame["extinct"] = null;
 let selected: { sp: number; slot: number; diedAt: number | null } | null = null;
 let spsMeasured = 0;
 
+// Predator energy budget over a sliding window of world-steps (the paper's replacement model, computed live).
+const EWIN = 1500;
+const eSteps = new Float64Array(EWIN), eTh2 = new Float64Array(EWIN), eCatch = new Float64Array(EWIN);
+let eN = 0, eAt = 0, sumSteps = 0, sumTh2 = 0, sumCatch = 0;
+
+function resetEnergy() {
+  eSteps.fill(0);
+  eTh2.fill(0);
+  eCatch.fill(0);
+  eN = eAt = sumSteps = sumTh2 = sumCatch = 0;
+  lastEnergy = null;
+}
+
+/** Expected children per predator lifetime: Poisson catches over max_age steps, each child costs child_energy of
+ *  banked surplus, at most max_age / repro_cooldown children (scripts/leak_model.py, Eq. 1 of the paper). */
+function replacement(rate: number, th2: number): number {
+  const q = world!.sc[PREDATOR];
+  const L = q.max_age, cost = q.base_drain + q.move_cost * th2, cap = Math.floor(L / q.repro_cooldown);
+  const lam = rate * L, kMax = Math.floor(lam * 4 + 60);
+  let pmf = Math.exp(-lam), r0 = 0;
+  for (let k = 0; k <= kMax; k++) {
+    if (k > 0) pmf *= lam / k;
+    const kids = Math.min(cap, Math.max(0, Math.floor((q.energy_per_catch * k - cost * L) / q.child_energy)));
+    r0 += pmf * kids;
+  }
+  return r0;
+}
+
+function predEnergy(): PredEnergy | null {
+  if (!world || eN < 200 || sumSteps < 2000) return null;
+  const q = world.sc[PREDATOR];
+  const thrust2 = sumTh2 / sumSteps, rate = sumCatch / sumSteps;
+  return { steps: eN, thrust2, catchesPer1k: rate * 1000, income: rate * q.energy_per_catch,
+    cost: q.base_drain + q.move_cost * thrust2, r0: replacement(rate, thrust2) };
+}
+
 function makePolicy(name: BrainName, sp: number): Policy {
   if (name === "random") return randomPolicy(sp);
   if (name === "heuristic") return heuristicPolicy(sp);
@@ -38,7 +74,8 @@ function makePolicy(name: BrainName, sp: number): Policy {
 
 function init(s: SimSettings) {
   settings = s;
-  world = new World(loadConfig(s.scenario, s.base), s.seed);
+  world = new World(loadConfig(s.scenario, s.base, s.drag ? { "prey.drag": 0.1, "predator.drag": 0.1 } : {}), s.seed);
+  resetEnergy();
   policies = [makePolicy(s.prey, PREY), makePolicy(s.predator, PREDATOR)];
   acts = [new Float32Array(world.species[0].n * 2), new Float32Array(world.species[1].n * 2)];
   popBuf = [...world.populations()];
@@ -62,7 +99,24 @@ function stepOnce() {
   policies[1](w, obs[1], acts[1]);
   const preyX = w.species[0].x.slice(), preyY = w.species[0].y.slice();
   const predX = w.species[1].x.slice(), predY = w.species[1].y.slice();
+  // predator-steps and thrust squared this step (thrust is clamped to [-1, 1] by the world)
+  let nPred = 0, th2 = 0;
+  const pa = w.species[1].alive, pAct = acts[1];
+  for (let i = 0; i < pa.length; i++) {
+    if (!pa[i]) continue;
+    const th = Math.min(1, Math.max(-1, pAct[2 * i + 1]));
+    nPred++;
+    th2 += th * th;
+  }
   const info = w.step(acts[0], acts[1]);
+  sumSteps += nPred - eSteps[eAt];
+  sumTh2 += th2 - eTh2[eAt];
+  sumCatch += info.captures - eCatch[eAt];
+  eSteps[eAt] = nPred;
+  eTh2[eAt] = th2;
+  eCatch[eAt] = info.captures;
+  eAt = (eAt + 1) % EWIN;
+  eN = Math.min(EWIN, eN + 1);
   for (let q = 0; q < eating.length; q++) if (w.species[1].digest[q] === 0 || !w.species[1].alive[q]) eating[q] = 0;
   for (const [q, p] of info.catches) {
     eating[q] = 1;
@@ -148,6 +202,7 @@ function currentObsRow(sp: number, slot: number): Float32Array {
   return o[sp].subarray(slot * world!.D, (slot + 1) * world!.D);
 }
 
+let lastEnergy: PredEnergy | null = null;
 function post() {
   const w = world!;
   const prey = herd(PREY);
@@ -176,7 +231,9 @@ function post() {
     running,
     extinct,
     selected: selectedInfo(),
+    energy: frameNo % 10 === 0 ? predEnergy() : lastEnergy,
   };
+  lastEnergy = frame.energy;
   popBuf = [];
   bornBuf = [];
   catchBuf = [];
@@ -250,6 +307,7 @@ ctx.onmessage = (e: MessageEvent<ToWorker>) => {
     case "brain":
       if (!world || !settings) break;
       settings = { ...settings, [m.species]: m.brain };
+      if (m.species === "predator") resetEnergy(); // the budget describes one brain
       policies[m.species === "prey" ? 0 : 1] = makePolicy(m.brain, m.species === "prey" ? PREY : PREDATOR);
       break;
     case "run":

@@ -202,6 +202,11 @@ button { cursor: pointer; }
   white-space: nowrap;
   transition: background 0.18s, color 0.18s, box-shadow 0.18s;
 }
+/* repaired brains: a second, quieter row */
+.fix-row { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
+.fix-label { font: 500 11px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.chips.fixes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.chips.fixes .chip:nth-child(2) { grid-column: auto; }
 .chip:hover { color: var(--fg); background: color-mix(in srgb, var(--fg) 6%, transparent); }
 .chip.on { background: var(--accent); color: var(--accent-fg); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18); }
 
@@ -230,6 +235,21 @@ button { cursor: pointer; }
 .inspector > :not(.panel-head) { margin-inline: 14px; }
 .insp-title { display: flex; align-items: center; text-transform: none !important; letter-spacing: 0 !important; font: 600 19px/1 var(--font-display) !important; color: var(--fg) !important; }
 .insp-title .mono { font: 400 13px var(--font-mono); margin-left: 8px; }
+/* predator energy panel */
+.ebars { display: grid; grid-template-columns: 52px 1fr 48px; align-items: center; gap: 7px 10px; font-size: 13px; }
+.ebars .mono { text-align: right; }
+.ebars .bar { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--fg) 10%, transparent); overflow: hidden; }
+.ebars .bar span { display: block; height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(.2, .8, .2, 1); }
+.ebars .earn span { background: var(--accent); }
+.ebars .spend span { background: var(--predator); }
+.r0 { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; background: var(--chip); border: 1px solid var(--line); border-left: 3px solid var(--muted); }
+.r0.good { border-left-color: var(--accent); }
+.r0.edge { border-left-color: var(--prey); }
+.r0.bad { border-left-color: var(--predator); }
+.r0-num { font-size: 26px; font-weight: 600; line-height: 1; min-width: 3.2ch; }
+.r0-text { font-size: 12.5px; line-height: 1.4; color: var(--muted); }
+.r0-text b { display: block; color: var(--fg); font-weight: 600; }
+.sheet-sub { margin: 6px 0 0; font: 600 15px/1 var(--font-display); }
 .meter-row { display: grid; grid-template-columns: 52px 1fr 40px; align-items: center; gap: 10px; font-size: 13px; }
 .meter-row .mono { text-align: right; }
 .bar { height: 8px; border-radius: 99px; background: var(--chip); overflow: hidden; border: 1px solid var(--line); }

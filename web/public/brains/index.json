@@ -78,5 +78,53 @@
   "kind": "mlp",
   "file": "hybrid-predator.json",
   "note": ""
+ },
+ {
+  "method": "ga-fix",
+  "species": "prey",
+  "label": "GA + energy fix",
+  "kind": "mlp",
+  "file": "ga-fix-prey.json",
+  "note": ""
+ },
+ {
+  "method": "ga-fix",
+  "species": "predator",
+  "label": "GA + energy fix",
+  "kind": "mlp",
+  "file": "ga-fix-predator.json",
+  "note": ""
+ },
+ {
+  "method": "ppo-fix",
+  "species": "prey",
+  "label": "PPO + long horizon",
+  "kind": "mlp",
+  "file": "ppo-fix-prey.json",
+  "note": ""
+ },
+ {
+  "method": "ppo-fix",
+  "species": "predator",
+  "label": "PPO + long horizon",
+  "kind": "mlp",
+  "file": "ppo-fix-predator.json",
+  "note": ""
+ },
+ {
+  "method": "es-fix",
+  "species": "prey",
+  "label": "ES + slower prey",
+  "kind": "mlp",
+  "file": "es-fix-prey.json",
+  "note": ""
+ },
+ {
+  "method": "es-fix",
+  "species": "predator",
+  "label": "ES + slower prey",
+  "kind": "mlp",
+  "file": "es-fix-predator.json",
+  "note": ""
  }
 ]

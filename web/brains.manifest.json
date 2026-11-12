@@ -1,5 +1,5 @@
 {
-  "_comment": "Which checkpoint the demo loads for each method and species: the benchmark runs (both species trained together, 150k world-steps). For each method the seed whose worlds stayed balanced most often in results/bench/eval was picked (PPO 3, GA 0, ES 0, NEAT 0, Hybrid 4). After editing, run: python scripts/export_web.py brains",
+  "_comment": "Which checkpoint the demo loads for each method and species: the benchmark runs (both species trained together, 150k world-steps). For each method the seed whose worlds stayed balanced most often in results/bench/eval was picked (PPO 3, GA 0, ES 0, NEAT 0, Hybrid 4). After editing, run: python scripts/export_web.py brains The three '-fix' brains are Study 2 runs that repaired a collapse (results/study/train): GA trained with movement cost x5 (seed 1), PPO with discount 0.999 (seed 1), ES with prey updated 4x less often (seed 0); each kept all 15 of its test worlds alive in S1, S2 and S4.",
   "brains": [
     {
       "method": "ppo",
@@ -60,6 +60,42 @@
       "species": "predator",
       "label": "Hybrid",
       "source": "results/bench/train/hybrid/hybrid-seed4/predator.pt"
+    },
+    {
+      "method": "ga-fix",
+      "species": "prey",
+      "label": "GA + energy fix",
+      "source": "results/study/train/ga-cost5/ga-cost5-seed1/prey.pt"
+    },
+    {
+      "method": "ga-fix",
+      "species": "predator",
+      "label": "GA + energy fix",
+      "source": "results/study/train/ga-cost5/ga-cost5-seed1/predator.pt"
+    },
+    {
+      "method": "ppo-fix",
+      "species": "prey",
+      "label": "PPO + long horizon",
+      "source": "results/study/train/ppo-g999/ppo-g999-seed1/prey.pt"
+    },
+    {
+      "method": "ppo-fix",
+      "species": "predator",
+      "label": "PPO + long horizon",
+      "source": "results/study/train/ppo-g999/ppo-g999-seed1/predator.pt"
+    },
+    {
+      "method": "es-fix",
+      "species": "prey",
+      "label": "ES + slower prey",
+      "source": "results/study/train/es-prey4/es-prey4-seed0/prey.pt"
+    },
+    {
+      "method": "es-fix",
+      "species": "predator",
+      "label": "ES + slower prey",
+      "source": "results/study/train/es-prey4/es-prey4-seed0/predator.pt"
     }
   ]
 }

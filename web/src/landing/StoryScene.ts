@@ -12,7 +12,8 @@ import { animateMaterial, predatorGeometry, preyGeometry } from "../view/creatur
 import { makeHeight, mulberry, Particles, skyAt } from "../view/Diorama";
 
 export const CHAPTERS = ["hero", "world", "prey", "predators", "refuges", "vision", "methods", "fair",
-  "findings-prey", "findings-scenarios", "findings-collapse", "findings-predators", "findings-reward", "enter"] as const;
+  "findings-prey", "findings-scenarios", "findings-collapse", "findings-predators", "findings-reward",
+  "why-leak", "why-window", "fixes", "arms", "drag", "team", "enter"] as const;
 const CH = (name: (typeof CHAPTERS)[number]) => CHAPTERS.indexOf(name);
 
 const S = 80; // island size (world units)
@@ -39,10 +40,18 @@ const SHOTS: { pos: V3; target: V3; elev: number }[] = [
   { pos: [-6, 15, 46], target: [17, 0, 12], elev: 0.04 }, // findings 3: the wolves' side of the island
   { pos: [44, 12, 30], target: [14, 0, 2], elev: 0.02 }, // findings 4: low beside the hunt lane
   { pos: [72, 42, -58], target: [0, -4, 0], elev: -0.01 }, // findings 5: sunset from the other corner
+  { pos: [-12, 10, 32], target: [12, 0.5, 4], elev: -0.14 }, // why 1: night falls over the hunters
+  { pos: [34, 64, 62], target: [0, -4, 0], elev: -0.24 }, // why 2: high above the island, deep night
+  { pos: [-62, 24, 48], target: [0, -3, 0], elev: 0.07 }, // fixes: first light
+  { pos: [34, 22, 44], target: [8, 0, 0], elev: 0.22 }, // arms race: morning on the hunt lane
+  { pos: [70, 32, -42], target: [0, -4, 0], elev: 0.4 }, // drag world: bright midday, the far side
+  { pos: [-42, 46, 70], target: [0, -4, 0], elev: 0.2 }, // team: afternoon, wide
   { pos: [40, 22, 52], target: [0, 0, 0], elev: -0.05 }, // enter: twilight, fireflies
 ];
 
-const smooth = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+// the camera rides one smooth curve through every shot, so a long jump has no corners at the shots it passes
+const POS_CURVE = new THREE.CatmullRomCurve3(SHOTS.map((s) => new THREE.Vector3(...s.pos)), false, "centripetal");
+const TARGET_CURVE = new THREE.CatmullRomCurve3(SHOTS.map((s) => new THREE.Vector3(...s.target)), false, "centripetal");
 
 interface Animal {
   x: number; y: number; h: number; // world coords, heading (radians, x right / y up the map)
@@ -508,6 +517,7 @@ export class StoryScene {
   /** Chapter position: 0 = hero, 1 = first chapter, ... fractional between chapters. */
   setProgress(c: number) {
     this.glide = null;
+    this.vel = 0;
     this.progress = Math.max(0, Math.min(SHOTS.length - 1, c));
   }
 
@@ -518,9 +528,11 @@ export class StoryScene {
       this.setProgress(to);
       return;
     }
-    this.glide = { from: this.progress, to, t0: performance.now(), ms };
+    // a critically damped spring: a new destination mid-flight bends the path instead of restarting it
+    this.glide = { to, smoothTime: ms / 3600 };
   }
-  private glide: { from: number; to: number; t0: number; ms: number } | null = null;
+  private glide: { to: number; smoothTime: number } | null = null;
+  private vel = 0; // chapters per second
 
   /** Swoop down into the island, then call done (the page switches to the simulation). */
   diveIn(done: () => void) {
@@ -839,17 +851,24 @@ export class StoryScene {
       return;
     }
     if (this.glide) {
-      const g = this.glide;
-      const u = Math.min(1, (performance.now() - g.t0) / g.ms);
-      const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
-      this.progress = g.from + (g.to - g.from) * e;
-      if (u >= 1) this.glide = null;
+      // smooth-damp (critically damped spring), stable for any frame time
+      const g = this.glide, h = Math.min(dt, 0.05);
+      const omega = 2 / g.smoothTime, x = omega * h, decay = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x);
+      const change = this.progress - g.to, temp = (this.vel + omega * change) * h;
+      this.vel = (this.vel - omega * temp) * decay;
+      let next = g.to + (change + temp) * decay;
+      if ((g.to - this.progress > 0) === (next > g.to)) { next = g.to; this.vel = 0; } // never overshoot a chapter
+      this.progress = next;
+      if (Math.abs(g.to - next) < 0.002 && Math.abs(this.vel) < 0.02) {
+        this.progress = g.to;
+        this.vel = 0;
+        this.glide = null;
+      }
     }
-    // a glide already eases in and out, so between shots it moves linearly (no stop at each shot on long jumps)
-    const c = this.progress, i = Math.floor(c), f = this.glide ? c - i : smooth(c - i);
-    const a = SHOTS[i], b = SHOTS[Math.min(SHOTS.length - 1, i + 1)];
-    const pos = new THREE.Vector3(...a.pos).lerp(new THREE.Vector3(...b.pos), f);
-    const target = new THREE.Vector3(...a.target).lerp(new THREE.Vector3(...b.target), f);
+    const c = this.progress, i = Math.min(SHOTS.length - 2, Math.floor(c)), f = c - i;
+    const a = SHOTS[i], b = SHOTS[i + 1];
+    const u = c / (SHOTS.length - 1);
+    const pos = POS_CURVE.getPoint(u), target = TARGET_CURVE.getPoint(u);
     // slow drift in the hero and at the end so the island always feels alive
     const drift = Math.max(this.weight(CH("hero")), this.weight(CH("enter")), Math.max(this.weight(CH("methods")), this.weight(CH("fair"))) * 0.4);
     if (drift > 0) {
@@ -859,7 +878,7 @@ export class StoryScene {
       pos.copy(target).add(rel);
     }
     const elev = a.elev + (b.elev - a.elev) * f;
-    const k = 1 - Math.exp(-dt * (this.glide ? 10 : 4));
+    const k = 1 - Math.exp(-dt * (this.glide ? 12 : 4));
     if (this.dive) {
       const d = this.dive;
       const u = Math.min(1, (performance.now() - d.t0) / 1600);

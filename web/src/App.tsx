@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { BRAIN_INDEX } from "./brainIndex";
 import Loader from "./loader/Loader";
-import type { BrainName, Frame, Selected, SimSettings, ToWorker } from "./protocol";
+import type { BrainName, Frame, PredEnergy, Selected, SimSettings, ToWorker } from "./protocol";
 import { drawChart } from "./view/Chart";
 import { Diorama, type CameraMode, type Overlay, type Quality, type SkyMode } from "./view/Diorama";
 import SimWorker from "./worker?worker&inline";
@@ -15,6 +15,12 @@ const BRAINS: { id: BrainName; label: string }[] = [
   { id: "neat", label: "NEAT" },
   { id: "hybrid", label: "Hybrid" },
 ];
+// Study 2 runs whose change to training repaired the collapse (each trained its prey and predators together)
+const FIXES: { id: BrainName; label: string }[] = [
+  { id: "ga-fix", label: "GA fixed" },
+  { id: "ppo-fix", label: "PPO fixed" },
+  { id: "es-fix", label: "ES fixed" },
+];
 
 const ABOUT: Record<BrainName, string> = {
   random: "Uniform random turning and thrust. The floor every method has to beat.",
@@ -24,6 +30,9 @@ const ABOUT: Record<BrainName, string> = {
   es: "Evolution strategies: 25 pairs of opposite weight nudges estimate which direction raises fitness.",
   neat: "NEAT: starts from direct input-to-output wiring and grows hidden neurons and connections as it evolves.",
   hybrid: "Half the budget evolving with GA, then PPO fine-tunes the best evolved network.",
+  "ga-fix": "GA trained with movement costing five times more. Its predators stopped wasting energy, and survival rose from 4% to 72% of test worlds. Pick it for both species to see the repaired pair.",
+  "ppo-fix": "PPO trained to look about 1,000 steps ahead instead of 100 (discount 0.999). Survival rose from 28% to 72% of test worlds. Pick it for both species to see the repaired pair.",
+  "es-fix": "ES with the prey updated four times less often than the predators, so the prey can't win the arms race. Every test world survived. Pick it for both species to see the repaired pair.",
 };
 
 const SCENARIOS: [string, string][] = [
@@ -100,6 +109,7 @@ const I = {
   chart: "M4 19h16M6 16l4-5 3 3 5-7",
   close: "M6 6l12 12M18 6L6 18",
   chevron: "M6 9l6 6 6-6",
+  bolt: "M13 2 4 14h7l-1 8 9-12h-7z",
 };
 
 function Panel({ id, title, icon, children, open, onToggle, className = "", extra }: {
@@ -121,11 +131,12 @@ function Panel({ id, title, icon, children, open, onToggle, className = "", extr
 }
 
 export default function App() {
-  const [settings, setSettings] = useState<SimSettings>({ base: "s1_large.json", scenario: "S1", seed: 1, prey: "es", predator: "es" });
+  const [settings, setSettings] = useState<SimSettings>({ base: "s1_large.json", scenario: "S1", drag: false, seed: 1, prey: "es", predator: "es" });
   const [running, setRunning] = useState(true);
   const [speed, setSpeed] = useState(30);
   const [chartMode, setChartMode] = useState<"time" | "phase">("time");
   const [stats, setStats] = useState({ t: 0, prey: 0, pred: 0, sps: 0, caught: 0 });
+  const [energy, setEnergy] = useState<PredEnergy | null>(null);
   const [extinct, setExtinct] = useState<Frame["extinct"]>(null);
   const [selected, setSelected] = useState<Selected | null>(null);
   const [seedText, setSeedText] = useState("1");
@@ -133,7 +144,7 @@ export default function App() {
   const [sky, setSky] = useState<SkyMode>(() => load<SkyMode>("sky", "cycle"));
   const [quality, setQuality] = useState<Quality>(() => load<Quality>("quality", "high"));
   const [overlay, setOverlay] = useState<Overlay>("none");
-  const [open, setOpen] = useState(() => load("panels", { brains: true, chart: true }));
+  const [open, setOpen] = useState(() => load("panels", { brains: true, chart: true, energy: true } as { brains: boolean; chart: boolean; energy?: boolean }));
   const [sheet, setSheet] = useState<"none" | "brains" | "chart" | "world">("none");
   const [worldOpen, setWorldOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -239,6 +250,7 @@ export default function App() {
       v.update(f);
       setStats({ t: f.t, prey: f.prey.slot.length, pred: f.pred.slot.length, sps: f.stepsPerSec, caught: h.caught.reduce((a, b) => a + b, 0) });
       setExtinct(f.extinct);
+      setEnergy((e) => (e === f.energy || (e && f.energy && e.r0 === f.energy.r0 && e.income === f.energy.income && e.cost === f.energy.cost) ? e : f.energy));
       setSelected(f.selected);
       setClock(v.clockText());
       const now = performance.now();
@@ -278,7 +290,7 @@ export default function App() {
     if (!canBuild) return;
     send({ type: "init", settings, running: live.current.running && !loadingRef.current, speed: live.current.speed });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canBuild, settings.base, settings.scenario, settings.seed, send]);
+  }, [canBuild, settings.base, settings.scenario, settings.drag, settings.seed, send]);
   useEffect(() => send({ type: "brain", species: "prey", brain: settings.prey }), [settings.prey, send]);
   useEffect(() => send({ type: "brain", species: "predator", brain: settings.predator }), [settings.predator, send]);
   useEffect(() => send({ type: "run", running: running && !loading }), [running, loading, send]);
@@ -372,6 +384,17 @@ export default function App() {
           </button>
         ))}
       </div>
+      <div className="fix-row">
+        <span className="fix-label">Repaired</span>
+        <div className="chips fixes">
+          {FIXES.map((b) => (
+            <button key={b.id} type="button" id={`${sp}-${b.id}`} className={`chip ${settings[sp] === b.id ? "on" : ""}`}
+              aria-pressed={settings[sp] === b.id} onClick={() => setSettings((s) => ({ ...s, [sp]: b.id }))}>
+              {b.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <p className="about">
         {ABOUT[settings[sp]]}
         {notes[`${settings[sp]}-${sp}`] ? <span className="note"> {notes[`${settings[sp]}-${sp}`]}.</span> : null}
@@ -383,7 +406,7 @@ export default function App() {
     <>
       {brainRow("prey")}
       {brainRow("predator")}
-      <p className="caption">Each method trained its prey and predators together; mixing two methods pairs animals that never met in training. A switch takes effect on the next step.</p>
+      <p className="caption">Each method trained its prey and predators together; mixing two methods pairs animals that never met in training. The repaired brains are the same methods after one change to training. A switch takes effect on the next step.</p>
     </>
   );
 
@@ -398,6 +421,36 @@ export default function App() {
         {chartMode === "time" ? "Last 4,000 steps. Prey on the left axis, predators on the right." : "Prey across, predators up, one point per step, newest darkest. Lotka–Volterra cycles trace loops."}
       </p>
     </>
+  );
+
+  const eMax = energy ? Math.max(energy.income, energy.cost) * 1.12 : 1;
+  const verdict = !energy ? "" : energy.r0 >= 1 ? "good" : energy.r0 >= 0.86 ? "edge" : "bad";
+  const energyBody = energy ? (
+    <>
+      <div className="ebars" role="img" aria-label={`Predators earn ${energy.income.toFixed(3)} and spend ${energy.cost.toFixed(3)} energy per step`}>
+        <span className="dim">Earns</span>
+        <span className="bar earn"><span style={{ width: `${(100 * energy.income) / eMax}%` }} /></span>
+        <span className="mono">{energy.income.toFixed(3)}</span>
+        <span className="dim">Spends</span>
+        <span className="bar spend"><span style={{ width: `${(100 * energy.cost) / eMax}%` }} /></span>
+        <span className="mono">{energy.cost.toFixed(3)}</span>
+      </div>
+      <div className={`r0 ${verdict}`}>
+        <span className="r0-num mono">{energy.r0.toFixed(2)}</span>
+        <span className="r0-text">
+          <b>children per predator lifetime (R0)</b>
+          {verdict === "good" ? "Each predator can replace itself, so the pack can last."
+            : verdict === "edge" ? "Borderline: the pack survives only if its best hunters breed."
+            : "Below 1: predators can't replace themselves, so expect the pack to dwindle."}
+        </span>
+      </div>
+      <p className="caption">
+        Per predator per step, over the last {energy.steps.toLocaleString()} steps: thrust² {energy.thrust2.toFixed(2)}, {energy.catchesPer1k.toFixed(1)} catches per 1,000 steps.
+        R0 comes from the world's rules alone and is the formula our paper uses to predict which predators die out.
+      </p>
+    </>
+  ) : (
+    <p className="about">{stats.pred === 0 ? "No predators left to measure." : "Measuring… this needs a few hundred steps of hunting."}</p>
   );
 
   const worldBody = (
@@ -420,7 +473,15 @@ export default function App() {
         </label>
         <button type="button" id="restart" className="btn" onClick={restart}>Restart</button>
       </div>
-      <p className="caption">The benchmark world is 200 × 200 with 48 rocky refuges where prey can't be caught. This browser version follows the same rules as the Python benchmark and is checked against it step by step.</p>
+      <div className="row">
+        <div className="seg-group" role="radiogroup" aria-label="Friction">
+          <button type="button" role="radio" id="drag-off" aria-checked={!settings.drag} className={`seg ${!settings.drag ? "on" : ""}`} onClick={() => setSettings((s) => ({ ...s, drag: false }))}>Free coasting</button>
+          <button type="button" role="radio" id="drag-on" aria-checked={settings.drag} className={`seg ${settings.drag ? "on" : ""}`} onClick={() => setSettings((s) => ({ ...s, drag: true }))}>Drag world</button>
+        </div>
+      </div>
+      <p className="caption">{settings.drag
+        ? "Drag world: every animal loses 10% of its speed each step, so speed has to be paid for all the time. These brains were trained without drag; in our tests only the hand-coded animals kept this world alive."
+        : "The benchmark world is 200 × 200 with 48 rocky refuges where prey can't be caught. This browser version follows the same rules as the Python benchmark and is checked against it step by step."}</p>
     </>
   );
 
@@ -507,6 +568,7 @@ export default function App() {
       <div className="side right">
         {inspector}
         <Panel id="chart" title="Populations" icon="chart" open={open.chart} onToggle={() => setOpen((o: typeof open) => ({ ...o, chart: !o.chart }))}>{chartBody}</Panel>
+        <Panel id="energy" title="Predator energy" icon="bolt" open={open.energy !== false} onToggle={() => setOpen((o: typeof open) => ({ ...o, energy: o.energy === false }))}>{energyBody}</Panel>
       </div>
 
       {worldOpen ? (
@@ -525,7 +587,7 @@ export default function App() {
             <h2>{sheet === "brains" ? "Brains" : sheet === "chart" ? "Populations" : "World"}</h2>
             <button type="button" className="icon-btn" aria-label="Close" onClick={() => setSheet("none")}><Icon d={I.close} size={15} /></button>
           </div>
-          {sheet === "brains" ? brainsBody : sheet === "chart" ? chartBody : worldBody}
+          {sheet === "brains" ? brainsBody : sheet === "chart" ? <>{chartBody}<h3 className="sheet-sub">Predator energy</h3>{energyBody}</> : worldBody}
         </section>
       ) : null}
 
@@ -584,7 +646,7 @@ export default function App() {
         </button>
         <span className="divider" aria-hidden="true" />
         <button type="button" id="world" className={`dock-btn ${worldOpen ? "on" : ""}`} onClick={() => setWorldOpen((o) => !o)}>
-          <Icon d={I.globe} size={16} /><span>World <span className="mono dim">{settings.scenario}</span></span>
+          <Icon d={I.globe} size={16} /><span>World <span className="mono dim">{settings.scenario}{settings.drag ? " · drag" : ""}</span></span>
         </button>
         <div className="phone-tabs">
           <button type="button" className={`dock-btn ${sheet === "brains" ? "on" : ""}`} onClick={() => setSheet((s) => (s === "brains" ? "none" : "brains"))}><Icon d={I.brain} size={16} /><span>Brains</span></button>
