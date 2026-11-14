@@ -45,6 +45,7 @@ from ecoarena.trainers.ppo import load_policy
 OUT = ROOT / "results" / "study"
 BENCH = ROOT / "results" / "bench"
 BASE = "s1_large.json"  # world B: --base s1_drag.json --bench results/bench_drag --out results/study_drag
+RUNS = OUT  # where the study's trained runs live; --runs tests main-world runs in another world
 SEEDS = [0, 1, 2, 3, 4]
 EVAL_SEED = 20_000  # same as the benchmark, so baseline evaluations are reused as they are
 
@@ -52,6 +53,7 @@ GA = ["train_ga.py", "--method", "ga"]
 ES = ["train_ga.py", "--method", "es"]
 PPO = ["train_ppo.py"]
 NEAT = ["train_ga.py", "--method", "neat"]
+ECO = ["train_ecoppo.py"]
 # E2 runs in episodic worlds: 24 fresh worlds per generation, one per genome under group selection
 EPI = ["--episodic", "--worlds", "24", "--population", "24", "--gen-steps", "1000", "--world-steps", "1200000"]
 GA_EPI = ["--elite-frac", "0.125"]  # 3 elites of 24
@@ -125,6 +127,17 @@ _FIX = {"cost": ["--cost-weight", "5"], "g999": ["--gamma", "0.999"], "prey4": [
         "hct": ["--homeostat", "0.5"], "ext": ["--extinction-penalty", "5"]}
 _RECIPE = {"ga": (GA, ["cost", "prey4", "hct"]), "es": (ES, ["cost", "prey4", "hct"]),
            "ppo": (PPO, ["g999", "prey4", "ext"])}
+# E8: EcoPPO, a PPO learner built to keep the ecosystem alive (ecoarena/trainers/ecoppo.py): lineage reward,
+# no-reset worlds, automatic balancing, training across scenarios and friction levels, gamma 0.999. Each ablation
+# switches one part off. Trained on S1, S2, S4 with and without drag 0.1; S3, S5 and drag 0.05 / 0.15 are unseen.
+CONDITIONS.update({
+    "ecoppo": ("E8", "ppo", [*ECO]),
+    "ecoppo-nolineage": ("E8", "ppo", [*ECO, "--no-lineage"]),
+    "ecoppo-resets": ("E8", "ppo", [*ECO, "--resets"]),
+    "ecoppo-nobalance": ("E8", "ppo", [*ECO, "--balance", "0"]),
+    "ecoppo-oneworld": ("E8", "ppo", [*ECO, "--worlds", "S1", "S1", "S1", "S1", "S1", "S1"]),
+    "ecoppo-g99": ("E8", "ppo", [*ECO, "--gamma", "0.99"]),
+})
 for _m, (_base, _ing) in _RECIPE.items():
     CONDITIONS[f"{_m}-opt"] = ("E7", _m, [*_base, *[x for i in _ing for x in _FIX[i]]])
     for _drop in _ing:
@@ -139,7 +152,7 @@ for _n, (_e, _m, _a) in CONDITIONS.items():
 def run_dir(cond: str, seed: int) -> Path:
     if CONDITIONS[cond][0] == "base":
         return BENCH / "train" / cond / f"{cond}-seed{seed}"
-    return OUT / "train" / cond / f"{cond}-seed{seed}"
+    return RUNS / "train" / cond / f"{cond}-seed{seed}"
 
 
 def done(cond: str, seed: int) -> bool:
@@ -201,7 +214,9 @@ def cmd_eval(a) -> None:
                 if f.exists() or not done(c, s):
                     continue
                 bench_f = BENCH / "eval" / sc / f"{c}-seed{s}.json"
-                if CONDITIONS[c][0] == "base" and bench_f.exists() and a.worlds == 5 and a.steps == 10_000:
+                # reuse the benchmark's own test only when it was run in this same world
+                same_world = BASE == "s1_large.json" or BENCH != ROOT / "results" / "bench"
+                if CONDITIONS[c][0] == "base" and same_world and bench_f.exists() and a.worlds == 5 and a.steps == 10_000:
                     f.parent.mkdir(parents=True, exist_ok=True)  # identical setting: reuse the benchmark's
                     shutil.copy(bench_f, f)
                     shutil.copy(bench_f.with_suffix(".pops.npy"), f.with_suffix(".pops.npy"))
@@ -357,7 +372,7 @@ def main() -> None:
     p.add_argument("command", choices=["train", "eval", "crossplay", "behaviour", "skill", "probe", "list"])
     # E1x / E2x: optional extras (ES/GA long windows, group selection), too costly for the main schedule because
     # parallel worlds give no speed-up on our GPU (probe, 7 Nov: 195 vs 206 world-steps/s)
-    p.add_argument("--exp", nargs="+", choices=["E1", "E1x", "E2", "E2x", "E3", "E4", "E5", "E6", "E7"])
+    p.add_argument("--exp", nargs="+", choices=["E1", "E1x", "E2", "E2x", "E3", "E4", "E5", "E6", "E7", "E8"])
     p.add_argument("--cond", nargs="+", choices=list(CONDITIONS))
     p.add_argument("--seeds", nargs="+", type=int, default=SEEDS)
     p.add_argument("--scenarios", nargs="+", default=["S1", "S2", "S4"])
@@ -371,11 +386,13 @@ def main() -> None:
     p.add_argument("--device", default=None)
     p.add_argument("--out", default=None, help="default results/study")
     p.add_argument("--base", default="s1_large.json", help="world config; s1_drag.json = world B (drag)")
+    p.add_argument("--runs", default=None, help="study dir holding the trained runs (default: --out)")
     p.add_argument("--bench", default=None, help="benchmark dir whose runs are the baselines (default results/bench)")
     a = p.parse_args()
-    global OUT, BENCH, BASE
+    global OUT, BENCH, BASE, RUNS
     if a.out:
         OUT = Path(a.out)
+    RUNS = Path(a.runs) if a.runs else OUT
     if a.bench:
         BENCH = Path(a.bench)
     BASE = a.base

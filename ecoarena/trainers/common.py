@@ -28,7 +28,7 @@ def homeostat_gate(world: EcoWorld, sp: int, threshold: float) -> bool:
 
 def step_rewards(world: EcoWorld, info: dict, sp: int, energy_before: torch.Tensor, alive_before: torch.Tensor,
                  birth_bonus: float = 0.0, death_penalty: float = 1.0, eco_lambda: float = 0.0,
-                 cost_weight: float = 1.0) -> torch.Tensor:
+                 cost_weight: float = 1.0, lineage: bool = False) -> torch.Tensor:
     """Per-slot reward for one step, the same rule for every method and both species.
 
         r = Δenergy / energy_cap
@@ -43,19 +43,27 @@ def step_rewards(world: EcoWorld, info: dict, sp: int, energy_before: torch.Tens
 
     eco_lambda (study 2, default 0): adds a shared reward for the world's ecosystem health; see ecosystem_health.
     cost_weight (study 2, default 1): multiplies the movement-cost part of the reward (see world.last_thrust).
+    lineage (EcoPPO, default False): count the reward in children instead of energy, and charge every step the
+        surplus an animal must bank to replace itself once in a lifetime:
+            r = (Δenergy + child refund) / child_energy - 1 / max_age,   -death_penalty on death
+        An animal that only breaks even on energy now loses about one child's worth over a full life, the same as
+        dying, so the learner is pushed to R0 >= 1 (scripts/leak_model.py, Eq. 1 of the paper), not just to survive.
     """
     sc = world.species_cfg[sp]
     st = world.species[sp]
     died = info["died"][sp]
-    r = (st.energy - energy_before) / sc.energy_cap
+    unit = sc.child_energy if lineage else sc.energy_cap
+    r = (st.energy - energy_before) / unit
     wi, _child, par = info["birth_pairs"][sp]
     if wi.numel():
-        r[wi, par] += sc.child_energy / sc.energy_cap + birth_bonus
+        r[wi, par] += sc.child_energy / unit + birth_bonus
+    if lineage:
+        r = r - 1.0 / sc.max_age
     if cost_weight != 1.0:
         # energy-leak fix (study 2, E4): count the movement cost cost_weight times in the reward. The world itself
         # is unchanged; only how strongly a learner feels the cost of thrust.
         th = world.last_thrust[sp]
-        r = r - (cost_weight - 1.0) * sc.move_cost * th * th / sc.energy_cap
+        r = r - (cost_weight - 1.0) * sc.move_cost * th * th / unit
     if eco_lambda:
         # "care" term for the study: every living animal also earns eco_lambda / 1000 per step times its world's
         # ecosystem health, so over a ~1000-step life lambda = 1 is worth about one death penalty
