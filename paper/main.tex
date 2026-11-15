@@ -187,6 +187,7 @@ and the predators persist only if $R_0\ge1$. The curve $R_0=1$ splits the plane 
 \end{figure*}
 
 \subsection{Why evolution leaks}
+\label{sec:why}
 
 The energy that coasting saves is small per step: $0.15\times(0.56-0.04)/100\approx0.0008$ reward per predator-step. To test whether selection can see it, we filled all 50 genome slots of GA's shared-world evaluation with the \emph{same} trained predator, so that any fitness difference is pure luck of catches and deaths, and credited half of the slots with exactly the coasting saving. With GA's 128-step window the saving is 0.24 of the luck spread, and the credited half supplies 71\% of the elites (50\% is chance). With 512 and 1,024-step windows the ratio rises to 0.59 and 0.93 and the credited half wins 90--93\% of elite places. The luck spread shrinks as $T^{-0.66}$ (Fig.~\ref{fig:leakmodel}B; independent steps would give $T^{-0.5}$), so the saving outweighs luck only for windows beyond about 1,100 steps, nine times GA's. In a Gaussian selection model the energy trait then receives $d^2/(1+d^2)$ of the selection pressure, where $d$ is the signal-to-luck ratio: 5\% at 128 steps, 26\% at 512 and 47\% at 1,024. Evolution's short fitness window therefore barely sees the cost of wasteful movement, whereas PPO receives it as a per-step reward signal. This predicts that longer windows or a stronger cost signal should repair evolved predators, which we test in Sec.~\ref{sec:fixes}.
 
@@ -278,6 +279,35 @@ PPO, eco reward $\lambda=5$ & 88 & 0 & 16 & \\
 \end{algorithm}
 
 % ===================================================================================================
+\section{Sensitivity to Step Size}
+\label{sec:hyper}
+A fair benchmark must ask whether the ranking is an accident of the settings we chose. We retrained every method with its main step size halved and doubled (PPO learning rate, GA mutation size, ES learning rate, NEAT weight mutation), three seeds each, and tested on S1, S2 and S4 (Table~\ref{tab:hyper}).
+
+\begin{table}[t]
+\centering
+\caption{Worlds with both species alive (\%) when each method's step size is halved or doubled. 15 worlds per cell (3 seeds $\times$ 5 worlds). The 1$\times$ column is the benchmark's seeds 0--2.}
+\label{tab:hyper}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccccccc}
+\toprule
+ & \multicolumn{3}{c}{0.5$\times$} & \multicolumn{3}{c}{1$\times$} & \multicolumn{3}{c}{2$\times$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+Method & S1 & S2 & S4 & S1 & S2 & S4 & S1 & S2 & S4 \\
+\midrule
+PPO & 67 & 0 & 0 & 67 & 0 & 7 & 93 & 7 & 0 \\
+GA & \textbf{100} & \textbf{73} & \textbf{73} & 7 & 0 & 13 & 0 & 0 & 0 \\
+ES & 100 & 100 & 80 & 100 & 67 & 100 & 13 & 0 & 0 \\
+NEAT & 47 & 33 & 40 & 0 & 0 & 0 & 0 & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{For evolution the step size matters a great deal, and it acts through the energy leak.} Halving GA's mutation size lifts it from the worst methods (7\% in S1) to the best (100\%), and NEAT from 0\% to about 40\%; doubling either loses every world. The energy budgets show why. With small mutations, GA predators push with thrust$^2$ 0.21--0.33 and earn more than they spend (net $+0.015$ to $+0.033$ per step); with large ones they push at 0.78--0.89 and lose $-0.022$ to $-0.051$. Large random changes drive the thrust output towards its limits, and a 128-step fitness window cannot see the cost well enough to pull it back (Section~\ref{sec:why}). ES behaves the same way, and PPO, which learns from every step, is barely affected.
+
+The replacement model again predicts the outcome without refitting: on these 18 new brains, the main-world threshold $R_0<0.86$ classifies 17 correctly (AUC 1.00), the one miss being a surviving GA seed at $R_0=0.83$.
+
+This changes how the benchmark should be read. The collapse of GA and NEAT is not a fixed property of evolution but of evolution with mutations too large for its fitness window. The benchmark settings were standard defaults, not tuned for survival, and at those defaults the leak appears. The general lesson is unchanged and sharper: in an ecosystem that never resets, a learner's step size is an ecological parameter.
+
 \section{A Second World: Drag}
 \label{sec:drag}
 To test whether the findings depend on free coasting, we built a second world in which every animal keeps only 90\% of its speed each step before thrust is added, so speed must be paid for continuously. All rules are otherwise unchanged and the browser port matches it exactly. The hand-coded animals keep both species alive in 5 of 5 worlds for 10,000 steps (about 840 prey and 180 predators), so the world is viable. We retrained all five methods with five seeds each and evaluated them on S1, S2 and S4.

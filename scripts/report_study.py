@@ -76,13 +76,15 @@ def thrust_stats(m: str, s: int | None, steps: int, warm: int, device: str, stud
 
 def cmd_energy(a) -> None:
     device = a.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    f = OUT / "energy.json"
+    f = OUT / (a.file or "energy.json")
     res = json.loads(f.read_text()) if f.exists() else {}
-    jobs = [(m, None, False) for m in ("random", "heuristic")] + [(m, s, False) for m in LEARNED for s in range(5)]
-    jobs += [(c, s, True) for c in a.conds for s in range(5)]  # study conditions (results/study)
+    jobs = [] if a.only_conds else [(m, None, False) for m in ("random", "heuristic")] + [(m, s, False) for m in LEARNED for s in range(5)]
+    jobs += [(c, s, True) for c in a.conds for s in range(10)]  # study conditions (results/study)
     for m, s, study in jobs:
         key = m if s is None else f"{m}-seed{s}"
         if key in res:
+            continue
+        if study and not (OUT / "train" / m / key / "predator.pt").exists():
             continue
         res[key] = {"method": m, "seed": s, "study": study, **thrust_stats(m, s, a.steps, a.warm, device, study)}
         r = res[key]
@@ -235,6 +237,8 @@ def main() -> None:
     p.add_argument("--warm", type=int, default=100)
     p.add_argument("--device", default=None)
     p.add_argument("--conds", nargs="*", default=[], help="study conditions to add to the energy table")
+    p.add_argument("--file", default=None, help="energy table file name (default energy.json)")
+    p.add_argument("--only-conds", action="store_true", help="measure only --conds, not the benchmark brains")
     p.add_argument("--base", default="s1_large.json", help="world; drag world: s1_drag.json with --bench/--out")
     p.add_argument("--bench", default=None)
     p.add_argument("--out", default=None)
