@@ -1,0 +1,90 @@
+{
+ "scenario": "S1",
+ "policy": "es-opt-seed0 pred vs neat",
+ "method": "es-opt",
+ "worlds": 3,
+ "steps": 3000,
+ "summary": {
+  "attack_rate_e6": 13.925,
+  "pred_catches_per_1k_agent_steps": 5.978,
+  "prey_mean_lifespan": 376.7,
+  "pred_mean_lifespan": 1369.6,
+  "prey_births_per_1k_agent_steps": 2.509,
+  "pred_births_per_1k_agent_steps": 0.879,
+  "prey_reward_per_1k_agent_steps": -1.349,
+  "pred_reward_per_1k_agent_steps": -0.424,
+  "worlds_survived": 3,
+  "worlds": 3
+ },
+ "per_world": [
+  {
+   "survived": true,
+   "extinct_at": {
+    "prey": null,
+    "predator": null
+   },
+   "mean_pop_2nd_half": [
+    450.3,
+    179.3
+   ],
+   "cv_2nd_half": [
+    0.13,
+    0.076
+   ],
+   "attack_rate_e6": 14.148,
+   "pred_catches_per_1k_agent_steps": 6.023,
+   "prey_mean_lifespan": 368.8,
+   "pred_mean_lifespan": 1367.6,
+   "prey_births_per_1k_agent_steps": 2.559,
+   "pred_births_per_1k_agent_steps": 0.887,
+   "prey_reward_per_1k_agent_steps": -1.35,
+   "pred_reward_per_1k_agent_steps": -0.414
+  },
+  {
+   "survived": true,
+   "extinct_at": {
+    "prey": null,
+    "predator": null
+   },
+   "mean_pop_2nd_half": [
+    460.8,
+    172.3
+   ],
+   "cv_2nd_half": [
+    0.123,
+    0.078
+   ],
+   "attack_rate_e6": 13.614,
+   "pred_catches_per_1k_agent_steps": 5.902,
+   "prey_mean_lifespan": 385.0,
+   "pred_mean_lifespan": 1355.5,
+   "prey_births_per_1k_agent_steps": 2.457,
+   "pred_births_per_1k_agent_steps": 0.869,
+   "prey_reward_per_1k_agent_steps": -1.328,
+   "pred_reward_per_1k_agent_steps": -0.451
+  },
+  {
+   "survived": true,
+   "extinct_at": {
+    "prey": null,
+    "predator": null
+   },
+   "mean_pop_2nd_half": [
+    430.6,
+    182.4
+   ],
+   "cv_2nd_half": [
+    0.028,
+    0.095
+   ],
+   "attack_rate_e6": 14.014,
+   "pred_catches_per_1k_agent_steps": 6.01,
+   "prey_mean_lifespan": 376.3,
+   "pred_mean_lifespan": 1385.7,
+   "prey_births_per_1k_agent_steps": 2.51,
+   "pred_births_per_1k_agent_steps": 0.882,
+   "prey_reward_per_1k_agent_steps": -1.369,
+   "pred_reward_per_1k_agent_steps": -0.406
+  }
+ ]
+}
