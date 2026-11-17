@@ -54,6 +54,12 @@ class EcoPPOConfig(PPOConfig):
     balance: float = 1.0  # 0 = off
     balance_power: float = 2.0
     balance_min: float = 0.05
+    # v2 (after the first GPU test): "ratio" compares the opponent with the learner itself, so only the side that is
+    # ahead slows down ("opponent" = v1: compare the opponent with its own starting count, which also slowed the
+    # losing side whenever the winner sat below its start). collapse_frac > 0 counts a collapse when a species falls
+    # below that share of its starting count, so the penalty still fires when migrants keep it from reaching zero.
+    balance_mode: str = "opponent"
+    collapse_frac: float = 0.0
     gamma: float = 0.999
     extinction_penalty: float = 5.0
 
@@ -70,7 +76,9 @@ class EcoPPOTrainer(PPOTrainer):
                 over |= {"prey.drag": drag, "predator.drag": drag}
             if cfg.no_reset:
                 over |= {"immigration_floor": cfg.founders, "immigration_interval": cfg.migrant_every}
-            self.envs.append({"spec": spec, "cfg": load_config(sc, base=cfg.base, **over),
+            wc = load_config(sc, base=cfg.base, **over)
+            floor = torch.tensor([cfg.collapse_frac * wc.prey.init_count, cfg.collapse_frac * wc.predator.init_count])
+            self.envs.append({"spec": spec, "cfg": wc, "floor": floor.long().to(cfg.device),
                               "seed": cfg.seed * 1000 + 100 * i, "resets": 0, "extinctions": 0})
         super().__init__(self.envs[0]["cfg"], cfg, out_dir)
         for e in self.envs:
@@ -93,6 +101,8 @@ class EcoPPOTrainer(PPOTrainer):
             rho = self.relative_pops()
             for sp in (PREY, PREDATOR):
                 other = float(rho[1 - sp])
+                if cfg.balance_mode == "ratio":
+                    other = other / max(float(rho[sp]), 1e-6)
                 self.lr_scale[sp] = min(1.0, max(cfg.balance_min, (other / cfg.balance) ** cfg.balance_power))
         for sp, opt in self.opts.items():
             for g in opt.param_groups:
@@ -136,7 +146,8 @@ class EcoPPOTrainer(PPOTrainer):
             # an extinction happens when the last animal of a species dies this step (migrants may refill the
             # world in the same step, so count before immigration)
             before_mig = info["populations"] - torch.stack(info["migrants"], 1)
-            gone = ((pops0 > 0) & (before_mig == 0)).any(1)  # [W]
+            floor = e["floor"] if cfg.collapse_frac > 0 else 0
+            gone = ((pops0 > floor) & (before_mig <= floor)).any(1)  # [W]
             if bool(gone.any()):
                 stats["extinctions"] += int(gone.sum())
                 e["extinctions"] += int(gone.sum())

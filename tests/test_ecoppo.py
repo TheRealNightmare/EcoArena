@@ -75,3 +75,26 @@ def test_short_training_run(tmp_path):
     tr = _trainer(tmp_path)
     hist = tr.train()
     assert len(hist) == 2 and (tmp_path / "prey.pt").exists() and (tmp_path / "worlds.json").exists()
+
+
+def test_ratio_balance_slows_only_the_leader(tmp_path):
+    tr = _trainer(tmp_path, balance_mode="ratio")
+    for e in tr.envs:
+        alive = e["world"].species[PREDATOR].alive
+        idx = alive[0].nonzero().squeeze(1)
+        alive[0, idx[len(idx) // 2:]] = False  # predators at about half their start, prey at their full start
+    tr._set_lr()
+    assert tr.lr_scale[PREY] < 0.4 and tr.lr_scale[PREDATOR] == 1.0
+
+
+def test_collapse_below_floor_counts_without_zero(tmp_path):
+    tr = _trainer(tmp_path, collapse_frac=0.9, founders=0)
+    e = tr.envs[0]
+    w = e["world"]
+    alive = w.species[PREDATOR].alive
+    idx = alive[0].nonzero().squeeze(1)
+    keep = int(e["floor"][1]) + 1  # one above the floor; the next death is a collapse
+    alive[0, idx[keep:]] = False
+    w.species[PREDATOR].energy[0, idx[0]] = 0.01  # dies this step
+    _, st = tr._rollout_env(e)
+    assert st["extinctions"] >= 1 and int(w.populations()[0, PREDATOR]) > 0

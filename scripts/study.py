@@ -130,13 +130,15 @@ _RECIPE = {"ga": (GA, ["cost", "prey4", "hct"]), "es": (ES, ["cost", "prey4", "h
 # E8: EcoPPO, a PPO learner built to keep the ecosystem alive (ecoarena/trainers/ecoppo.py): lineage reward,
 # no-reset worlds, automatic balancing, training across scenarios and friction levels, gamma 0.999. Each ablation
 # switches one part off. Trained on S1, S2, S4 with and without drag 0.1; S3, S5 and drag 0.05 / 0.15 are unseen.
+V2 = [*ECO, "--balance-mode", "ratio", "--collapse-frac", "0.1"]
 CONDITIONS.update({
-    "ecoppo": ("E8", "ppo", [*ECO]),
-    "ecoppo-nolineage": ("E8", "ppo", [*ECO, "--no-lineage"]),
-    "ecoppo-resets": ("E8", "ppo", [*ECO, "--resets"]),
-    "ecoppo-nobalance": ("E8", "ppo", [*ECO, "--balance", "0"]),
-    "ecoppo-oneworld": ("E8", "ppo", [*ECO, "--worlds", "S1", "S1", "S1", "S1", "S1", "S1"]),
-    "ecoppo-g99": ("E8", "ppo", [*ECO, "--gamma", "0.99"]),
+    "ecoppo": ("E8", "ppo", [*ECO]),  # v1: first GPU test (balance against the opponent's start; zero-only extinctions)
+    "ecoppo2": ("E8", "ppo", [*V2]),  # v2: balance the leader against the laggard; collapse below 10% of the start
+    "ecoppo2-nolineage": ("E8", "ppo", [*V2, "--no-lineage"]),
+    "ecoppo2-resets": ("E8", "ppo", [*V2, "--resets"]),
+    "ecoppo2-nobalance": ("E8", "ppo", [*V2, "--balance", "0"]),
+    "ecoppo2-oneworld": ("E8", "ppo", [*V2, "--worlds", "S1", "S1", "S1", "S1", "S1", "S1"]),
+    "ecoppo2-g99": ("E8", "ppo", [*V2, "--gamma", "0.99"]),
 })
 for _m, (_base, _ing) in _RECIPE.items():
     CONDITIONS[f"{_m}-opt"] = ("E7", _m, [*_base, *[x for i in _ing for x in _FIX[i]]])

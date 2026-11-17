@@ -38,6 +38,8 @@ def main() -> None:
     p.add_argument("--migrant-every", type=int, default=10)
     p.add_argument("--balance", type=float, default=1.0, help="0 = ablation: no automatic balancing")
     p.add_argument("--balance-power", type=float, default=2.0)
+    p.add_argument("--balance-mode", choices=["opponent", "ratio"], default="opponent")
+    p.add_argument("--collapse-frac", type=float, default=0.0, help="count a collapse below this share of the start")
     p.add_argument("--extinction-penalty", type=float, default=5.0)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
@@ -53,6 +55,7 @@ def main() -> None:
                        iterations=a.iters, world_step_budget=int(a.world_steps), minibatch=a.minibatch, lr=a.lr,
                        gamma=a.gamma, lineage=not a.no_lineage, no_reset=not a.resets, founders=a.founders,
                        migrant_every=a.migrant_every, balance=a.balance, balance_power=a.balance_power,
+                       balance_mode=a.balance_mode, collapse_frac=a.collapse_frac,
                        extinction_penalty=a.extinction_penalty, seed=a.seed, device=a.device)
     print(f"training {name} on {a.device}: {a.world_steps:,.0f} world-steps over {len(cfg.worlds)} worlds "
           f"({', '.join(cfg.worlds)})", flush=True)

@@ -279,6 +279,12 @@ PPO, eco reward $\lambda=5$ & 88 & 0 & 16 & \\
 \end{algorithm}
 
 % ===================================================================================================
+\subsection{Combining the fixes}
+\label{sec:combined}
+The fixes act on different causes, so we stacked them: for ES, movement cost $\times5$, prey updated four times less often and Homeostatic Co-Training; for PPO, discount 0.999, slower prey and the extinction penalty (HCT gave PPO little). Ten seeds each, tested on S1, S2 and S4 and scored for skill as well as survival, since a world can be kept alive by animals too weak to matter. Skill pits a brain's predators against the prey of all five benchmark methods, and its prey against their predators; 1.0 is the average benchmark method.
+
+The combined ES keeps both species in 96\% of worlds (95\% CI 93--99; ES alone 73\%) at unchanged skill (0.97 against 0.98). The combined PPO reaches 72\% (65--79; PPO alone 28\%) and keeps most of PPO's edge in skill (1.30 against 1.48). Neither reaches the corner we want, high survival with PPO's skill: the steadiest learner is average at hunting and escaping, and the most skilled still loses a quarter of its worlds.
+
 \section{Sensitivity to Step Size}
 \label{sec:hyper}
 A fair benchmark must ask whether the ranking is an accident of the settings we chose. We retrained every method with its main step size halved and doubled (PPO learning rate, GA mutation size, ES learning rate, NEAT weight mutation), three seeds each, and tested on S1, S2 and S4 (Table~\ref{tab:hyper}).
