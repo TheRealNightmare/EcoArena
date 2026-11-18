@@ -60,6 +60,10 @@ class EcoPPOConfig(PPOConfig):
     # below that share of its starting count, so the penalty still fires when migrants keep it from reaching zero.
     balance_mode: str = "opponent"
     collapse_frac: float = 0.0
+    # v3: the predators crashed in the first ~25k world-steps of every v2 run, before they had learned to hunt, and
+    # only some seeds recovered. head_start freezes the prey for that share of the budget, so the predators learn
+    # first (a curriculum); a larger `founders` floor keeps enough predators alive to learn from.
+    head_start: float = 0.0
     gamma: float = 0.999
     extinction_penalty: float = 5.0
 
@@ -84,6 +88,7 @@ class EcoPPOTrainer(PPOTrainer):
         for e in self.envs:
             e["world"] = EcoWorld(e["cfg"], n_worlds=cfg.worlds_each, seed=e["seed"], device=cfg.device)
         self.lr_scale = {PREY: 1.0, PREDATOR: 1.0}
+        self.world_steps = 0
 
     # ------------------------------------------------------------------ helpers
     def relative_pops(self) -> torch.Tensor:
@@ -97,6 +102,12 @@ class EcoPPOTrainer(PPOTrainer):
 
     def _set_lr(self) -> None:
         cfg = self.cfg
+        if cfg.head_start > 0 and self.world_steps < cfg.head_start * cfg.world_step_budget:
+            self.lr_scale = {PREY: 0.0, PREDATOR: 1.0}
+            for sp, opt in self.opts.items():
+                for g in opt.param_groups:
+                    g["lr"] = cfg.lr * self.lr_scale[sp]
+            return
         if cfg.balance > 0:
             rho = self.relative_pops()
             for sp in (PREY, PREDATOR):
@@ -207,6 +218,7 @@ class EcoPPOTrainer(PPOTrainer):
             self.iteration = it
             buf, stats = self.rollout()
             world_steps += stats["world_steps"]
+            self.world_steps = world_steps
             self._set_lr()
             upd = self.update(buf)
             rho = self.relative_pops().tolist()

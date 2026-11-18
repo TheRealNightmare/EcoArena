@@ -134,6 +134,9 @@ V2 = [*ECO, "--balance-mode", "ratio", "--collapse-frac", "0.1"]
 CONDITIONS.update({
     "ecoppo": ("E8", "ppo", [*ECO]),  # v1: first GPU test (balance against the opponent's start; zero-only extinctions)
     "ecoppo2": ("E8", "ppo", [*V2]),  # v2: balance the leader against the laggard; collapse below 10% of the start
+    # v3: prey frozen for the first quarter of the budget (predators learn first) and a 30-predator migrant floor
+    "ecoppo3": ("E8", "ppo", [*V2, "--head-start", "0.25", "--founders", "30"]),
+    "ecoppo3-nohead": ("E8", "ppo", [*V2, "--founders", "30"]),
     "ecoppo2-nolineage": ("E8", "ppo", [*V2, "--no-lineage"]),
     "ecoppo2-resets": ("E8", "ppo", [*V2, "--resets"]),
     "ecoppo2-nobalance": ("E8", "ppo", [*V2, "--balance", "0"]),

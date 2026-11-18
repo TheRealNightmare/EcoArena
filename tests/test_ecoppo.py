@@ -98,3 +98,13 @@ def test_collapse_below_floor_counts_without_zero(tmp_path):
     w.species[PREDATOR].energy[0, idx[0]] = 0.01  # dies this step
     _, st = tr._rollout_env(e)
     assert st["extinctions"] >= 1 and int(w.populations()[0, PREDATOR]) > 0
+
+
+def test_head_start_freezes_prey_then_releases(tmp_path):
+    tr = _trainer(tmp_path, head_start=0.5)
+    tr.world_steps = 0
+    tr._set_lr()
+    assert tr.opts[PREY].param_groups[0]["lr"] == 0.0 and tr.opts[PREDATOR].param_groups[0]["lr"] == tr.cfg.lr
+    tr.world_steps = tr.cfg.world_step_budget
+    tr._set_lr()
+    assert tr.opts[PREY].param_groups[0]["lr"] > 0.0
