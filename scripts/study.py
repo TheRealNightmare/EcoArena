@@ -138,10 +138,12 @@ CONDITIONS.update({
     "ecoppo3": ("E8", "ppo", [*V2, "--head-start", "0.25", "--founders", "30"]),
     "ecoppo3-nohead": ("E8", "ppo", [*V2, "--founders", "30"]),
     "ecoppo2-nolineage": ("E8", "ppo", [*V2, "--no-lineage"]),
-    "ecoppo2-resets": ("E8", "ppo", [*V2, "--resets"]),
-    "ecoppo2-nobalance": ("E8", "ppo", [*V2, "--balance", "0"]),
-    "ecoppo2-oneworld": ("E8", "ppo", [*V2, "--worlds", "S1", "S1", "S1", "S1", "S1", "S1"]),
-    "ecoppo2-g99": ("E8", "ppo", [*V2, "--gamma", "0.99"]),
+    # final EcoPPO = ecoppo3-nohead (v2 + 30-predator migrant floor; the head start hurt). Ablations: one part off each.
+    "ecoppo3n-nolineage": ("E8", "ppo", [*V2, "--founders", "30", "--no-lineage"]),
+    "ecoppo3n-resets": ("E8", "ppo", [*V2, "--founders", "30", "--resets"]),
+    "ecoppo3n-nobalance": ("E8", "ppo", [*V2, "--founders", "30", "--balance", "0"]),
+    "ecoppo3n-oneworld": ("E8", "ppo", [*V2, "--founders", "30", "--worlds", "S1", "S1", "S1", "S1", "S1", "S1"]),
+    "ecoppo3n-g99": ("E8", "ppo", [*V2, "--founders", "30", "--gamma", "0.99"]),
 })
 for _m, (_base, _ing) in _RECIPE.items():
     CONDITIONS[f"{_m}-opt"] = ("E7", _m, [*_base, *[x for i in _ing for x in _FIX[i]]])
