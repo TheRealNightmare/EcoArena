@@ -1,0 +1,38 @@
+[
+ {
+  "spec": "S1",
+  "seed": 7000,
+  "resets": 0,
+  "extinctions": 0
+ },
+ {
+  "spec": "S2",
+  "seed": 7100,
+  "resets": 0,
+  "extinctions": 0
+ },
+ {
+  "spec": "S4",
+  "seed": 7200,
+  "resets": 0,
+  "extinctions": 0
+ },
+ {
+  "spec": "S1@0.1",
+  "seed": 7300,
+  "resets": 0,
+  "extinctions": 0
+ },
+ {
+  "spec": "S2@0.1",
+  "seed": 7400,
+  "resets": 0,
+  "extinctions": 0
+ },
+ {
+  "spec": "S4@0.1",
+  "seed": 7500,
+  "resets": 0,
+  "extinctions": 0
+ }
+]

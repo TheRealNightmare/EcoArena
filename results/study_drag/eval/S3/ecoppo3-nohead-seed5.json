@@ -1,0 +1,136 @@
+{
+ "scenario": "S3",
+ "policy": "ecoppo3-nohead-seed5",
+ "method": "ecoppo3-nohead",
+ "worlds": 5,
+ "steps": 10000,
+ "summary": {
+  "attack_rate_e6": 13.123,
+  "pred_catches_per_1k_agent_steps": 6.34,
+  "prey_mean_lifespan": 690.36,
+  "pred_mean_lifespan": 975.92,
+  "prey_births_per_1k_agent_steps": 1.432,
+  "pred_births_per_1k_agent_steps": 0.926,
+  "prey_reward_per_1k_agent_steps": -0.776,
+  "pred_reward_per_1k_agent_steps": -0.896,
+  "worlds_survived": 5,
+  "worlds": 5
+ },
+ "per_world": [
+  {
+   "survived": true,
+   "extinct_at": {
+    "prey": null,
+    "predator": null
+   },
+   "mean_pop_2nd_half": [
+    478.7,
+    63.0
+   ],
+   "cv_2nd_half": [
+    0.023,
+    0.203
+   ],
+   "attack_rate_e6": 13.171,
+   "pred_catches_per_1k_agent_steps": 6.346,
+   "prey_mean_lifespan": 659.2,
+   "pred_mean_lifespan": 987.7,
+   "prey_births_per_1k_agent_steps": 1.492,
+   "pred_births_per_1k_agent_steps": 0.924,
+   "prey_reward_per_1k_agent_steps": -0.808,
+   "pred_reward_per_1k_agent_steps": -0.881
+  },
+  {
+   "survived": true,
+   "extinct_at": {
+    "prey": null,
+    "predator": null
+   },
+   "mean_pop_2nd_half": [
+    482.2,
+    51.7
+   ],
+   "cv_2nd_half": [
+    0.017,
+    0.293
+   ],
+   "attack_rate_e6": 13.051,
+   "pred_catches_per_1k_agent_steps": 6.336,
+   "prey_mean_lifespan": 718.2,
+   "pred_mean_lifespan": 969.6,
+   "prey_births_per_1k_agent_steps": 1.368,
+   "pred_births_per_1k_agent_steps": 0.926,
+   "prey_reward_per_1k_agent_steps": -0.743,
+   "pred_reward_per_1k_agent_steps": -0.908
+  },
+  {
+   "survived": true,
+   "extinct_at": {
+    "prey": null,
+    "predator": null
+   },
+   "mean_pop_2nd_half": [
+    481.2,
+    55.1
+   ],
+   "cv_2nd_half": [
+    0.022,
+    0.352
+   ],
+   "attack_rate_e6": 13.366,
+   "pred_catches_per_1k_agent_steps": 6.38,
+   "prey_mean_lifespan": 643.8,
+   "pred_mean_lifespan": 1000.8,
+   "prey_births_per_1k_agent_steps": 1.529,
+   "pred_births_per_1k_agent_steps": 0.908,
+   "prey_reward_per_1k_agent_steps": -0.826,
+   "pred_reward_per_1k_agent_steps": -0.858
+  },
+  {
+   "survived": true,
+   "extinct_at": {
+    "prey": null,
+    "predator": null
+   },
+   "mean_pop_2nd_half": [
+    476.1,
+    69.5
+   ],
+   "cv_2nd_half": [
+    0.022,
+    0.13
+   ],
+   "attack_rate_e6": 13.164,
+   "pred_catches_per_1k_agent_steps": 6.363,
+   "prey_mean_lifespan": 658.0,
+   "pred_mean_lifespan": 974.7,
+   "prey_births_per_1k_agent_steps": 1.499,
+   "pred_births_per_1k_agent_steps": 0.949,
+   "prey_reward_per_1k_agent_steps": -0.814,
+   "pred_reward_per_1k_agent_steps": -0.886
+  },
+  {
+   "survived": true,
+   "extinct_at": {
+    "prey": null,
+    "predator": null
+   },
+   "mean_pop_2nd_half": [
+    485.1,
+    29.4
+   ],
+   "cv_2nd_half": [
+    0.019,
+    0.231
+   ],
+   "attack_rate_e6": 12.861,
+   "pred_catches_per_1k_agent_steps": 6.277,
+   "prey_mean_lifespan": 772.6,
+   "pred_mean_lifespan": 946.8,
+   "prey_births_per_1k_agent_steps": 1.27,
+   "pred_births_per_1k_agent_steps": 0.924,
+   "prey_reward_per_1k_agent_steps": -0.691,
+   "pred_reward_per_1k_agent_steps": -0.947
+  }
+ ]
+}
