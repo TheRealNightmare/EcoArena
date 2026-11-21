@@ -322,6 +322,36 @@ To test whether the findings depend on free coasting, we built a second world in
 
 \textbf{The replacement model predicts the new world without refitting.} We measured thrust and catch rate for the 32 drag-world brains (five methods, the GA cost fix and both baselines) and computed $R_0$ from Eq.~\ref{eq:r0}, keeping the threshold fixed at the value found in the main world ($R_0<0.86$). It classifies all 32 correctly (AUC 1.00); the plain rule $R_0<1$ gets 31 of 32. The test is lopsided, with only two surviving brains (the hand-coded animals at $R_0=1.30$ and one GA seed at $R_0=0.864$, exactly on the threshold), so it confirms the model's ranking more than its exact cut.
 
+\section{EcoPPO: a Learner Built from the Causes}
+\label{sec:ecoppo}
+The fixes above each target one cause. EcoPPO targets all of them at once and keeps everything else of the benchmark PPO (network, update, budget):
+(i) a \emph{lineage reward}, counted in children, that charges every step the surplus an animal must bank to raise one child in its life, so break-even predators are penalised as $R_0<1$ demands;
+(ii) \emph{no-reset training}: an extinct or collapsed species (below 10\% of its start) is recolonised by migrants, at least 30 predators, instead of the world restarting, and every learner in that world pays a penalty;
+(iii) \emph{automatic balancing}: each species' learning rate shrinks by the square of the ratio of the other species' relative numbers to its own, so only the side that is ahead slows down;
+(iv) \emph{many worlds}: training worlds S1, S2 and S4, each with drag 0 and 0.1; and a discount of 0.999.
+
+Reaching this version took three iterations, which we report because each failure is informative. Balancing each species against its opponent's starting count (v1) also slowed the losing side; counting only true extinctions let migrants hide collapse from the learner. With those corrected (v2) the predators still crashed early in training and only some seeds recovered. Freezing the prey for the first quarter of training (a curriculum) made matters worse: when the prey resumed learning, the predators crashed again. What worked was the larger migrant floor alone, which kept enough predators to learn from.
+
+\begin{table}[t]
+\centering
+\caption{EcoPPO, 10 seeds, worlds with both species alive (\%), 50 per cell. Training saw S1, S2, S4 at drag 0 and 0.1; S3, S5 and drags 0.05 and 0.15 are unseen. Benchmark PPO in brackets (5 seeds).}
+\label{tab:ecoppo}
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{lcccccc}
+\toprule
+World & S1 & S2 & S3 & S4 & S5 & All \\
+\midrule
+Drag 0 & 90 (80) & 80 (0) & 70 (0) & 62 (4) & 88 (24) & 78 (22) \\
+Drag 0.05$^\ast$ & 96 & 82 & 80 & 72 & 88 & 84 \\
+Drag 0.1 & 98 (0) & 42 (0) & 70 (0) & 86 (0) & 100 (0) & 79 (0) \\
+Drag 0.15$^\ast$ & 10 & 0 & 4 & 8 & 8 & 6 \\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize $^\ast$ never seen in training}
+\end{tabular}
+\end{table}
+
+EcoPPO keeps both species in 78\% of main-world tests against PPO's 22\%, including the two unseen scenarios, and in 79\% of drag worlds, where every benchmark learner kept none. It interpolates to the unseen drag of 0.05 (84\%) but does not extrapolate to 0.15 (6\%), although hand-coded animals survive there in every test: training across worlds widens what a learner can handle, but only to the range it has seen. Its animals stay skilled (1.12 against the benchmark average of 1.0; PPO 1.48, ES 0.98). \todo{ablations, PPO and ES at drag 0.05 and 0.15}
+
 \section{Discussion and Limitations}
 
 Our results point to two separable failure modes. Evolutionary methods with short fitness windows produce energetically wasteful predators that starve whatever their prey do; gradient-based RL produces efficient predators but even more effective prey, and the ecosystem survives only while neither side out-learns the other. Neither failure is visible in the training objective, and both are hidden in standard practice by resetting worlds after extinction. This matches ecological intuition, the life--dinner principle~\cite{dawkins1979} and the difficulty of evolving prudence under individual selection~\cite{slobodkin1968}, but here it is measured, manipulated and quantified.
