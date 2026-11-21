@@ -222,7 +222,7 @@ def cmd_eval(a) -> None:
                     continue
                 bench_f = BENCH / "eval" / sc / f"{c}-seed{s}.json"
                 # reuse the benchmark's own test only when it was run in this same world
-                same_world = BASE == "s1_large.json" or BENCH != ROOT / "results" / "bench"
+                same_world = BASE == "s1_large.json" or BENCH.resolve() != (ROOT / "results" / "bench").resolve()
                 if CONDITIONS[c][0] == "base" and same_world and bench_f.exists() and a.worlds == 5 and a.steps == 10_000:
                     f.parent.mkdir(parents=True, exist_ok=True)  # identical setting: reuse the benchmark's
                     shutil.copy(bench_f, f)

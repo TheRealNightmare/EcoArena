@@ -1,6 +1,6 @@
 # E7: the optimised recipe
 
-Family: **ES**. Survival = worlds with both species alive (S1, S2, S4). Skill: 1.0 = an average benchmark method (see `scripts/report_opt.py`).
+Family: **PPO**. Survival = worlds with both species alive (S1, S2, S4). Skill: 1.0 = an average benchmark method (see `scripts/report_opt.py`).
 
 | brain | S1 | S2 | S4 | survival (95% CI) | predator skill | prey skill | skill |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -9,4 +9,4 @@ Family: **ES**. Survival = worlds with both species alive (S1, S2, S4). Skill: 1
 | ES | 80% | 60% | 80% | 73% (63–83), n=75 | 0.95 | 1.00 | 0.98 |
 | NEAT | 0% | 0% | 0% | 0% (0–0), n=75 | 0.76 | 0.78 | 0.77 |
 | Hybrid | 88% | 40% | 76% | 68% (57–77), n=75 | 1.18 | 1.16 | 1.17 |
-| es-opt | 100% | 100% | 88% | 96% (93–99), n=150 | 0.96 | 0.98 | 0.97 |
+| ppo-opt | 92% | 60% | 64% | 72% (65–79), n=150 | 1.30 | 1.29 | 1.30 |
