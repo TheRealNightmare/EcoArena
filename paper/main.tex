@@ -342,15 +342,15 @@ Reaching this version took three iterations, which we report because each failur
 World & S1 & S2 & S3 & S4 & S5 & All \\
 \midrule
 Drag 0 & 90 (80) & 80 (0) & 70 (0) & 62 (4) & 88 (24) & 78 (22) \\
-Drag 0.05$^\ast$ & 96 & 82 & 80 & 72 & 88 & 84 \\
+Drag 0.05$^\ast$ & 96 (40) & 82 (0) & 80 (12) & 72 (40) & 88 (40) & 84 (26) \\
 Drag 0.1 & 98 (0) & 42 (0) & 70 (0) & 86 (0) & 100 (0) & 79 (0) \\
-Drag 0.15$^\ast$ & 10 & 0 & 4 & 8 & 8 & 6 \\
+Drag 0.15$^\ast$ & 10 (0) & 0 (0) & 4 (0) & 8 (0) & 8 (0) & 6 (0) \\
 \bottomrule
 \multicolumn{7}{l}{\footnotesize $^\ast$ never seen in training}
 \end{tabular}
 \end{table}
 
-EcoPPO keeps both species in 78\% of main-world tests against PPO's 22\%, including the two unseen scenarios, and in 79\% of drag worlds, where every benchmark learner kept none. It interpolates to the unseen drag of 0.05 (84\%) but does not extrapolate to 0.15 (6\%), although hand-coded animals survive there in every test: training across worlds widens what a learner can handle, but only to the range it has seen. Its animals stay skilled (1.12 against the benchmark average of 1.0; PPO 1.48, ES 0.98). \todo{ablations, PPO and ES at drag 0.05 and 0.15}
+EcoPPO keeps both species in 78\% of main-world tests against PPO's 22\%, including the two unseen scenarios, and in 79\% of drag worlds, where every benchmark learner kept none. It interpolates to the unseen drag of 0.05 (84\%, against PPO's 26\% and ES's 49\%) but does not extrapolate to 0.15 (6\%; PPO 0\%, ES 1\%), although hand-coded animals survive there in every test: training across worlds widens what a learner can handle, but only to the range it has seen. Its animals stay skilled (1.12 against the benchmark average of 1.0; PPO 1.48, ES 0.98). \todo{ablations}
 
 \section{Discussion and Limitations}
 
